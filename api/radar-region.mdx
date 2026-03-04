@@ -1,0 +1,98 @@
+---
+title: RadarRegion
+description: Represents a region with jurisdiction and geofencing information.
+---
+
+`RadarRegion` represents a region. Learn more about [Regions](https://radar.com/documentation/regions).
+
+## Properties
+
+<ResponseField name="_id" type="String" required>
+  The Radar ID of the region.
+</ResponseField>
+
+<ResponseField name="name" type="String" required>
+  The name of the region.
+</ResponseField>
+
+<ResponseField name="code" type="String" required>
+  The unique code for the region.
+</ResponseField>
+
+<ResponseField name="type" type="String" required>
+  The type of the region.
+</ResponseField>
+
+<ResponseField name="flag" type="String">
+  The optional flag of the region.
+</ResponseField>
+
+<ResponseField name="allowed" type="BOOL" required>
+  A boolean indicating whether the jurisdiction is allowed. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="passed" type="BOOL" required>
+  A boolean indicating whether all jurisdiction checks for the region have passed. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="inExclusionZone" type="BOOL" required>
+  A boolean indicating whether the user is in an exclusion zone for the jurisdiction. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="inBufferZone" type="BOOL" required>
+  A boolean indicating whether the user is too close to the border for the jurisdiction. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="distanceToBorder" type="double" required>
+  The distance in meters to the border of the jurisdiction. May be 0 if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="expected" type="BOOL" required>
+  A boolean indicating whether the jurisdiction is expected based on the values passed to `setExpectedJurisdiction()`.
+</ResponseField>
+
+## Methods
+
+### dictionaryValue
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Returns the dictionary representation of the region.
+
+## Example
+
+```swift
+let region: RadarRegion = event.region
+let regionId = region._id
+let regionName = region.name
+let regionCode = region.code
+let regionType = region.type
+let regionFlag = region.flag
+let regionAllowed = region.allowed
+let regionPassed = region.passed
+let regionInExclusionZone = region.inExclusionZone
+let regionInBufferZone = region.inBufferZone
+let regionDistanceToBorder = region.distanceToBorder
+let regionExpected = region.expected
+```
+
+```objective-c
+RadarRegion *region = event.region;
+NSString *regionId = region._id;
+NSString *regionName = region.name;
+NSString *regionCode = region.code;
+NSString *regionType = region.type;
+NSString *regionFlag = region.flag;
+BOOL regionAllowed = region.allowed;
+BOOL regionPassed = region.passed;
+BOOL regionInExclusionZone = region.inExclusionZone;
+BOOL regionInBufferZone = region.inBufferZone;
+double regionDistanceToBorder = region.distanceToBorder;
+BOOL regionExpected = region.expected;
+```
+
+<Note>
+  Fraud detection features are only available when Radar Fraud is enabled for your project.
+</Note>

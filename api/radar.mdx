@@ -1,0 +1,2199 @@
+---
+title: "Radar"
+description: "The main class used to interact with the Radar SDK for location tracking, geofencing, and trip management."
+---
+
+## Overview
+
+The `Radar` class is the primary interface for the Radar iOS SDK. It provides methods for:
+
+- SDK initialization and configuration
+- User identification and metadata management
+- Location tracking (foreground and background)
+- Trip tracking and management
+- Search (places, geofences)
+- Geocoding and reverse geocoding
+- Distance and routing calculations
+- Event handling and conversions
+
+## Initialization
+
+### isInitialized
+
+```swift
+class var isInitialized: Bool { get }
+```
+
+Returns whether the SDK has been initialized.
+
+### initialize(publishableKey:)
+
+```swift
+class func initialize(publishableKey: String)
+```
+
+```objective-c
++ (void)initializeWithPublishableKey:(NSString *)publishableKey;
+```
+
+Initializes the Radar SDK.
+
+<Warning>
+Call this method from the main thread in your `AppDelegate` class before calling any other Radar methods.
+</Warning>
+
+<ParamField path="publishableKey" type="String" required>
+  Your publishable API key.
+</ParamField>
+
+### initialize(publishableKey:options:)
+
+```swift
+class func initialize(publishableKey: String, options: RadarInitializeOptions?)
+```
+
+```objective-c
++ (void)initializeWithPublishableKey:(NSString *)publishableKey options:(RadarInitializeOptions *)options;
+```
+
+Initializes the Radar SDK with additional configuration options.
+
+<Warning>
+Call this method from the main thread in your `AppDelegate` class before calling any other Radar methods.
+</Warning>
+
+<ParamField path="publishableKey" type="String" required>
+  Your publishable API key.
+</ParamField>
+
+<ParamField path="options" type="RadarInitializeOptions" optional>
+  Radar SDK initialization options.
+</ParamField>
+
+## Properties
+
+### sdkVersion
+
+```swift
+class var sdkVersion: String { get }
+```
+
+```objective-c
+@property (readonly, class) NSString *sdkVersion;
+```
+
+Gets the version number of the Radar SDK, such as "3.5.1" or "3.5.1-beta.2".
+
+## User Identification
+
+### setUserId(_:)
+
+```swift
+class func setUserId(_ userId: String?)
+```
+
+```objective-c
++ (void)setUserId:(NSString *)userId;
+```
+
+Identifies the user.
+
+<Note>
+Until you identify the user, Radar will automatically identify the user by `deviceId` (IDFV).
+</Note>
+
+<ParamField path="userId" type="String" optional>
+  A stable unique ID for the user. If `nil`, the previous `userId` will be cleared.
+</ParamField>
+
+### getUserId()
+
+```swift
+class func getUserId() -> String?
+```
+
+```objective-c
++ (NSString *)getUserId;
+```
+
+Returns the current `userId`.
+
+### setDescription(_:)
+
+```swift
+class func setDescription(_ description: String?)
+```
+
+```objective-c
++ (void)setDescription:(NSString *)description;
+```
+
+Sets an optional description for the user, displayed in the dashboard.
+
+<ParamField path="description" type="String" optional>
+  A description for the user. If `nil`, the previous `description` will be cleared.
+</ParamField>
+
+### getDescription()
+
+```swift
+class func getDescription() -> String?
+```
+
+```objective-c
++ (NSString *)getDescription;
+```
+
+Returns the current `description`.
+
+### setMetadata(_:)
+
+```swift
+class func setMetadata(_ metadata: [AnyHashable: Any]?)
+```
+
+```objective-c
++ (void)setMetadata:(NSDictionary *)metadata;
+```
+
+Sets an optional set of custom key-value pairs for the user.
+
+<ParamField path="metadata" type="Dictionary" optional>
+  A set of custom key-value pairs for the user. Must have 16 or fewer keys and values of type string, boolean, or number. If `nil`, the previous `metadata` will be cleared.
+</ParamField>
+
+### getMetadata()
+
+```swift
+class func getMetadata() -> [AnyHashable: Any]?
+```
+
+```objective-c
++ (NSDictionary *)getMetadata;
+```
+
+Returns the current `metadata`.
+
+## Tags
+
+### getTags()
+
+```swift
+class func getTags() -> [String]?
+```
+
+```objective-c
++ (NSArray<NSString *> *)getTags;
+```
+
+Returns the current `tags`.
+
+### setTags(_:)
+
+```swift
+class func setTags(_ tags: [String]?)
+```
+
+```objective-c
++ (void)setTags:(NSArray<NSString *> *)tags;
+```
+
+Sets tags, replacing any existing tags.
+
+<ParamField path="tags" type="Array<String>" optional>
+  An array of tags. If `nil`, all tags will be cleared.
+</ParamField>
+
+### addTags(_:)
+
+```swift
+class func addTags(_ tags: [String])
+```
+
+```objective-c
++ (void)addTags:(NSArray<NSString *> *)tags;
+```
+
+Adds tags to the existing set.
+
+<ParamField path="tags" type="Array<String>" required>
+  An array of tags to add.
+</ParamField>
+
+### removeTags(_:)
+
+```swift
+class func removeTags(_ tags: [String])
+```
+
+```objective-c
++ (void)removeTags:(NSArray<NSString *> *)tags;
+```
+
+Removes tags from the existing set.
+
+<ParamField path="tags" type="Array<String>" required>
+  An array of tags to remove.
+</ParamField>
+
+## Product
+
+### setProduct(_:)
+
+```swift
+class func setProduct(_ product: String?)
+```
+
+```objective-c
++ (void)setProduct:(NSString *)product;
+```
+
+Sets an optional product name, displayed in the dashboard and reports.
+
+<ParamField path="product" type="String" optional>
+  A product name. If `nil`, the previous `product` will be cleared.
+</ParamField>
+
+### getProduct()
+
+```swift
+class func getProduct() -> String?
+```
+
+```objective-c
++ (NSString *)getProduct;
+```
+
+Returns the current `product`.
+
+## Privacy
+
+### setAnonymousTrackingEnabled(_:)
+
+```swift
+class func setAnonymousTrackingEnabled(_ enabled: Bool)
+```
+
+```objective-c
++ (void)setAnonymousTrackingEnabled:(BOOL)enabled;
+```
+
+Enables anonymous tracking for privacy reasons. Avoids creating user records on the server and avoids sending any stable device IDs, user IDs, and user metadata to the server when calling `trackOnce()` or `startTracking()`. Disabled by default.
+
+<ParamField path="enabled" type="Bool" required>
+  A boolean indicating whether anonymous tracking should be enabled.
+</ParamField>
+
+## Location
+
+### getLocation(completionHandler:)
+
+```swift
+class func getLocation(completionHandler: RadarLocationCompletionHandler?)
+```
+
+```objective-c
++ (void)getLocationWithCompletionHandler:(RadarLocationCompletionHandler)completionHandler;
+```
+
+Gets the device's current location.
+
+<ParamField path="completionHandler" type="RadarLocationCompletionHandler" optional>
+  An optional completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarLocationCompletionHandler = (RadarStatus, CLLocation?, Bool) -> Void
+  ```
+  
+  - `status`: The request status
+  - `location`: The device's location, if successful
+  - `stopped`: Whether the device is stopped
+</ParamField>
+
+### getLocation(desiredAccuracy:completionHandler:)
+
+```swift
+class func getLocation(desiredAccuracy: RadarTrackingOptionsDesiredAccuracy, completionHandler: RadarLocationCompletionHandler?)
+```
+
+```objective-c
++ (void)getLocationWithDesiredAccuracy:(RadarTrackingOptionsDesiredAccuracy)desiredAccuracy
+                     completionHandler:(RadarLocationCompletionHandler)completionHandler;
+```
+
+Gets the device's current location with the desired accuracy.
+
+<ParamField path="desiredAccuracy" type="RadarTrackingOptionsDesiredAccuracy" required>
+  The desired accuracy (`.high`, `.medium`, or `.low`).
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarLocationCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+## Foreground Tracking
+
+### trackOnce(completionHandler:)
+
+```swift
+class func trackOnce(completionHandler: RadarTrackCompletionHandler?)
+```
+
+```objective-c
++ (void)trackOnceWithCompletionHandler:(RadarTrackCompletionHandler)completionHandler;
+```
+
+Tracks the user's location once in the foreground.
+
+<Warning>
+Note that these calls are subject to rate limits.
+</Warning>
+
+<ParamField path="completionHandler" type="RadarTrackCompletionHandler" optional>
+  An optional completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarTrackCompletionHandler = (RadarStatus, CLLocation?, [RadarEvent]?, RadarUser?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `location`: The user's location, if successful
+  - `events`: An array of events generated, if any
+  - `user`: The user, if successful
+</ParamField>
+
+### trackOnce(desiredAccuracy:beacons:completionHandler:)
+
+```swift
+class func trackOnce(desiredAccuracy: RadarTrackingOptionsDesiredAccuracy, beacons: Bool, completionHandler: RadarTrackCompletionHandler?)
+```
+
+```objective-c
++ (void)trackOnceWithDesiredAccuracy:(RadarTrackingOptionsDesiredAccuracy)desiredAccuracy
+                             beacons:(BOOL)beacons
+                   completionHandler:(RadarTrackCompletionHandler)completionHandler;
+```
+
+Tracks the user's location once with the desired accuracy and optionally ranges beacons in the foreground.
+
+<Warning>
+Note that these calls are subject to rate limits.
+</Warning>
+
+<ParamField path="desiredAccuracy" type="RadarTrackingOptionsDesiredAccuracy" required>
+  The desired accuracy.
+</ParamField>
+
+<ParamField path="beacons" type="Bool" required>
+  A boolean indicating whether to range beacons.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTrackCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### trackOnce(location:completionHandler:)
+
+```swift
+class func trackOnce(location: CLLocation, completionHandler: RadarTrackCompletionHandler?)
+```
+
+```objective-c
++ (void)trackOnceWithLocation:(CLLocation *)location
+            completionHandler:(RadarTrackCompletionHandler)completionHandler;
+```
+
+Manually updates the user's location.
+
+<Warning>
+Note that these calls are subject to rate limits.
+</Warning>
+
+<ParamField path="location" type="CLLocation" required>
+  A location for the user.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTrackCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+## Verified Tracking
+
+### trackVerified(completionHandler:)
+
+```swift
+class func trackVerified(completionHandler: RadarTrackVerifiedCompletionHandler?)
+```
+
+```objective-c
++ (void)trackVerifiedWithCompletionHandler:(RadarTrackVerifiedCompletionHandler)completionHandler;
+```
+
+Tracks the user's location with device integrity information for location verification use cases.
+
+<Warning>
+Note that you must configure SSL pinning before calling this method.
+</Warning>
+
+<ParamField path="completionHandler" type="RadarTrackVerifiedCompletionHandler" optional>
+  An optional completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarTrackVerifiedCompletionHandler = (RadarStatus, RadarVerifiedLocationToken?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `token`: The verified location token, if successful. Verify the token server-side using your secret key.
+</ParamField>
+
+### trackVerified(beacons:desiredAccuracy:completionHandler:)
+
+```swift
+class func trackVerified(beacons: Bool, desiredAccuracy: RadarTrackingOptionsDesiredAccuracy, completionHandler: RadarTrackVerifiedCompletionHandler?)
+```
+
+```objective-c
++ (void)trackVerifiedWithBeacons:(BOOL)beacons 
+                 desiredAccuracy:(RadarTrackingOptionsDesiredAccuracy)desiredAccuracy 
+               completionHandler:(RadarTrackVerifiedCompletionHandler)completionHandler;
+```
+
+Tracks the user's location with device integrity information for location verification use cases.
+
+<Warning>
+Note that you must configure SSL pinning before calling this method.
+</Warning>
+
+<ParamField path="beacons" type="Bool" required>
+  A boolean indicating whether to range beacons.
+</ParamField>
+
+<ParamField path="desiredAccuracy" type="RadarTrackingOptionsDesiredAccuracy" required>
+  The desired accuracy.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTrackVerifiedCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### trackVerified(beacons:desiredAccuracy:reason:transactionId:completionHandler:)
+
+```swift
+class func trackVerified(beacons: Bool, desiredAccuracy: RadarTrackingOptionsDesiredAccuracy, reason: String?, transactionId: String?, completionHandler: RadarTrackVerifiedCompletionHandler?)
+```
+
+```objective-c
++ (void)trackVerifiedWithBeacons:(BOOL)beacons 
+                 desiredAccuracy:(RadarTrackingOptionsDesiredAccuracy)desiredAccuracy 
+                          reason:(NSString *)reason 
+                   transactionId:(NSString *)transactionId 
+               completionHandler:(RadarTrackVerifiedCompletionHandler)completionHandler;
+```
+
+Tracks the user's location with device integrity information for location verification use cases.
+
+<Warning>
+Note that you must configure SSL pinning before calling this method.
+</Warning>
+
+<ParamField path="beacons" type="Bool" required>
+  A boolean indicating whether to range beacons.
+</ParamField>
+
+<ParamField path="desiredAccuracy" type="RadarTrackingOptionsDesiredAccuracy" required>
+  The desired accuracy.
+</ParamField>
+
+<ParamField path="reason" type="String" optional>
+  An optional reason, displayed in the dashboard and reports.
+</ParamField>
+
+<ParamField path="transactionId" type="String" optional>
+  An optional transaction ID, displayed in the dashboard and reports.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTrackVerifiedCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### startTrackingVerified(interval:beacons:)
+
+```swift
+class func startTrackingVerified(interval: TimeInterval, beacons: Bool)
+```
+
+```objective-c
++ (void)startTrackingVerifiedWithInterval:(NSTimeInterval)interval beacons:(BOOL)beacons;
+```
+
+Starts tracking the user's location with device integrity information for location verification use cases.
+
+<Warning>
+Note that you must configure SSL pinning before calling this method.
+</Warning>
+
+<ParamField path="interval" type="TimeInterval" required>
+  The default interval in seconds between each location update.
+</ParamField>
+
+<ParamField path="beacons" type="Bool" required>
+  A boolean indicating whether to range beacons.
+</ParamField>
+
+### stopTrackingVerified()
+
+```swift
+class func stopTrackingVerified()
+```
+
+```objective-c
++ (void)stopTrackingVerified;
+```
+
+Stops tracking the user's location with device integrity information for location verification use cases.
+
+### isTrackingVerified()
+
+```swift
+class func isTrackingVerified() -> Bool
+```
+
+```objective-c
++ (BOOL)isTrackingVerified;
+```
+
+Returns a boolean indicating whether verified tracking has been started.
+
+### getVerifiedLocationToken(completionHandler:)
+
+```swift
+class func getVerifiedLocationToken(completionHandler: RadarTrackVerifiedCompletionHandler?)
+```
+
+```objective-c
++ (void)getVerifiedLocationToken:(RadarTrackVerifiedCompletionHandler)completionHandler;
+```
+
+Returns the user's last verified location token if still valid, or requests a fresh token if not.
+
+<Warning>
+Note that you must configure SSL pinning before calling this method.
+</Warning>
+
+<ParamField path="completionHandler" type="RadarTrackVerifiedCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### getVerifiedLocationToken(beacons:desiredAccuracy:completionHandler:)
+
+```swift
+class func getVerifiedLocationToken(beacons: Bool, desiredAccuracy: RadarTrackingOptionsDesiredAccuracy, completionHandler: RadarTrackVerifiedCompletionHandler?)
+```
+
+```objective-c
++ (void)getVerifiedLocationTokenWithBeacons:(BOOL)beacons 
+                           desiredAccuracy:(RadarTrackingOptionsDesiredAccuracy)desiredAccuracy 
+                         completionHandler:(RadarTrackVerifiedCompletionHandler)completionHandler;
+```
+
+Returns the user's last verified location token if still valid, or requests a fresh token if not.
+
+<Warning>
+Note that you must configure SSL pinning before calling this method.
+</Warning>
+
+<ParamField path="beacons" type="Bool" required>
+  A boolean indicating whether to range beacons.
+</ParamField>
+
+<ParamField path="desiredAccuracy" type="RadarTrackingOptionsDesiredAccuracy" required>
+  The desired accuracy.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTrackVerifiedCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### clearVerifiedLocationToken()
+
+```swift
+class func clearVerifiedLocationToken()
+```
+
+```objective-c
++ (void)clearVerifiedLocationToken;
+```
+
+Clears the user's last verified location token.
+
+### setExpectedJurisdiction(countryCode:stateCode:)
+
+```swift
+class func setExpectedJurisdiction(countryCode: String?, stateCode: String?)
+```
+
+```objective-c
++ (void)setExpectedJurisdictionWithCountryCode:(NSString *)countryCode stateCode:(NSString *)stateCode;
+```
+
+Optionally sets the user's expected country and state for jurisdiction checks.
+
+<ParamField path="countryCode" type="String" optional>
+  The user's expected two-letter country code.
+</ParamField>
+
+<ParamField path="stateCode" type="String" optional>
+  The user's expected two-letter state code.
+</ParamField>
+
+## Background Tracking
+
+### startTracking(trackingOptions:)
+
+```swift
+class func startTracking(trackingOptions: RadarTrackingOptions)
+```
+
+```objective-c
++ (void)startTrackingWithOptions:(RadarTrackingOptions *)options;
+```
+
+Starts tracking the user's location in the background with configurable tracking options.
+
+<ParamField path="trackingOptions" type="RadarTrackingOptions" required>
+  Configurable tracking options. Use preset options like `RadarTrackingOptions.presetContinuous`, `RadarTrackingOptions.presetResponsive`, or `RadarTrackingOptions.presetEfficient`, or create custom options.
+</ParamField>
+
+### mockTracking(origin:destination:mode:steps:interval:completionHandler:)
+
+```swift
+class func mockTracking(origin: CLLocation, destination: CLLocation, mode: RadarRouteMode, steps: Int32, interval: TimeInterval, completionHandler: RadarTrackCompletionHandler?)
+```
+
+```objective-c
++ (void)mockTrackingWithOrigin:(CLLocation *)origin
+                   destination:(CLLocation *)destination
+                          mode:(RadarRouteMode)mode
+                         steps:(int)steps
+                      interval:(NSTimeInterval)interval
+             completionHandler:(RadarTrackCompletionHandler)completionHandler;
+```
+
+Mocks tracking the user's location from an origin to a destination.
+
+<ParamField path="origin" type="CLLocation" required>
+  The origin.
+</ParamField>
+
+<ParamField path="destination" type="CLLocation" required>
+  The destination.
+</ParamField>
+
+<ParamField path="mode" type="RadarRouteMode" required>
+  The travel mode.
+</ParamField>
+
+<ParamField path="steps" type="Int" required>
+  The number of mock location updates.
+</ParamField>
+
+<ParamField path="interval" type="TimeInterval" required>
+  The interval in seconds between each mock location update. A number between 1 and 60.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTrackCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### stopTracking()
+
+```swift
+class func stopTracking()
+```
+
+```objective-c
++ (void)stopTracking;
+```
+
+Stops tracking the user's location in the background.
+
+### isTracking()
+
+```swift
+class func isTracking() -> Bool
+```
+
+```objective-c
++ (BOOL)isTracking;
+```
+
+Returns a boolean indicating whether tracking has been started.
+
+### getTrackingOptions()
+
+```swift
+class func getTrackingOptions() -> RadarTrackingOptions
+```
+
+```objective-c
++ (RadarTrackingOptions *)getTrackingOptions;
+```
+
+Returns the current tracking options.
+
+### isUsingRemoteTrackingOptions()
+
+```swift
+class func isUsingRemoteTrackingOptions() -> Bool
+```
+
+```objective-c
++ (BOOL)isUsingRemoteTrackingOptions;
+```
+
+Returns a boolean indicating whether local tracking options are being overridden by remote tracking options.
+
+## Delegate
+
+### setDelegate(_:)
+
+```swift
+class func setDelegate(_ delegate: RadarDelegate?)
+```
+
+```objective-c
++ (void)setDelegate:(id<RadarDelegate>)delegate;
+```
+
+Sets a delegate for client-side delivery of events, location updates, and debug logs.
+
+<ParamField path="delegate" type="RadarDelegate" optional>
+  A delegate for client-side delivery of events, location updates, and debug logs. If `nil`, the previous delegate will be cleared.
+</ParamField>
+
+### setVerifiedDelegate(_:)
+
+```swift
+class func setVerifiedDelegate(_ verifiedDelegate: RadarVerifiedDelegate?)
+```
+
+```objective-c
++ (void)setVerifiedDelegate:(id<RadarVerifiedDelegate>)verifiedDelegate;
+```
+
+Sets a delegate for client-side delivery of verified location tokens.
+
+<ParamField path="verifiedDelegate" type="RadarVerifiedDelegate" optional>
+  A delegate for client-side delivery of verified location tokens. If `nil`, the previous delegate will be cleared.
+</ParamField>
+
+## Events
+
+### acceptEventId(_:verifiedPlaceId:)
+
+```swift
+class func acceptEventId(_ eventId: String, verifiedPlaceId: String?)
+```
+
+```objective-c
++ (void)acceptEventId:(NSString *)eventId verifiedPlaceId:(NSString *)verifiedPlaceId;
+```
+
+Accepts an event. Events can be accepted after user check-ins or other forms of verification. Event verifications will be used to improve the accuracy and confidence level of future events.
+
+<ParamField path="eventId" type="String" required>
+  The ID of the event to accept.
+</ParamField>
+
+<ParamField path="verifiedPlaceId" type="String" optional>
+  For place entry events, the ID of the verified place. May be `nil`.
+</ParamField>
+
+### rejectEventId(_:)
+
+```swift
+class func rejectEventId(_ eventId: String)
+```
+
+```objective-c
++ (void)rejectEventId:(NSString *)eventId;
+```
+
+Rejects an event. Events can be rejected after user check-ins or other forms of verification. Event verifications will be used to improve the accuracy and confidence level of future events.
+
+<ParamField path="eventId" type="String" required>
+  The ID of the event to reject.
+</ParamField>
+
+### logConversion(name:metadata:completionHandler:)
+
+```swift
+class func logConversion(name: String, metadata: [AnyHashable: Any]?, completionHandler: RadarLogConversionCompletionHandler)
+```
+
+```objective-c
++ (void)logConversionWithName:(NSString *)name
+                     metadata:(NSDictionary *)metadata
+            completionHandler:(RadarLogConversionCompletionHandler)completionHandler;
+```
+
+Logs a conversion.
+
+<ParamField path="name" type="String" required>
+  The name of the conversion.
+</ParamField>
+
+<ParamField path="metadata" type="Dictionary" optional>
+  The metadata associated with the conversion.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarLogConversionCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarLogConversionCompletionHandler = (RadarStatus, RadarEvent?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `event`: The conversion event generated, if successful
+</ParamField>
+
+### logConversion(name:revenue:metadata:completionHandler:)
+
+```swift
+class func logConversion(name: String, revenue: NSNumber, metadata: [AnyHashable: Any]?, completionHandler: RadarLogConversionCompletionHandler)
+```
+
+```objective-c
++ (void)logConversionWithName:(NSString *)name
+                      revenue:(NSNumber *)revenue
+                     metadata:(NSDictionary *)metadata
+            completionHandler:(RadarLogConversionCompletionHandler)completionHandler;
+```
+
+Logs a conversion with revenue.
+
+<ParamField path="name" type="String" required>
+  The name of the conversion.
+</ParamField>
+
+<ParamField path="revenue" type="NSNumber" required>
+  The revenue generated by the conversion.
+</ParamField>
+
+<ParamField path="metadata" type="Dictionary" optional>
+  The metadata associated with the conversion.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarLogConversionCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### logConversion(request:)
+
+```swift
+class func logConversion(request: UNNotificationRequest?)
+```
+
+```objective-c
++ (void)logConversionWithNotification:(UNNotificationRequest *)request;
+```
+
+Logs a conversion with a notification.
+
+<ParamField path="request" type="UNNotificationRequest" optional>
+  The request associated with the notification.
+</ParamField>
+
+### logConversion(response:)
+
+```swift
+class func logConversion(response: UNNotificationResponse)
+```
+
+```objective-c
++ (void)logConversionWithNotificationResponse:(UNNotificationResponse *)response;
+```
+
+Logs a conversion with a notification. This should only be used to manually setup logging of notification conversions.
+
+<ParamField path="response" type="UNNotificationResponse" required>
+  The response associated with user interaction with the notification.
+</ParamField>
+
+## Trips
+
+### getTripOptions()
+
+```swift
+class func getTripOptions() -> RadarTripOptions?
+```
+
+```objective-c
++ (RadarTripOptions *)getTripOptions;
+```
+
+Returns the current trip options.
+
+### getTrip()
+
+```swift
+class func getTrip() -> RadarTrip?
+```
+
+```objective-c
++ (RadarTrip *)getTrip;
+```
+
+Returns the current trip, including legs for multi-destination trips. Use the legs' `_id` values when calling `updateTripLeg`.
+
+### startTrip(options:)
+
+```swift
+class func startTrip(options: RadarTripOptions)
+```
+
+```objective-c
++ (void)startTripWithOptions:(RadarTripOptions *)options;
+```
+
+Starts a trip.
+
+<ParamField path="options" type="RadarTripOptions" required>
+  Configurable trip options.
+</ParamField>
+
+### startTrip(options:completionHandler:)
+
+```swift
+class func startTrip(options: RadarTripOptions, completionHandler: RadarTripCompletionHandler?)
+```
+
+```objective-c
++ (void)startTripWithOptions:(RadarTripOptions *)options
+           completionHandler:(RadarTripCompletionHandler)completionHandler;
+```
+
+Starts a trip.
+
+<ParamField path="options" type="RadarTripOptions" required>
+  Configurable trip options.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTripCompletionHandler" optional>
+  An optional completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarTripCompletionHandler = (RadarStatus, RadarTrip?, [RadarEvent]?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `trip`: The trip, if successful
+  - `events`: An array of events generated, if any
+</ParamField>
+
+### startTrip(options:trackingOptions:completionHandler:)
+
+```swift
+class func startTrip(options: RadarTripOptions, trackingOptions: RadarTrackingOptions?, completionHandler: RadarTripCompletionHandler?)
+```
+
+```objective-c
++ (void)startTripWithOptions:(RadarTripOptions *)tripOptions
+             trackingOptions:(RadarTrackingOptions *)trackingOptions
+           completionHandler:(RadarTripCompletionHandler)completionHandler;
+```
+
+Starts a trip.
+
+<ParamField path="options" type="RadarTripOptions" required>
+  Configurable trip options.
+</ParamField>
+
+<ParamField path="trackingOptions" type="RadarTrackingOptions" optional>
+  Tracking options to use during the trip.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTripCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### updateTrip(options:status:completionHandler:)
+
+```swift
+class func updateTrip(options: RadarTripOptions, status: RadarTripStatus, completionHandler: RadarTripCompletionHandler?)
+```
+
+```objective-c
++ (void)updateTripWithOptions:(RadarTripOptions *)options
+                       status:(RadarTripStatus)status
+            completionHandler:(RadarTripCompletionHandler)completionHandler;
+```
+
+Manually updates a trip.
+
+<ParamField path="options" type="RadarTripOptions" required>
+  Configurable trip options.
+</ParamField>
+
+<ParamField path="status" type="RadarTripStatus" required>
+  The trip status. To avoid updating status, pass `RadarTripStatus.unknown`.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTripCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### completeTrip()
+
+```swift
+class func completeTrip()
+```
+
+```objective-c
++ (void)completeTrip;
+```
+
+Completes a trip.
+
+### completeTrip(completionHandler:)
+
+```swift
+class func completeTrip(completionHandler: RadarTripCompletionHandler?)
+```
+
+```objective-c
++ (void)completeTripWithCompletionHandler:(RadarTripCompletionHandler)completionHandler;
+```
+
+Completes a trip.
+
+<ParamField path="completionHandler" type="RadarTripCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### cancelTrip()
+
+```swift
+class func cancelTrip()
+```
+
+```objective-c
++ (void)cancelTrip;
+```
+
+Cancels a trip.
+
+### cancelTrip(completionHandler:)
+
+```swift
+class func cancelTrip(completionHandler: RadarTripCompletionHandler?)
+```
+
+```objective-c
++ (void)cancelTripWithCompletionHandler:(RadarTripCompletionHandler)completionHandler;
+```
+
+Cancels a trip.
+
+<ParamField path="completionHandler" type="RadarTripCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### updateTripLeg(tripId:legId:status:completionHandler:)
+
+```swift
+class func updateTripLeg(tripId: String, legId: String, status: RadarTripLegStatus, completionHandler: RadarTripLegCompletionHandler?)
+```
+
+```objective-c
++ (void)updateTripLegWithTripId:(NSString *)tripId
+                          legId:(NSString *)legId
+                         status:(RadarTripLegStatus)status
+              completionHandler:(RadarTripLegCompletionHandler)completionHandler;
+```
+
+Updates a trip leg status for multi-destination trips.
+
+<ParamField path="tripId" type="String" required>
+  The Radar ID of the trip (from `RadarTrip._id`).
+</ParamField>
+
+<ParamField path="legId" type="String" required>
+  The Radar ID of the leg (from `RadarTripLeg._id`).
+</ParamField>
+
+<ParamField path="status" type="RadarTripLegStatus" required>
+  The new status for the leg.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTripLegCompletionHandler" optional>
+  An optional completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarTripLegCompletionHandler = (RadarStatus, RadarTrip?, RadarTripLeg?, [RadarEvent]?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `trip`: The trip, if successful
+  - `leg`: The updated leg, if successful
+  - `events`: An array of events generated, if any
+</ParamField>
+
+### updateTripLeg(legId:status:completionHandler:)
+
+```swift
+class func updateTripLeg(legId: String, status: RadarTripLegStatus, completionHandler: RadarTripLegCompletionHandler?)
+```
+
+```objective-c
++ (void)updateTripLegWithLegId:(NSString *)legId
+                        status:(RadarTripLegStatus)status
+             completionHandler:(RadarTripLegCompletionHandler)completionHandler;
+```
+
+Updates a trip leg status for multi-destination trips, using the current trip's ID.
+
+<ParamField path="legId" type="String" required>
+  The Radar ID of the leg (from `RadarTripLeg._id`).
+</ParamField>
+
+<ParamField path="status" type="RadarTripLegStatus" required>
+  The new status for the leg.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTripLegCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### updateCurrentTripLeg(status:completionHandler:)
+
+```swift
+class func updateCurrentTripLeg(status: RadarTripLegStatus, completionHandler: RadarTripLegCompletionHandler?)
+```
+
+```objective-c
++ (void)updateCurrentTripLegWithStatus:(RadarTripLegStatus)status
+                     completionHandler:(RadarTripLegCompletionHandler)completionHandler;
+```
+
+Updates the current trip leg status for multi-destination trips. Uses the current trip's ID and currentLegId automatically.
+
+<ParamField path="status" type="RadarTripLegStatus" required>
+  The new status for the current leg.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTripLegCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### reorderTripLegs(tripId:legIds:completionHandler:)
+
+```swift
+class func reorderTripLegs(tripId: String, legIds: [String], completionHandler: RadarTripCompletionHandler?)
+```
+
+```objective-c
++ (void)reorderTripLegsWithTripId:(NSString *)tripId
+                           legIds:(NSArray<NSString *> *)legIds
+                completionHandler:(RadarTripCompletionHandler)completionHandler;
+```
+
+Reorders the legs of a multi-destination trip.
+
+<ParamField path="tripId" type="String" required>
+  The Radar ID of the trip (from `RadarTrip._id`).
+</ParamField>
+
+<ParamField path="legIds" type="Array<String>" required>
+  An array of leg IDs in the desired new order.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTripCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+### reorderTripLegs(legIds:completionHandler:)
+
+```swift
+class func reorderTripLegs(legIds: [String], completionHandler: RadarTripCompletionHandler?)
+```
+
+```objective-c
++ (void)reorderTripLegsWithLegIds:(NSArray<NSString *> *)legIds
+                completionHandler:(RadarTripCompletionHandler)completionHandler;
+```
+
+Reorders the legs of the current multi-destination trip.
+
+<ParamField path="legIds" type="Array<String>" required>
+  An array of leg IDs in the desired new order.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarTripCompletionHandler" optional>
+  An optional completion handler.
+</ParamField>
+
+## Context
+
+### getContext(completionHandler:)
+
+```swift
+class func getContext(completionHandler: RadarContextCompletionHandler)
+```
+
+```objective-c
++ (void)getContextWithCompletionHandler:(RadarContextCompletionHandler)completionHandler;
+```
+
+Gets the device's current location, then gets context for that location without sending device or user identifiers to the server.
+
+<ParamField path="completionHandler" type="RadarContextCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarContextCompletionHandler = (RadarStatus, CLLocation?, RadarContext?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `location`: The location, if successful
+  - `context`: The context, if successful
+</ParamField>
+
+### getContext(location:completionHandler:)
+
+```swift
+class func getContext(location: CLLocation, completionHandler: RadarContextCompletionHandler)
+```
+
+```objective-c
++ (void)getContextForLocation:(CLLocation *)location
+            completionHandler:(RadarContextCompletionHandler)completionHandler;
+```
+
+Gets context for a location without sending device or user identifiers to the server.
+
+<ParamField path="location" type="CLLocation" required>
+  The location.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarContextCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+## Search
+
+### searchPlaces(radius:chains:categories:groups:countryCodes:limit:completionHandler:)
+
+```swift
+class func searchPlaces(radius: Int32, chains: [String]?, categories: [String]?, groups: [String]?, countryCodes: [String]?, limit: Int32, completionHandler: RadarSearchPlacesCompletionHandler)
+```
+
+```objective-c
++ (void)searchPlacesWithRadius:(int)radius
+                        chains:(NSArray<NSString *> *)chains
+                    categories:(NSArray<NSString *> *)categories
+                        groups:(NSArray<NSString *> *)groups
+                 countryCodes:(NSArray<NSString *> *)countryCodes
+                         limit:(int)limit
+             completionHandler:(RadarSearchPlacesCompletionHandler)completionHandler;
+```
+
+Gets the device's current location, then searches for places near that location, sorted by distance.
+
+<Warning>
+You may specify only one of chains, categories, or groups.
+</Warning>
+
+<ParamField path="radius" type="Int" required>
+  The radius to search, in meters. A number between 100 and 10000.
+</ParamField>
+
+<ParamField path="chains" type="Array<String>" optional>
+  An array of chain slugs to filter. See [Chains](https://radar.com/documentation/places/chains).
+</ParamField>
+
+<ParamField path="categories" type="Array<String>" optional>
+  An array of categories to filter. See [Categories](https://radar.com/documentation/places/categories).
+</ParamField>
+
+<ParamField path="groups" type="Array<String>" optional>
+  An array of groups to filter. See [Groups](https://radar.com/documentation/places/groups).
+</ParamField>
+
+<ParamField path="countryCodes" type="Array<String>" optional>
+  An array of country codes to filter. See [Countries](https://radar.com/documentation/regions/countries).
+</ParamField>
+
+<ParamField path="limit" type="Int" required>
+  The max number of places to return. A number between 1 and 100.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarSearchPlacesCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarSearchPlacesCompletionHandler = (RadarStatus, CLLocation?, [RadarPlace]?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `location`: The location, if successful
+  - `places`: An array of places sorted by distance, if successful
+</ParamField>
+
+### searchPlaces(radius:chains:chainMetadata:categories:groups:countryCodes:limit:completionHandler:)
+
+```swift
+class func searchPlaces(radius: Int32, chains: [String]?, chainMetadata: [String: String]?, categories: [String]?, groups: [String]?, countryCodes: [String]?, limit: Int32, completionHandler: RadarSearchPlacesCompletionHandler)
+```
+
+```objective-c
++ (void)searchPlacesWithRadius:(int)radius
+                        chains:(NSArray<NSString *> *)chains
+                 chainMetadata:(NSDictionary<NSString *, NSString *> *)chainMetadata
+                    categories:(NSArray<NSString *> *)categories
+                        groups:(NSArray<NSString *> *)groups
+                  countryCodes:(NSArray<NSString *> *)countryCodes
+                         limit:(int)limit
+             completionHandler:(RadarSearchPlacesCompletionHandler)completionHandler;
+```
+
+Gets the device's current location, then searches for places near that location, sorted by distance.
+
+<Warning>
+You may specify only one of chains, categories, or groups; if chains are specified, `chainMetadata` can also be specified.
+</Warning>
+
+<ParamField path="radius" type="Int" required>
+  The radius to search, in meters. A number between 100 and 10000.
+</ParamField>
+
+<ParamField path="chains" type="Array<String>" optional>
+  An array of chain slugs to filter.
+</ParamField>
+
+<ParamField path="chainMetadata" type="Dictionary<String, String>" optional>
+  Optional chain metadata filters. Keys and values must be strings.
+</ParamField>
+
+<ParamField path="categories" type="Array<String>" optional>
+  An array of categories to filter.
+</ParamField>
+
+<ParamField path="groups" type="Array<String>" optional>
+  An array of groups to filter.
+</ParamField>
+
+<ParamField path="countryCodes" type="Array<String>" optional>
+  An array of country codes to filter.
+</ParamField>
+
+<ParamField path="limit" type="Int" required>
+  The max number of places to return. A number between 1 and 100.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarSearchPlacesCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### searchPlaces(near:radius:chains:categories:groups:countryCodes:limit:completionHandler:)
+
+```swift
+class func searchPlaces(near: CLLocation, radius: Int32, chains: [String]?, categories: [String]?, groups: [String]?, countryCodes: [String]?, limit: Int32, completionHandler: RadarSearchPlacesCompletionHandler)
+```
+
+```objective-c
++ (void)searchPlacesNear:(CLLocation *)near
+                  radius:(int)radius
+                  chains:(NSArray<NSString *> *)chains
+              categories:(NSArray<NSString *> *)categories
+                  groups:(NSArray<NSString *> *)groups
+           countryCodes:(NSArray<NSString *> *)countryCodes
+                   limit:(int)limit
+       completionHandler:(RadarSearchPlacesCompletionHandler)completionHandler;
+```
+
+Searches for places near a location, sorted by distance.
+
+<Warning>
+You may specify only one of chains, categories, or groups.
+</Warning>
+
+<ParamField path="near" type="CLLocation" required>
+  The location to search.
+</ParamField>
+
+<ParamField path="radius" type="Int" required>
+  The radius to search, in meters. A number between 100 and 10000.
+</ParamField>
+
+<ParamField path="chains" type="Array<String>" optional>
+  An array of chain slugs to filter.
+</ParamField>
+
+<ParamField path="categories" type="Array<String>" optional>
+  An array of categories to filter.
+</ParamField>
+
+<ParamField path="groups" type="Array<String>" optional>
+  An array of groups to filter.
+</ParamField>
+
+<ParamField path="countryCodes" type="Array<String>" optional>
+  An array of country codes to filter.
+</ParamField>
+
+<ParamField path="limit" type="Int" required>
+  The max number of places to return. A number between 1 and 100.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarSearchPlacesCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### searchPlaces(near:radius:chains:chainMetadata:categories:groups:countryCodes:limit:completionHandler:)
+
+```swift
+class func searchPlaces(near: CLLocation, radius: Int32, chains: [String]?, chainMetadata: [String: String]?, categories: [String]?, groups: [String]?, countryCodes: [String]?, limit: Int32, completionHandler: RadarSearchPlacesCompletionHandler)
+```
+
+```objective-c
++ (void)searchPlacesNear:(CLLocation *)near
+                  radius:(int)radius
+                  chains:(NSArray<NSString *> *)chains
+           chainMetadata:(NSDictionary<NSString *, NSString *> *)chainMetadata
+              categories:(NSArray<NSString *> *)categories
+                  groups:(NSArray<NSString *> *)groups
+            countryCodes:(NSArray<NSString *> *)countryCodes
+                   limit:(int)limit
+       completionHandler:(RadarSearchPlacesCompletionHandler)completionHandler;
+```
+
+Searches for places near a location, sorted by distance.
+
+<Warning>
+You may specify only one of chains, categories, or groups.
+</Warning>
+
+<ParamField path="near" type="CLLocation" required>
+  The location to search.
+</ParamField>
+
+<ParamField path="radius" type="Int" required>
+  The radius to search, in meters. A number between 100 and 10000.
+</ParamField>
+
+<ParamField path="chains" type="Array<String>" optional>
+  An array of chain slugs to filter.
+</ParamField>
+
+<ParamField path="chainMetadata" type="Dictionary<String, String>" optional>
+  Optional chain metadata filters.
+</ParamField>
+
+<ParamField path="categories" type="Array<String>" optional>
+  An array of categories to filter.
+</ParamField>
+
+<ParamField path="groups" type="Array<String>" optional>
+  An array of groups to filter.
+</ParamField>
+
+<ParamField path="countryCodes" type="Array<String>" optional>
+  An array of country codes to filter.
+</ParamField>
+
+<ParamField path="limit" type="Int" required>
+  The max number of places to return. A number between 1 and 100.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarSearchPlacesCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### searchGeofences(completionHandler:)
+
+```swift
+class func searchGeofences(completionHandler: RadarSearchGeofencesCompletionHandler)
+```
+
+```objective-c
++ (void)searchGeofences:(RadarSearchGeofencesCompletionHandler)completionHandler;
+```
+
+Gets the device's current location, then searches for geofences near that location, sorted by distance.
+
+<ParamField path="completionHandler" type="RadarSearchGeofencesCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarSearchGeofencesCompletionHandler = (RadarStatus, CLLocation?, [RadarGeofence]?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `location`: The location, if successful
+  - `geofences`: An array of geofences sorted by distance, if successful
+</ParamField>
+
+### searchGeofences(near:radius:tags:metadata:limit:includeGeometry:completionHandler:)
+
+```swift
+class func searchGeofences(near: CLLocation?, radius: Int32, tags: [String]?, metadata: [AnyHashable: Any]?, limit: Int32, includeGeometry: Bool, completionHandler: RadarSearchGeofencesCompletionHandler)
+```
+
+```objective-c
++ (void)searchGeofencesNear:(CLLocation *)near
+                      radius:(int)radius
+                        tags:(NSArray<NSString *> *)tags
+                    metadata:(NSDictionary *)metadata
+                       limit:(int)limit
+             includeGeometry:(BOOL)includeGeometry
+           completionHandler:(RadarSearchGeofencesCompletionHandler)completionHandler;
+```
+
+Searches for geofences near a location, sorted by distance.
+
+<ParamField path="near" type="CLLocation" optional>
+  The location to search. Use `nil` to search near the device's current location.
+</ParamField>
+
+<ParamField path="radius" type="Int" required>
+  The radius to search, in meters. A number between 100 and 10000. If -1 is entered, the server defaults to using unlimited radius.
+</ParamField>
+
+<ParamField path="tags" type="Array<String>" optional>
+  An array of tags to filter.
+</ParamField>
+
+<ParamField path="metadata" type="Dictionary" optional>
+  A dictionary of metadata to filter.
+</ParamField>
+
+<ParamField path="limit" type="Int" required>
+  The max number of geofences to return. A number between 1 and 1000. Defaults to 100.
+</ParamField>
+
+<ParamField path="includeGeometry" type="Bool" required>
+  Include geofence geometries in the response. Recommended to be set to false unless you specifically need the geometries. To retrieve more than 100 results, `includeGeometry` must be set to `false`.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarSearchGeofencesCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### autocomplete(query:near:layers:limit:country:mailable:completionHandler:)
+
+```swift
+class func autocomplete(query: String, near: CLLocation?, layers: [String]?, limit: Int32, country: String?, mailable: Bool, completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)autocompleteQuery:(NSString *)query
+                     near:(CLLocation *)near
+                   layers:(NSArray<NSString *> *)layers
+                    limit:(int)limit
+                  country:(NSString *)country
+                 mailable:(BOOL)mailable
+        completionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Autocompletes partial addresses and place names, sorted by relevance.
+
+<ParamField path="query" type="String" required>
+  The partial address or place name to autocomplete.
+</ParamField>
+
+<ParamField path="near" type="CLLocation" optional>
+  A location for the search.
+</ParamField>
+
+<ParamField path="layers" type="Array<String>" optional>
+  Optional layer filters.
+</ParamField>
+
+<ParamField path="limit" type="Int" required>
+  The max number of addresses to return. A number between 1 and 100.
+</ParamField>
+
+<ParamField path="country" type="String" optional>
+  An optional country filter. A string, the unique 2-letter country code.
+</ParamField>
+
+<ParamField path="mailable" type="Bool" required>
+  Whether to only include mailable addresses.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarGeocodeCompletionHandler = (RadarStatus, [RadarAddress]?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `addresses`: The geocoding results (an array of addresses), if successful
+</ParamField>
+
+### autocomplete(query:near:layers:limit:country:completionHandler:)
+
+```swift
+class func autocomplete(query: String, near: CLLocation?, layers: [String]?, limit: Int32, country: String?, completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)autocompleteQuery:(NSString *)query
+                     near:(CLLocation *)near
+                   layers:(NSArray<NSString *> *)layers
+                    limit:(int)limit
+                  country:(NSString *)country
+        completionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Autocompletes partial addresses and place names, sorted by relevance.
+
+<ParamField path="query" type="String" required>
+  The partial address or place name to autocomplete.
+</ParamField>
+
+<ParamField path="near" type="CLLocation" optional>
+  A location for the search.
+</ParamField>
+
+<ParamField path="layers" type="Array<String>" optional>
+  Optional layer filters.
+</ParamField>
+
+<ParamField path="limit" type="Int" required>
+  The max number of addresses to return. A number between 1 and 100.
+</ParamField>
+
+<ParamField path="country" type="String" optional>
+  An optional country filter.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### autocomplete(query:near:limit:completionHandler:)
+
+```swift
+class func autocomplete(query: String, near: CLLocation?, limit: Int32, completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)autocompleteQuery:(NSString *)query
+                     near:(CLLocation *)near
+                    limit:(int)limit
+        completionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Autocompletes partial addresses and place names, sorted by relevance.
+
+<ParamField path="query" type="String" required>
+  The partial address or place name to autocomplete.
+</ParamField>
+
+<ParamField path="near" type="CLLocation" optional>
+  A location for the search.
+</ParamField>
+
+<ParamField path="limit" type="Int" required>
+  The max number of addresses to return. A number between 1 and 100.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+## Geocoding
+
+### geocode(address:completionHandler:)
+
+```swift
+class func geocode(address: String, completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)geocodeAddress:(NSString *)query completionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Geocodes an address, converting address to coordinates.
+
+<ParamField path="address" type="String" required>
+  The address to geocode.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### geocode(address:layers:countries:completionHandler:)
+
+```swift
+class func geocode(address: String, layers: [String]?, countries: [String]?, completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)geocodeAddress:(NSString *)query
+                layers:(NSArray<NSString *> *)layers
+             countries:(NSArray<NSString *> *)countries
+     completionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Geocodes an address, converting address to coordinates.
+
+<ParamField path="address" type="String" required>
+  The address to geocode.
+</ParamField>
+
+<ParamField path="layers" type="Array<String>" optional>
+  Optional layer filters.
+</ParamField>
+
+<ParamField path="countries" type="Array<String>" optional>
+  Optional country filters. A string array of unique 2-letter country codes.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### reverseGeocode(completionHandler:)
+
+```swift
+class func reverseGeocode(completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)reverseGeocodeWithCompletionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Gets the device's current location, then reverse geocodes that location, converting coordinates to address.
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### reverseGeocode(layers:completionHandler:)
+
+```swift
+class func reverseGeocode(layers: [String]?, completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)reverseGeocodeWithLayers:(NSArray<NSString *> *)layers
+               completionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Gets the device's current location, then reverse geocodes that location, converting coordinates to address.
+
+<ParamField path="layers" type="Array<String>" optional>
+  Optional layer filters.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### reverseGeocode(location:completionHandler:)
+
+```swift
+class func reverseGeocode(location: CLLocation, completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)reverseGeocodeLocation:(CLLocation *)location
+             completionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Reverse geocodes a location, converting coordinates to address.
+
+<ParamField path="location" type="CLLocation" required>
+  The location to reverse geocode.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### reverseGeocode(location:layers:completionHandler:)
+
+```swift
+class func reverseGeocode(location: CLLocation, layers: [String]?, completionHandler: RadarGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)reverseGeocodeLocation:(CLLocation *)location
+                        layers:(NSArray<NSString *> *)layers
+             completionHandler:(RadarGeocodeCompletionHandler)completionHandler;
+```
+
+Reverse geocodes a location, converting coordinates to address.
+
+<ParamField path="location" type="CLLocation" required>
+  The location to reverse geocode.
+</ParamField>
+
+<ParamField path="layers" type="Array<String>" optional>
+  Optional layer filters.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarGeocodeCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### ipGeocode(completionHandler:)
+
+```swift
+class func ipGeocode(completionHandler: RadarIPGeocodeCompletionHandler)
+```
+
+```objective-c
++ (void)ipGeocodeWithCompletionHandler:(RadarIPGeocodeCompletionHandler)completionHandler;
+```
+
+Geocodes the device's current IP address, converting IP address to partial address.
+
+<ParamField path="completionHandler" type="RadarIPGeocodeCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarIPGeocodeCompletionHandler = (RadarStatus, RadarAddress?, Bool) -> Void
+  ```
+  
+  - `status`: The request status
+  - `address`: The geocoding result (a partial address), if successful
+  - `proxy`: A boolean indicating whether the IP address is a known proxy
+</ParamField>
+
+### validateAddress(address:completionHandler:)
+
+```swift
+class func validateAddress(address: RadarAddress, completionHandler: RadarValidateAddressCompletionHandler)
+```
+
+```objective-c
++ (void)validateAddress:(RadarAddress *)address completionHandler:(RadarValidateAddressCompletionHandler)completionHandler;
+```
+
+Validates an address, attaching a verification status, property type, and ZIP+4.
+
+<ParamField path="address" type="RadarAddress" required>
+  The address to validate.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarValidateAddressCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarValidateAddressCompletionHandler = (RadarStatus, RadarAddress?, RadarAddressVerificationStatus) -> Void
+  ```
+  
+  - `status`: The request status
+  - `address`: The validated address, if successful
+  - `verificationStatus`: The verification status
+</ParamField>
+
+## Distance
+
+### getDistance(destination:modes:units:completionHandler:)
+
+```swift
+class func getDistance(destination: CLLocation, modes: RadarRouteMode, units: RadarRouteUnits, completionHandler: RadarRouteCompletionHandler)
+```
+
+```objective-c
++ (void)getDistanceToDestination:(CLLocation *)destination
+                           modes:(RadarRouteMode)modes
+                           units:(RadarRouteUnits)units
+               completionHandler:(RadarRouteCompletionHandler)completionHandler;
+```
+
+Gets the device's current location, then calculates the travel distance and duration to a destination.
+
+<ParamField path="destination" type="CLLocation" required>
+  The destination.
+</ParamField>
+
+<ParamField path="modes" type="RadarRouteMode" required>
+  The travel modes.
+</ParamField>
+
+<ParamField path="units" type="RadarRouteUnits" required>
+  The distance units (`.imperial` or `.metric`).
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarRouteCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarRouteCompletionHandler = (RadarStatus, RadarRoutes?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `routes`: The routes, if successful
+</ParamField>
+
+### getDistance(origin:destination:modes:units:completionHandler:)
+
+```swift
+class func getDistance(origin: CLLocation, destination: CLLocation, modes: RadarRouteMode, units: RadarRouteUnits, completionHandler: RadarRouteCompletionHandler)
+```
+
+```objective-c
++ (void)getDistanceFromOrigin:(CLLocation *)origin
+                  destination:(CLLocation *)destination
+                        modes:(RadarRouteMode)modes
+                        units:(RadarRouteUnits)units
+            completionHandler:(RadarRouteCompletionHandler)completionHandler;
+```
+
+Calculates the travel distance and duration from an origin to a destination.
+
+<ParamField path="origin" type="CLLocation" required>
+  The origin.
+</ParamField>
+
+<ParamField path="destination" type="CLLocation" required>
+  The destination.
+</ParamField>
+
+<ParamField path="modes" type="RadarRouteMode" required>
+  The travel modes.
+</ParamField>
+
+<ParamField path="units" type="RadarRouteUnits" required>
+  The distance units.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarRouteCompletionHandler" required>
+  A completion handler.
+</ParamField>
+
+### getMatrix(origins:destinations:mode:units:completionHandler:)
+
+```swift
+class func getMatrix(origins: [CLLocation], destinations: [CLLocation], mode: RadarRouteMode, units: RadarRouteUnits, completionHandler: RadarRouteMatrixCompletionHandler)
+```
+
+```objective-c
++ (void)getMatrixFromOrigins:(NSArray<CLLocation *> *)origins
+                destinations:(NSArray<CLLocation *> *)destinations
+                        mode:(RadarRouteMode)mode
+                       units:(RadarRouteUnits)units
+           completionHandler:(RadarRouteMatrixCompletionHandler)completionHandler;
+```
+
+Calculates the travel distances and durations between multiple origins and destinations for up to 25 routes.
+
+<ParamField path="origins" type="Array<CLLocation>" required>
+  The origins.
+</ParamField>
+
+<ParamField path="destinations" type="Array<CLLocation>" required>
+  The destinations.
+</ParamField>
+
+<ParamField path="mode" type="RadarRouteMode" required>
+  The travel mode.
+</ParamField>
+
+<ParamField path="units" type="RadarRouteUnits" required>
+  The distance units.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarRouteMatrixCompletionHandler" required>
+  A completion handler called when the request succeeds, fails, or times out.
+  
+  ```swift
+  typealias RadarRouteMatrixCompletionHandler = (RadarStatus, RadarRouteMatrix?) -> Void
+  ```
+  
+  - `status`: The request status
+  - `matrix`: The matrix, if successful
+</ParamField>
+
+## Logging
+
+### setLogLevel(_:)
+
+```swift
+class func setLogLevel(_ level: RadarLogLevel)
+```
+
+```objective-c
++ (void)setLogLevel:(RadarLogLevel)level;
+```
+
+Sets the preferred log level for debug logs. This can be overridden by the remote SDK configuration set in the dashboard.
+
+<ParamField path="level" type="RadarLogLevel" required>
+  The log level (`.none`, `.error`, `.warning`, `.info`, or `.debug`).
+</ParamField>
+
+### logTermination()
+
+```swift
+class func logTermination()
+```
+
+```objective-c
++ (void)logTermination;
+```
+
+Log application terminating. Include this in your application delegate's `applicationWillTerminate:` method.
+
+### logBackgrounding()
+
+```swift
+class func logBackgrounding()
+```
+
+```objective-c
++ (void)logBackgrounding;
+```
+
+Log application entering background. Include this in your application delegate's `applicationDidEnterBackground:` method.
+
+### logResigningActive()
+
+```swift
+class func logResigningActive()
+```
+
+```objective-c
++ (void)logResigningActive;
+```
+
+Log application resigning active. Include this in your application delegate's `applicationWillResignActive:` method.
+
+## Helpers
+
+### stringForStatus(_:)
+
+```swift
+class func stringForStatus(_ status: RadarStatus) -> String
+```
+
+```objective-c
++ (NSString *)stringForStatus:(RadarStatus)status;
+```
+
+Returns a display string for a status value.
+
+<ParamField path="status" type="RadarStatus" required>
+  A status value.
+</ParamField>
+
+### stringForVerificationStatus(_:)
+
+```swift
+class func stringForVerificationStatus(_ verificationStatus: RadarAddressVerificationStatus) -> String
+```
+
+```objective-c
++ (NSString *)stringForVerificationStatus:(RadarAddressVerificationStatus)verificationStatus;
+```
+
+Returns a string for address validation status value.
+
+<ParamField path="verificationStatus" type="RadarAddressVerificationStatus" required>
+  An address verification status value.
+</ParamField>
+
+### stringForActivityType(_:)
+
+```swift
+class func stringForActivityType(_ type: RadarActivityType) -> String
+```
+
+```objective-c
++ (NSString *)stringForActivityType:(RadarActivityType)type;
+```
+
+Returns a display string for an activity type value.
+
+<ParamField path="type" type="RadarActivityType" required>
+  An activity type value.
+</ParamField>
+
+### stringForLocationSource(_:)
+
+```swift
+class func stringForLocationSource(_ source: RadarLocationSource) -> String
+```
+
+```objective-c
++ (NSString *)stringForLocationSource:(RadarLocationSource)source;
+```
+
+Returns a display string for a location source value.
+
+<ParamField path="source" type="RadarLocationSource" required>
+  A location source value.
+</ParamField>
+
+### stringForMode(_:)
+
+```swift
+class func stringForMode(_ mode: RadarRouteMode) -> String
+```
+
+```objective-c
++ (NSString *)stringForMode:(RadarRouteMode)mode;
+```
+
+Returns a display string for a travel mode value.
+
+<ParamField path="mode" type="RadarRouteMode" required>
+  A travel mode value.
+</ParamField>
+
+### stringForTripStatus(_:)
+
+```swift
+class func stringForTripStatus(_ status: RadarTripStatus) -> String
+```
+
+```objective-c
++ (NSString *)stringForTripStatus:(RadarTripStatus)status;
+```
+
+Returns a display string for a trip status value.
+
+<ParamField path="status" type="RadarTripStatus" required>
+  A trip status value.
+</ParamField>
+
+### dictionaryForLocation(_:)
+
+```swift
+class func dictionaryForLocation(_ location: CLLocation) -> [AnyHashable: Any]
+```
+
+```objective-c
++ (NSDictionary *)dictionaryForLocation:(CLLocation *)location;
+```
+
+Returns a dictionary for a location.
+
+<ParamField path="location" type="CLLocation" required>
+  A location.
+</ParamField>
+
+### dictionaryForInAppMessage(_:)
+
+```swift
+class func dictionaryForInAppMessage(_ message: RadarInAppMessage) -> [AnyHashable: Any]
+```
+
+```objective-c
++ (NSDictionary *)dictionaryForInAppMessage:(RadarInAppMessage *)message;
+```
+
+Returns a dictionary for an in-app message.
+
+<ParamField path="message" type="RadarInAppMessage" required>
+  An in-app message.
+</ParamField>

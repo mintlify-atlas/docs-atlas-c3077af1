@@ -1,0 +1,73 @@
+---
+title: RadarChain
+description: Represents the chain of a place with name and metadata.
+---
+
+`RadarChain` represents the chain of a place. Learn more about [Places](https://radar.com/documentation/places).
+
+## Properties
+
+<ResponseField name="slug" type="String" required>
+  The unique ID of the chain. For a full list of chains, see [Place Chains](https://radar.com/documentation/places/chains).
+</ResponseField>
+
+<ResponseField name="name" type="String" required>
+  The name of the chain. For a full list of chains, see [Place Chains](https://radar.com/documentation/places/chains).
+</ResponseField>
+
+<ResponseField name="externalId" type="String">
+  The external ID of the chain.
+</ResponseField>
+
+<ResponseField name="metadata" type="NSDictionary">
+  The optional set of custom key-value pairs for the chain.
+</ResponseField>
+
+## Methods
+
+### arrayForChains
+
+```objective-c
++ (NSArray<NSDictionary *> *_Nullable)arrayForChains:(NSArray<RadarChain *> *_Nullable)chains;
+```
+
+Converts an array of `RadarChain` objects to an array of dictionaries.
+
+### dictionaryValue
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Returns the dictionary representation of the chain.
+
+## Example
+
+```swift
+let place: RadarPlace = event.place
+if let chain = place.chain {
+    let chainSlug = chain.slug
+    let chainName = chain.name
+    let chainExternalId = chain.externalId
+    let chainMetadata = chain.metadata
+    
+    if chainSlug == "starbucks" {
+        // place is a Starbucks
+    }
+}
+```
+
+```objective-c
+RadarPlace *place = event.place;
+RadarChain *chain = place.chain;
+if (chain) {
+    NSString *chainSlug = chain.slug;
+    NSString *chainName = chain.name;
+    NSString *chainExternalId = chain.externalId;
+    NSDictionary *chainMetadata = chain.metadata;
+    
+    if ([chainSlug isEqualToString:@"starbucks"]) {
+        // place is a Starbucks
+    }
+}
+```

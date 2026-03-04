@@ -1,0 +1,401 @@
+---
+title: Push Notifications
+description: Integrate push notifications for location events and campaign delivery
+---
+
+The Radar iOS SDK supports both local and remote push notifications for location events, enabling you to engage users based on their real-time location and behavior.
+
+## Overview
+
+Radar supports two types of push notifications:
+
+- **Local notifications**: Triggered by location events (geofence entries/exits, beacon proximity)
+- **Silent push notifications**: Server-triggered notifications for campaign delivery and tracking
+
+## Setup
+
+<Steps>
+  <Step title="Enable push notification capability">
+    In Xcode, navigate to your app target's **Signing & Capabilities** tab.
+
+    Click **+ Capability** and add **Push Notifications**.
+  </Step>
+
+  <Step title="Configure notification permissions">
+    Request notification permissions from the user:
+
+    <CodeGroup>
+    ```swift Swift
+    import UserNotifications
+
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+        if granted {
+            DispatchQueue.main.async {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
+    }
+    ```
+
+    ```objectivec Objective-C
+    @import UserNotifications;
+
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+    [center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge)
+                          completionHandler:^(BOOL granted, NSError * _Nullable error) {
+        if (granted) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [[UIApplication sharedApplication] registerForRemoteNotifications];
+            });
+        }
+    }];
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Initialize SDK with notification options">
+    Configure the SDK to automatically handle notifications:
+
+    <CodeGroup>
+    ```swift Swift
+    import RadarSDK
+
+    let options = RadarInitializeOptions()
+    options.autoLogNotificationConversions = true  // Auto-log opened_app conversions
+    options.autoHandleNotificationDeepLinks = true // Auto-open URLs from notifications
+    options.silentPush = true                      // Enable silent push support
+
+    Radar.initialize(publishableKey: "YOUR_PUBLISHABLE_KEY", options: options)
+    ```
+
+    ```objectivec Objective-C
+    @import RadarSDK;
+
+    RadarInitializeOptions *options = [[RadarInitializeOptions alloc] init];
+    options.autoLogNotificationConversions = YES;  // Auto-log opened_app conversions
+    options.autoHandleNotificationDeepLinks = YES; // Auto-open URLs from notifications
+    options.silentPush = YES;                      // Enable silent push support
+
+    [Radar initializeWithPublishableKey:@"YOUR_PUBLISHABLE_KEY" options:options];
+    ```
+    </CodeGroup>
+
+    <Note>
+      Setting `silentPush = true` automatically calls `registerForRemoteNotifications()` and swizzles the app delegate to handle remote notifications.
+    </Note>
+  </Step>
+</Steps>
+
+## Local notifications for location events
+
+Radar can automatically show local notifications when location events occur.
+
+### Configure geofence notifications
+
+Add notification metadata to your geofences in the [Radar dashboard](https://radar.com/dashboard):
+
+```json
+{
+  "radar:entryNotificationText": "Welcome to our store! Show this notification for 15% off.",
+  "radar:exitNotificationText": "Thanks for visiting! Come back soon."
+}
+```
+
+### Configure beacon notifications
+
+Add notification metadata to your beacons:
+
+```json
+{
+  "radar:entryNotificationText": "You're near our product display!",
+  "radar:exitNotificationText": "Check out more displays around the store."
+}
+```
+
+### Configure trip notifications
+
+Add notification metadata to trip destinations:
+
+```json
+{
+  "radar:approachingNotificationText": "You're almost at your destination.",
+  "radar:arrivalNotificationText": "You've arrived at your destination!"
+}
+```
+
+### Notification metadata format
+
+For more control over notification appearance, use the full notification format:
+
+```json
+{
+  "radar:notificationText": "Check out our new arrivals!",
+  "radar:notificationTitle": "Welcome to Our Store",
+  "radar:notificationSubtitle": "Limited Time Offer",
+  "radar:notificationURL": "myapp://store/new-arrivals",
+  "radar:campaignId": "store-entry-campaign",
+  "radar:campaignType": "eventBased"
+}
+```
+
+## Silent push notifications
+
+Silent push notifications enable server-triggered location tracking and campaign delivery.
+
+### Enable silent push
+
+<Steps>
+  <Step title="Enable remote notification background mode">
+    In Xcode, add **Background Modes** capability and enable **Remote notifications**.
+  </Step>
+
+  <Step title="Configure app delegate">
+    When `silentPush` is enabled during initialization, the SDK automatically handles remote notifications. To manually handle them:
+
+    <CodeGroup>
+    ```swift Swift
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        Radar.didReceivePushNotificationPayload(userInfo) {
+            completionHandler(.newData)
+        }
+    }
+
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        // Device token is automatically captured by the SDK
+    }
+    ```
+
+    ```objectivec Objective-C
+    - (void)application:(UIApplication *)application
+        didReceiveRemoteNotification:(NSDictionary *)userInfo
+              fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
+        [Radar didReceivePushNotificationPayload:userInfo completionHandler:^{
+            completionHandler(UIBackgroundFetchResultNewData);
+        }];
+    }
+
+    - (void)application:(UIApplication *)application
+        didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+        // Device token is automatically captured by the SDK
+    }
+    ```
+    </CodeGroup>
+
+    <Info>
+      If you enable automatic handling with `silentPush = true`, the SDK swizzles these methods automatically.
+    </Info>
+  </Step>
+</Steps>
+
+## Notification conversions
+
+Track when users interact with notifications:
+
+### Automatic conversion tracking
+
+When `autoLogNotificationConversions = true`, the SDK automatically logs conversions when users tap notifications:
+
+```swift
+// Automatically tracked:
+// - User opens app from notification
+// - Event name: "opened_app"
+// - Metadata includes notification payload
+```
+
+### Manual conversion tracking
+
+Manually log conversions for custom notification handling:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+func userNotificationCenter(_ center: UNUserNotificationCenter,
+                           didReceive response: UNNotificationResponse,
+                           withCompletionHandler completionHandler: @escaping () -> Void) {
+    // Log conversion for Radar notification
+    Radar.logConversion(response: response)
+    
+    completionHandler()
+}
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+       didReceiveNotificationResponse:(UNNotificationResponse *)response
+                withCompletionHandler:(void (^)(void))completionHandler {
+    // Log conversion for Radar notification
+    [Radar logConversionWithNotificationResponse:response];
+    
+    completionHandler();
+}
+```
+</CodeGroup>
+
+## Deep link handling
+
+### Automatic deep link handling
+
+When `autoHandleNotificationDeepLinks = true`, the SDK automatically opens URLs from notification metadata:
+
+```json
+{
+  "url": "myapp://product/123"
+}
+```
+
+### Manual deep link handling
+
+Manually handle deep links for custom routing:
+
+<CodeGroup>
+```swift Swift
+func userNotificationCenter(_ center: UNUserNotificationCenter,
+                           didReceive response: UNNotificationResponse,
+                           withCompletionHandler completionHandler: @escaping () -> Void) {
+    let userInfo = response.notification.request.content.userInfo
+    
+    if let urlString = userInfo["url"] as? String,
+       let url = URL(string: urlString) {
+        // Handle deep link
+        handleDeepLink(url)
+    }
+    
+    completionHandler()
+}
+```
+
+```objectivec Objective-C
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+       didReceiveNotificationResponse:(UNNotificationResponse *)response
+                withCompletionHandler:(void (^)(void))completionHandler {
+    NSDictionary *userInfo = response.notification.request.content.userInfo;
+    
+    NSString *urlString = userInfo[@"url"];
+    if (urlString) {
+        NSURL *url = [NSURL URLWithString:urlString];
+        // Handle deep link
+        [self handleDeepLink:url];
+    }
+    
+    completionHandler();
+}
+```
+</CodeGroup>
+
+## Upload APNs certificate
+
+For server-triggered push notifications:
+
+1. Generate an APNs certificate in the [Apple Developer Portal](https://developer.apple.com/account/)
+2. Upload the certificate to the [Radar dashboard](https://radar.com/dashboard) under Settings > Push Notifications
+3. Configure your notification campaigns in the dashboard
+
+## Custom notification handling
+
+For full control over notification presentation:
+
+<CodeGroup>
+```swift Swift
+import UserNotifications
+import RadarSDK
+
+class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                               willPresent notification: UNNotification,
+                               withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // Customize notification presentation
+        if notification.request.identifier.hasPrefix("radar_") {
+            // Radar notification
+            completionHandler([.banner, .sound, .badge])
+        } else {
+            completionHandler([])
+        }
+    }
+}
+
+// Set delegate
+UNUserNotificationCenter.current().delegate = NotificationDelegate()
+```
+
+```objectivec Objective-C
+@import UserNotifications;
+@import RadarSDK;
+
+@interface NotificationDelegate : NSObject <UNUserNotificationCenterDelegate>
+@end
+
+@implementation NotificationDelegate
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+       willPresentNotification:(UNNotification *)notification
+         withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler {
+    // Customize notification presentation
+    if ([notification.request.identifier hasPrefix:@"radar_"]) {
+        // Radar notification
+        completionHandler(UNNotificationPresentationOptionBanner | UNNotificationPresentationOptionSound | UNNotificationPresentationOptionBadge);
+    } else {
+        completionHandler(UNNotificationPresentationOptionNone);
+    }
+}
+
+@end
+
+// Set delegate
+[UNUserNotificationCenter currentNotificationCenter].delegate = [[NotificationDelegate alloc] init];
+```
+</CodeGroup>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Request permission at the right time" icon="bell">
+    Request notification permissions when the user will understand the value, not immediately on app launch.
+  </Card>
+  
+  <Card title="Keep messages relevant" icon="bullseye">
+    Ensure notification content is contextually relevant to the location event.
+  </Card>
+  
+  <Card title="Test notification campaigns" icon="flask">
+    Use test devices and geofences to verify notifications before launching campaigns.
+  </Card>
+  
+  <Card title="Monitor conversion rates" icon="chart-line">
+    Track notification conversion rates in the Radar dashboard to optimize campaigns.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<Accordion title="Notifications not appearing">
+  - Verify notification permissions are granted
+  - Check that the Push Notifications capability is enabled
+  - Ensure notification metadata is properly formatted in geofence/beacon configuration
+  - Check device notification settings for your app
+</Accordion>
+
+<Accordion title="Silent push not working">
+  - Verify Remote notifications background mode is enabled
+  - Ensure `silentPush = true` in initialization options
+  - Check that APNs certificate is uploaded to the Radar dashboard
+  - Verify the device token is registered
+</Accordion>
+
+<Accordion title="Conversions not tracking">
+  - Ensure `autoLogNotificationConversions = true` or call `logConversion` manually
+  - Check that notification identifiers start with "radar_"
+  - Verify the notification delegate is properly set
+</Accordion>
+
+## Related resources
+
+- [In-app messages](/advanced/in-app-messages)
+- [Notification campaigns](https://radar.com/documentation/campaigns)
+- [Conversion tracking](/conversions)
+- [Apple UserNotifications framework](https://developer.apple.com/documentation/usernotifications)

@@ -1,0 +1,490 @@
+---
+title: "Search"
+description: "Search for places, geofences, and chains near a location with customizable filters"
+---
+
+Radar's search APIs allow you to find places, geofences, and business locations near a given point with powerful filtering capabilities.
+
+## Search Places
+
+Search for places near a location, sorted by distance. You can filter by chains, categories, groups, and countries.
+
+### Basic Place Search
+
+Search for places within a radius using the device's current location:
+
+<CodeGroup>
+
+```swift Swift
+Radar.searchPlaces(
+    radius: 1000,
+    chains: nil,
+    categories: ["restaurant"],
+    groups: nil,
+    countryCodes: nil,
+    limit: 10
+) { status, location, places in
+    if status == .success {
+        places?.forEach { place in
+            print("Place: \(place.name)")
+            print("Categories: \(place.categories.joined(separator: ", "))")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar searchPlacesWithRadius:1000
+                       chains:nil
+                   categories:@[@"restaurant"]
+                       groups:nil
+                 countryCodes:nil
+                        limit:10
+            completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarPlace *> * _Nullable places) {
+    if (status == RadarStatusSuccess) {
+        for (RadarPlace *place in places) {
+            NSLog(@"Place: %@", place.name);
+            NSLog(@"Categories: %@", [place.categories componentsJoinedByString:@", "]);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Search by Chain
+
+Find specific restaurant or retail chains near a location:
+
+<CodeGroup>
+
+```swift Swift
+Radar.searchPlaces(
+    radius: 5000,
+    chains: ["mcdonalds", "starbucks"],
+    categories: nil,
+    groups: nil,
+    countryCodes: ["US"],
+    limit: 20
+) { status, location, places in
+    if status == .success {
+        places?.forEach { place in
+            print("Chain: \(place.chain?.name ?? "Unknown")")
+            print("Address: \(place.address?.formattedAddress ?? "")")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar searchPlacesWithRadius:5000
+                       chains:@[@"mcdonalds", @"starbucks"]
+                   categories:nil
+                       groups:nil
+                 countryCodes:@[@"US"]
+                        limit:20
+            completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarPlace *> * _Nullable places) {
+    if (status == RadarStatusSuccess) {
+        for (RadarPlace *place in places) {
+            NSLog(@"Chain: %@", place.chain.name);
+            NSLog(@"Address: %@", place.address.formattedAddress);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+<Info>
+See the [complete list of supported chains](https://radar.com/documentation/places/chains) in the Radar documentation.
+</Info>
+
+### Search with Chain Metadata
+
+Filter chains by custom metadata attributes:
+
+<CodeGroup>
+
+```swift Swift
+Radar.searchPlaces(
+    radius: 1000,
+    chains: ["mcdonalds"],
+    chainMetadata: ["orderActive": "true"],
+    categories: nil,
+    groups: nil,
+    countryCodes: ["US"],
+    limit: 10
+) { status, location, places in
+    if status == .success {
+        places?.forEach { place in
+            print("Place: \(place.name)")
+            if let metadata = place.chain?.metadata {
+                print("Metadata: \(metadata)")
+            }
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar searchPlacesWithRadius:1000
+                       chains:@[@"mcdonalds"]
+                chainMetadata:@{@"orderActive": @"true"}
+                   categories:nil
+                       groups:nil
+                 countryCodes:@[@"US"]
+                        limit:10
+            completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarPlace *> * _Nullable places) {
+    if (status == RadarStatusSuccess) {
+        for (RadarPlace *place in places) {
+            NSLog(@"Place: %@", place.name);
+            if (place.chain.metadata) {
+                NSLog(@"Metadata: %@", place.chain.metadata);
+            }
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+<Note>
+Chain metadata must be configured in the [Radar dashboard settings](https://radar.com/dashboard/settings).
+</Note>
+
+### Search Near a Specific Location
+
+Search for places near coordinates other than the device's current location:
+
+<CodeGroup>
+
+```swift Swift
+let searchLocation = CLLocation(latitude: 40.7128, longitude: -74.0060)
+
+Radar.searchPlaces(
+    near: searchLocation,
+    radius: 2000,
+    chains: nil,
+    categories: ["cafe", "restaurant"],
+    groups: nil,
+    countryCodes: ["US"],
+    limit: 15
+) { status, location, places in
+    if status == .success {
+        places?.forEach { place in
+            print("\(place.name): \(place.categories.joined(separator: ", "))")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *searchLocation = [[CLLocation alloc] initWithLatitude:40.7128 longitude:-74.0060];
+
+[Radar searchPlacesNear:searchLocation
+                 radius:2000
+                 chains:nil
+             categories:@[@"cafe", @"restaurant"]
+                 groups:nil
+           countryCodes:@[@"US"]
+                  limit:15
+      completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarPlace *> * _Nullable places) {
+    if (status == RadarStatusSuccess) {
+        for (RadarPlace *place in places) {
+            NSLog(@"%@: %@", place.name, [place.categories componentsJoinedByString:@", "]);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+## Search Parameters
+
+<Steps>
+
+<Step title="Radius">
+Search radius in meters. Must be between 100 and 10,000 meters.
+</Step>
+
+<Step title="Chains">
+Array of chain slugs to filter. Cannot be combined with categories or groups.
+</Step>
+
+<Step title="Categories">
+Array of place categories to filter. Cannot be combined with chains or groups.
+</Step>
+
+<Step title="Groups">
+Array of place groups to filter. Cannot be combined with chains or categories.
+</Step>
+
+<Step title="Country Codes">
+Array of ISO 3166-1 alpha-2 country codes to filter results.
+</Step>
+
+<Step title="Limit">
+Maximum number of results to return. Must be between 1 and 100.
+</Step>
+
+</Steps>
+
+<Warning>
+You can only specify one of chains, categories, or groups per search request.
+</Warning>
+
+## Search Geofences
+
+Search for geofences near a location, sorted by distance. This is useful for finding nearby custom regions.
+
+### Basic Geofence Search
+
+Search for all geofences near the device's current location:
+
+<CodeGroup>
+
+```swift Swift
+Radar.searchGeofences { status, location, geofences in
+    if status == .success {
+        geofences?.forEach { geofence in
+            print("Geofence: \(geofence.__description)")
+            print("Tag: \(geofence.tag ?? "None")")
+            print("External ID: \(geofence.externalId ?? "None")")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar searchGeofences:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarGeofence *> * _Nullable geofences) {
+    if (status == RadarStatusSuccess) {
+        for (RadarGeofence *geofence in geofences) {
+            NSLog(@"Geofence: %@", geofence.__description);
+            NSLog(@"Tag: %@", geofence.tag);
+            NSLog(@"External ID: %@", geofence.externalId);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Advanced Geofence Search
+
+Search with filters for tags, metadata, radius, and result limits:
+
+<CodeGroup>
+
+```swift Swift
+let searchLocation = CLLocation(latitude: 40.7128, longitude: -74.0060)
+
+Radar.searchGeofences(
+    near: searchLocation,
+    radius: 1000,
+    tags: ["store", "venue"],
+    metadata: ["type": "retail"],
+    limit: 50,
+    includeGeometry: false
+) { status, location, geofences in
+    if status == .success {
+        print("Found \(geofences?.count ?? 0) geofences")
+        geofences?.forEach { geofence in
+            print("Geofence: \(geofence.__description)")
+            if let metadata = geofence.metadata {
+                print("Metadata: \(metadata)")
+            }
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *searchLocation = [[CLLocation alloc] initWithLatitude:40.7128 longitude:-74.0060];
+
+[Radar searchGeofencesNear:searchLocation
+                    radius:1000
+                      tags:@[@"store", @"venue"]
+                  metadata:@{@"type": @"retail"}
+                     limit:50
+           includeGeometry:NO
+         completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarGeofence *> * _Nullable geofences) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Found %lu geofences", (unsigned long)geofences.count);
+        for (RadarGeofence *geofence in geofences) {
+            NSLog(@"Geofence: %@", geofence.__description);
+            if (geofence.metadata) {
+                NSLog(@"Metadata: %@", geofence.metadata);
+            }
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Geofence Search Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `near` | `CLLocation?` | Search location (nil uses current location) |
+| `radius` | `Int` | Search radius in meters (100-10000, or -1 for unlimited) |
+| `tags` | `[String]?` | Array of tags to filter |
+| `metadata` | `[String: Any]?` | Dictionary of metadata to filter |
+| `limit` | `Int` | Maximum results (1-1000, default 100) |
+| `includeGeometry` | `Bool` | Include geometry in response (set to false for >100 results) |
+
+<Tip>
+Set `includeGeometry` to `false` if you only need geofence metadata and not the actual boundaries. This improves performance and allows returning more than 100 results.
+</Tip>
+
+## Place Categories
+
+Radar supports hundreds of place categories across different verticals:
+
+<Accordion title="Common Categories">
+
+**Food & Drink**
+- `restaurant`, `cafe`, `bar`, `fast-food`, `bakery`, `brewery`
+
+**Retail**
+- `clothing-store`, `grocery-store`, `pharmacy`, `convenience-store`
+
+**Services**
+- `bank`, `atm`, `gas-station`, `car-wash`, `post-office`
+
+**Health & Fitness**
+- `gym`, `hospital`, `doctor`, `dentist`, `spa`
+
+**Entertainment**
+- `movie-theater`, `museum`, `park`, `stadium`, `casino`
+
+**Transportation**
+- `airport`, `train-station`, `bus-station`, `parking`
+
+[View all categories →](https://radar.com/documentation/places/categories)
+
+</Accordion>
+
+## Working with Search Results
+
+### RadarPlace Properties
+
+The `RadarPlace` object contains comprehensive information about each place:
+
+```swift
+Radar.searchPlaces(...) { status, location, places in
+    if let place = places?.first {
+        // Basic info
+        print("ID: \(place._id)")
+        print("Name: \(place.name)")
+        print("Categories: \(place.categories)")
+        
+        // Chain information
+        if let chain = place.chain {
+            print("Chain: \(chain.name)")
+            print("Chain slug: \(chain.slug)")
+            print("Chain metadata: \(chain.metadata ?? [:])")
+        }
+        
+        // Location
+        print("Coordinate: \(place.location.coordinate)")
+        
+        // Address
+        if let address = place.address {
+            print("Address: \(address.formattedAddress ?? "")")
+        }
+        
+        // Group and metadata
+        if let group = place.group {
+            print("Group: \(group)")
+        }
+        if let metadata = place.metadata {
+            print("Metadata: \(metadata)")
+        }
+    }
+}
+```
+
+### Checking Place Properties
+
+`RadarPlace` provides convenience methods for checking chains and categories:
+
+```swift
+if let place = places?.first {
+    // Check if place is part of a specific chain
+    if place.isChain("starbucks") {
+        print("This is a Starbucks location")
+    }
+    
+    // Check if place has a specific category
+    if place.hasCategory("restaurant") {
+        print("This is a restaurant")
+    }
+}
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+
+<Card title="Store Locator" icon="store">
+Build a store locator to help users find nearby retail locations.
+</Card>
+
+<Card title="Restaurant Finder" icon="utensils">
+Create a restaurant discovery feature with category filters.
+</Card>
+
+<Card title="Delivery Zones" icon="truck">
+Search geofences to determine if a location is within a delivery zone.
+</Card>
+
+<Card title="Competitor Analysis" icon="chart-line">
+Find competitor locations near your stores using chain search.
+</Card>
+
+</CardGroup>
+
+## Performance Tips
+
+<Steps>
+
+<Step title="Optimize Search Radius">
+Use the smallest radius necessary for your use case. Smaller radii return results faster.
+</Step>
+
+<Step title="Limit Results">
+Request only the number of results you need. Fewer results improve performance.
+</Step>
+
+<Step title="Use Specific Filters">
+Filter by country, category, or chain to reduce result sets and improve relevance.
+</Step>
+
+<Step title="Disable Geometry">
+For geofence searches, set `includeGeometry: false` if you don't need the shapes.
+</Step>
+
+</Steps>
+
+## Learn More
+
+<CardGroup cols={2}>
+
+<Card title="Places API" icon="location-dot" href="https://radar.com/documentation/api#search-places">
+Explore the complete places search API reference
+</Card>
+
+<Card title="Geofences API" icon="draw-circle" href="https://radar.com/documentation/api#search-geofences">
+Learn about geofence search capabilities
+</Card>
+
+<Card title="Context" icon="map-location-dot" href="/location/context">
+Get comprehensive location context
+</Card>
+
+<Card title="Geocoding" icon="location-crosshairs" href="/location/geocoding">
+Convert between addresses and coordinates
+</Card>
+
+</CardGroup>

@@ -1,80 +1,604 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Complete guide to implementing your first location tracking feature with Radar
 ---
 
-## Get started in three steps
+This guide will walk you through implementing location tracking with the Radar iOS SDK, from installation through your first tracking call.
 
-Get your documentation site running locally and make your first customization.
+## What You'll Build
 
-### Step 1: Set up your local environment
+In this quickstart, you'll:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+1. Install and initialize the Radar SDK
+2. Request location permissions from the user
+3. Track the user's location once (foreground tracking)
+4. Set up a delegate to receive events
+5. Start background tracking
+
+## Step 1: Installation & Setup
+
+<Steps>
+  <Step title="Install the SDK">
+    First, install the Radar SDK using CocoaPods or Swift Package Manager. See the [installation guide](/installation) for detailed instructions.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    For CocoaPods, add to your `Podfile`:
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    ```ruby
+    pod 'RadarSDK', '~> 3.27.0'
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
+    Then run:
+    
+    ```bash
+    pod install
+    ```
+  </Step>
+  
+  <Step title="Configure Info.plist">
+    Add location permission descriptions to your `Info.plist`:
+    
+    ```xml
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We use your location to provide location-based features.</string>
+    
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We use your location while you're using the app.</string>
+    ```
+  </Step>
+  
+  <Step title="Initialize the SDK">
+    In your `AppDelegate.swift`, initialize Radar with your publishable key:
+    
+    ```swift
+    import UIKit
+    import RadarSDK
+    
+    @UIApplicationMain
+    class AppDelegate: UIResponder, UIApplicationDelegate {
+        
+        func application(
+            _ application: UIApplication,
+            didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+        ) -> Bool {
+            // Initialize Radar
+            Radar.initialize(publishableKey: "prj_live_pk_...")
+            
+            return true
+        }
+    }
+    ```
+    
+    <Warning>
+      Replace `prj_live_pk_...` with your actual publishable API key from the [Radar dashboard](https://radar.com/dashboard).
+    </Warning>
+  </Step>
+</Steps>
+
+## Step 2: Request Location Permissions
+
+Create a location manager to request permissions:
+
+```swift
+import UIKit
+import CoreLocation
+import RadarSDK
+
+class ViewController: UIViewController, CLLocationManagerDelegate {
+    let locationManager = CLLocationManager()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        locationManager.delegate = self
+        requestLocationPermissions()
+    }
+    
+    func requestLocationPermissions() {
+        let status: CLAuthorizationStatus
+        
+        if #available(iOS 14.0, *) {
+            status = locationManager.authorizationStatus
+        } else {
+            status = CLLocationManager.authorizationStatus()
+        }
+        
+        if #available(iOS 13.4, *) {
+            // On iOS 13.4+, request foreground first
+            if status == .notDetermined {
+                locationManager.requestWhenInUseAuthorization()
+            } else if status == .authorizedWhenInUse {
+                // Then request background
+                locationManager.requestAlwaysAuthorization()
+            }
+        } else {
+            // Before iOS 13.4, request background directly
+            locationManager.requestAlwaysAuthorization()
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        // Continue requesting permissions if needed
+        requestLocationPermissions()
+    }
+}
+```
+
+<Info>
+  iOS 13.4+ requires a two-step permission flow: first request "When In Use" permission, then request "Always" permission for background tracking.
+</Info>
+
+## Step 3: Track Location Once
+
+Now let's track the user's location once (foreground tracking):
+
+```swift
+import RadarSDK
+
+class ViewController: UIViewController {
+    
+    @IBAction func trackLocationTapped(_ sender: Any) {
+        Radar.trackOnce { (status, location, events, user) in
+            switch status {
+            case .success:
+                print("✅ Location tracked successfully")
+                print("📍 Location: \(location?.coordinate ?? CLLocationCoordinate2D())")
+                print("👤 User ID: \(user?._id ?? "unknown")")
+                
+                // Check for events
+                if let events = events, !events.isEmpty {
+                    print("🎉 Events received: \(events.count)")
+                    for event in events {
+                        print("  - \(event.type)")
+                    }
+                }
+                
+            case .errorPermissions:
+                print("❌ Location permissions not granted")
+                
+            case .errorLocation:
+                print("❌ Could not get location")
+                
+            case .errorNetwork:
+                print("❌ Network error")
+                
+            default:
+                print("❌ Error: \(Radar.string(for: status))")
+            }
+        }
+    }
+}
+```
+
+### Understanding the Response
+
+The `trackOnce` completion handler receives:
+
+- **`status`**: A `RadarStatus` enum indicating success or failure
+- **`location`**: A `CLLocation` object with the user's coordinates
+- **`events`**: An array of `RadarEvent` objects (geofence entries/exits, place events, etc.)
+- **`user`**: A `RadarUser` object with the current user state
+
+<Accordion title="View all RadarStatus values">
+  - `.success` - Location tracked successfully
+  - `.errorPublishableKey` - SDK not initialized
+  - `.errorPermissions` - Location permissions not granted
+  - `.errorLocation` - Location services error
+  - `.errorNetwork` - Network error
+  - `.errorBadRequest` - Invalid request parameters
+  - `.errorUnauthorized` - Invalid API key
+  - `.errorRateLimit` - Rate limit exceeded
+  - `.errorServer` - Server error
+  - `.errorUnknown` - Unknown error
 </Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Step 4: Set Up a Delegate
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+Implement `RadarDelegate` to receive events and location updates:
 
-### Step 3: Go live
+```swift
+import RadarSDK
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+class MyRadarDelegate: NSObject, RadarDelegate {
+    
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        print("📬 Received \(events.count) event(s)")
+        
+        for event in events {
+            switch event.type {
+            case .userEnteredGeofence:
+                if let geofence = event.geofence {
+                    print("🎯 Entered geofence: \(geofence.description)")
+                }
+                
+            case .userExitedGeofence:
+                if let geofence = event.geofence {
+                    print("👋 Exited geofence: \(geofence.description)")
+                }
+                
+            case .userEnteredPlace:
+                if let place = event.place {
+                    print("🏪 Entered place: \(place.name)")
+                }
+                
+            default:
+                print("📍 Event: \(event.type)")
+            }
+        }
+    }
+    
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        print("📍 Location updated: \(location.coordinate)")
+        print("👤 User state updated")
+        
+        // Check if user is in any geofences
+        if let geofences = user.geofences, !geofences.isEmpty {
+            print("   In \(geofences.count) geofence(s)")
+        }
+        
+        // Check if user is at a place
+        if let place = user.place {
+            print("   At: \(place.name)")
+        }
+    }
+    
+    func didUpdateClientLocation(_ location: CLLocation, stopped: Bool, source: RadarLocationSource) {
+        print("📱 Client location: \(location.coordinate) (stopped: \(stopped))")
+    }
+    
+    func didFail(status: RadarStatus) {
+        print("❌ Radar error: \(Radar.string(for: status))")
+    }
+    
+    func didLog(message: String) {
+        print("🔍 Radar log: \(message)")
+    }
+}
+```
 
-## Next steps
+Set the delegate in your `AppDelegate`:
 
-Now that you have your docs running, explore these key features:
+```swift
+import RadarSDK
 
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    let radarDelegate = MyRadarDelegate()
+    
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        // Initialize Radar
+        Radar.initialize(publishableKey: "prj_live_pk_...")
+        
+        // Set delegate
+        Radar.setDelegate(radarDelegate)
+        
+        return true
+    }
+}
+```
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Keep a strong reference to your delegate (as shown above) to ensure it receives callbacks.
 </Note>
+
+## Step 5: Start Background Tracking
+
+Enable continuous background tracking with one of the preset tracking modes:
+
+```swift
+import RadarSDK
+
+// Start tracking with the responsive preset
+Radar.startTracking(trackingOptions: .presetResponsive)
+```
+
+### Tracking Presets
+
+Radar provides three preset tracking modes optimized for different use cases:
+
+<Tabs>
+  <Tab title="Responsive">
+    ```swift
+    Radar.startTracking(trackingOptions: .presetResponsive)
+    ```
+    
+    **Best for: Most apps**
+    
+    - Updates every ~2.5 minutes when moving
+    - Shuts down when stopped to save battery
+    - Low battery usage
+    - Requires `location` background mode
+  </Tab>
+  
+  <Tab title="Continuous">
+    ```swift
+    Radar.startTracking(trackingOptions: .presetContinuous)
+    ```
+    
+    **Best for: Real-time tracking**
+    
+    - Updates every ~30 seconds
+    - Continues when stopped
+    - Moderate battery usage
+    - Shows blue status bar during tracking
+  </Tab>
+  
+  <Tab title="Efficient">
+    ```swift
+    Radar.startTracking(trackingOptions: .presetEfficient)
+    ```
+    
+    **Best for: Battery-sensitive apps**
+    
+    - Uses iOS visit monitoring
+    - Updates only on stops and exits
+    - Lowest battery usage
+    - May have delayed updates
+  </Tab>
+</Tabs>
+
+### Custom Tracking Options
+
+You can also create custom tracking options:
+
+```swift
+let trackingOptions = RadarTrackingOptions()
+trackingOptions.desiredStoppedUpdateInterval = 180  // 3 minutes when stopped
+trackingOptions.desiredMovingUpdateInterval = 60    // 1 minute when moving
+trackingOptions.desiredSyncInterval = 50            // Sync every 50 seconds
+trackingOptions.desiredAccuracy = .medium
+trackingOptions.stopDuration = 140                  // Consider stopped after 140s
+trackingOptions.stopDistance = 70                   // Within 70 meters
+trackingOptions.syncGeofences = true                // Sync nearby geofences
+trackingOptions.useVisits = false
+trackingOptions.useSignificantLocationChanges = false
+trackingOptions.beacons = false
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+## Step 6: Identify Users
+
+Optionally identify users with a custom ID:
+
+```swift
+// Set user ID (e.g., your internal user ID)
+Radar.setUserId("user_12345")
+
+// Set user description
+Radar.setDescription("Premium User")
+
+// Set custom metadata
+Radar.setMetadata([
+    "plan": "premium",
+    "signupDate": "2024-01-15"
+])
+```
+
+<Info>
+  If you don't set a user ID, Radar automatically identifies users by device ID (IDFV).
+</Info>
+
+## Complete Example
+
+Here's a complete working example:
+
+<CodeGroup>
+```swift AppDelegate.swift
+import UIKit
+import RadarSDK
+
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    let radarDelegate = MyRadarDelegate()
+    
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        // Initialize Radar
+        Radar.initialize(publishableKey: "prj_live_pk_...")
+        
+        // Set delegate
+        Radar.setDelegate(radarDelegate)
+        
+        // Identify user
+        Radar.setUserId("user_12345")
+        Radar.setMetadata(["plan": "premium"])
+        
+        return true
+    }
+}
+```
+
+```swift ViewController.swift
+import UIKit
+import CoreLocation
+import RadarSDK
+
+class ViewController: UIViewController, CLLocationManagerDelegate {
+    let locationManager = CLLocationManager()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        locationManager.delegate = self
+        requestLocationPermissions()
+    }
+    
+    func requestLocationPermissions() {
+        let status: CLAuthorizationStatus
+        
+        if #available(iOS 14.0, *) {
+            status = locationManager.authorizationStatus
+        } else {
+            status = CLLocationManager.authorizationStatus()
+        }
+        
+        if status == .notDetermined {
+            if #available(iOS 13.4, *) {
+                locationManager.requestWhenInUseAuthorization()
+            } else {
+                locationManager.requestAlwaysAuthorization()
+            }
+        } else if status == .authorizedWhenInUse {
+            if #available(iOS 13.4, *) {
+                locationManager.requestAlwaysAuthorization()
+            }
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        requestLocationPermissions()
+    }
+    
+    @IBAction func trackOnceTapped(_ sender: Any) {
+        Radar.trackOnce { (status, location, events, user) in
+            if status == .success {
+                print("✅ Tracked: \(location?.coordinate ?? CLLocationCoordinate2D())")
+            } else {
+                print("❌ Error: \(Radar.string(for: status))")
+            }
+        }
+    }
+    
+    @IBAction func startTrackingTapped(_ sender: Any) {
+        Radar.startTracking(trackingOptions: .presetResponsive)
+        print("🚀 Started background tracking")
+    }
+    
+    @IBAction func stopTrackingTapped(_ sender: Any) {
+        Radar.stopTracking()
+        print("🛑 Stopped background tracking")
+    }
+}
+```
+
+```swift MyRadarDelegate.swift  
+import RadarSDK
+
+class MyRadarDelegate: NSObject, RadarDelegate {
+    
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        for event in events {
+            switch event.type {
+            case .userEnteredGeofence:
+                print("🎯 Entered: \(event.geofence?.description ?? "")")
+            case .userExitedGeofence:
+                print("👋 Exited: \(event.geofence?.description ?? "")")
+            case .userEnteredPlace:
+                print("🏪 At: \(event.place?.name ?? "")")
+            default:
+                break
+            }
+        }
+    }
+    
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        print("📍 Location: \(location.coordinate)")
+    }
+    
+    func didUpdateClientLocation(_ location: CLLocation, stopped: Bool, source: RadarLocationSource) {
+        // Optional: handle client-side location updates
+    }
+    
+    func didFail(status: RadarStatus) {
+        print("❌ Error: \(Radar.string(for: status))")
+    }
+    
+    func didLog(message: String) {
+        // Optional: handle debug logs
+    }
+}
+```
+</CodeGroup>
+
+## Testing Your Integration
+
+To test your integration:
+
+<Steps>
+  <Step title="Run the app">
+    Build and run your app on a physical device (simulator location is less accurate).
+  </Step>
+  
+  <Step title="Grant permissions">
+    Accept the location permission prompts when they appear.
+  </Step>
+  
+  <Step title="Track location">
+    Tap your "Track Once" button to send a location update to Radar.
+  </Step>
+  
+  <Step title="View in dashboard">
+    Open the [Radar dashboard](https://radar.com/dashboard) and go to the **Users** page to see your location update.
+  </Step>
+</Steps>
+
+<Tip>
+  Enable debug logs to see detailed SDK activity:
+  
+  ```swift
+  Radar.setLogLevel(.debug)
+  ```
+</Tip>
+
+## Next Steps
+
+Now that you have basic tracking working, explore more features:
+
+<CardGroup cols={2}>
+  <Card title="Create Geofences" icon="draw-circle" href="https://radar.com/documentation/geofences">
+    Set up geofences in the Radar dashboard
+  </Card>
+  
+  <Card title="Trip Tracking" icon="route" href="https://radar.com/documentation/trip-tracking">
+    Track multi-stop trips with live ETAs
+  </Card>
+  
+  <Card title="Search Places" icon="magnifying-glass" href="https://radar.com/documentation/places">
+    Search for nearby places and chains
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="https://radarlabs.github.io/radar-sdk-ios/">
+    View the complete SDK reference
+  </Card>
+</CardGroup>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Location permissions not granted">
+    Make sure you've added the required `NSLocationWhenInUseUsageDescription` and `NSLocationAlwaysAndWhenInUseUsageDescription` keys to your `Info.plist`.
+    
+    On iOS 13.4+, you must request "When In Use" permission before requesting "Always" permission.
+  </Accordion>
+  
+  <Accordion title="Background tracking not working">
+    Verify that:
+    - You've enabled the **Location updates** background mode in **Signing & Capabilities**
+    - The user granted "Always" location permission (not just "When In Use")
+    - You called `Radar.startTracking()` with valid tracking options
+  </Accordion>
+  
+  <Accordion title="Events not received">
+    Make sure:
+    - You've set a delegate with `Radar.setDelegate()`
+    - You're keeping a strong reference to your delegate object
+    - You've created geofences in the [Radar dashboard](https://radar.com/dashboard)
+  </Accordion>
+  
+  <Accordion title="Rate limit errors">
+    The `trackOnce()` method is subject to rate limits. For continuous tracking, use `startTracking()` instead, which handles rate limiting automatically.
+  </Accordion>
+</AccordionGroup>
+
+## Get Help
+
+Have questions? We're here to help!
+
+- Email: [support@radar.com](mailto:support@radar.com)
+- Documentation: [radar.com/documentation](https://radar.com/documentation)
+- Community: [Radar Community](https://community.radar.com)

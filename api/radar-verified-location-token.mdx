@@ -1,0 +1,108 @@
+---
+title: RadarVerifiedLocationToken
+description: Represents a user's verified location token with fraud detection results.
+---
+
+The `RadarVerifiedLocationToken` class represents a user's verified location, including fraud detection results and a signed JWT token that can be verified server-side.
+
+<Note>
+  Verify the token server-side using your secret key for secure location verification.
+</Note>
+
+## Properties
+
+<ResponseField name="user" type="RadarUser">
+  The user associated with this verified location token.
+</ResponseField>
+
+<ResponseField name="events" type="RadarEvent[]">
+  An array of events associated with the verified location.
+</ResponseField>
+
+<ResponseField name="token" type="String">
+  A signed JSON Web Token (JWT) containing the user and array of events. Verify the token server-side using your secret key.
+</ResponseField>
+
+<ResponseField name="expiresAt" type="Date">
+  The datetime when the token expires.
+</ResponseField>
+
+<ResponseField name="expiresIn" type="TimeInterval">
+  The number of seconds until the token expires.
+</ResponseField>
+
+<ResponseField name="passed" type="Bool">
+  A boolean indicating whether the user passed all jurisdiction and fraud detection checks.
+</ResponseField>
+
+<ResponseField name="failureReasons" type="String[]">
+  An array of failure reasons for jurisdiction and fraud detection checks.
+</ResponseField>
+
+<ResponseField name="_id" type="String">
+  The Radar ID of the location check.
+</ResponseField>
+
+<ResponseField name="fullDict" type="Dictionary">
+  The full dictionary value of the token.
+</ResponseField>
+
+## Methods
+
+### dictionaryValue
+
+Returns a dictionary representation of the verified location token.
+
+```swift
+func dictionaryValue() -> [AnyHashable : Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+**Returns:** A dictionary containing all token properties.
+
+## Example
+
+```swift
+// Implement RadarVerifiedDelegate to receive tokens
+func didUpdateToken(_ token: RadarVerifiedLocationToken) {
+    if token.passed {
+        // User passed all fraud checks
+        if let jwtToken = token.token {
+            // Send token to your server for verification
+            verifyTokenOnServer(jwtToken)
+        }
+    } else {
+        // User failed fraud checks
+        if let reasons = token.failureReasons {
+            print("Failed reasons: \(reasons)")
+        }
+    }
+}
+```
+
+```objective-c
+// Implement RadarVerifiedDelegate to receive tokens
+- (void)didUpdateToken:(RadarVerifiedLocationToken *)token {
+    if (token.passed) {
+        // User passed all fraud checks
+        if (token.token) {
+            // Send token to your server for verification
+            [self verifyTokenOnServer:token.token];
+        }
+    } else {
+        // User failed fraud checks
+        if (token.failureReasons) {
+            NSLog(@"Failed reasons: %@", token.failureReasons);
+        }
+    }
+}
+```
+
+## See Also
+
+- [RadarVerifiedDelegate](/api/radar-verified-delegate)
+- [RadarFraud](/api/radar-fraud)
+- [Fraud Documentation](https://radar.com/documentation/fraud)

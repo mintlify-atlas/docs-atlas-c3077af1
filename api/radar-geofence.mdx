@@ -1,0 +1,130 @@
+---
+title: RadarGeofence
+description: Represents a geofence with geometry, metadata, and operating hours.
+---
+
+`RadarGeofence` represents a geofence. Learn more about [Geofences](https://radar.com/documentation/geofences).
+
+## Properties
+
+<ResponseField name="_id" type="String" required>
+  The Radar ID of the geofence.
+</ResponseField>
+
+<ResponseField name="__description" type="String" required>
+  The description of the geofence. Not to be confused with the `NSObject` `description` property.
+</ResponseField>
+
+<ResponseField name="tag" type="String">
+  The tag of the geofence.
+</ResponseField>
+
+<ResponseField name="externalId" type="String">
+  The external ID of the geofence.
+</ResponseField>
+
+<ResponseField name="metadata" type="NSDictionary">
+  The optional set of custom key-value pairs for the geofence.
+</ResponseField>
+
+<ResponseField name="geometry" type="RadarGeofenceGeometry" required>
+  The geometry of the geofence, which can be cast to either `RadarCircleGeometry` or `RadarPolygonGeometry`.
+  
+  <Expandable title="RadarCircleGeometry">
+    <ResponseField name="center" type="RadarCoordinate" required>
+      The center of the circle geofence.
+    </ResponseField>
+    
+    <ResponseField name="radius" type="double" required>
+      The radius of the circle geofence in meters.
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="RadarPolygonGeometry">
+    <ResponseField name="_coordinates" type="Array<RadarCoordinate>">
+      The geometry of the polygon geofence. A closed ring of coordinates.
+    </ResponseField>
+    
+    <ResponseField name="center" type="RadarCoordinate" required>
+      The calculated centroid of the polygon geofence.
+    </ResponseField>
+    
+    <ResponseField name="radius" type="double" required>
+      The calculated radius of the polygon geofence in meters.
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="RadarCoordinate">
+    <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+      The coordinate.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="operatingHours" type="RadarOperatingHours">
+  The optional operating hours for the geofence.
+  
+  <Expandable title="properties">
+    <ResponseField name="hours" type="NSDictionary<NSString *, NSArray<NSArray<NSString *> *> *>" required>
+      A dictionary mapping day names to arrays of time ranges. Each time range is an array of two strings representing the start and end times.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Methods
+
+### arrayForGeofences
+
+```objective-c
++ (NSArray<NSDictionary *> *_Nullable)arrayForGeofences:(NSArray<RadarGeofence *> *_Nullable)geofences;
+```
+
+Converts an array of `RadarGeofence` objects to an array of dictionaries.
+
+### dictionaryValue
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Returns the dictionary representation of the geofence.
+
+## Example
+
+```swift
+let geofence: RadarGeofence = event.geofence
+let geofenceId = geofence._id
+let geofenceDescription = geofence.__description
+let geofenceTag = geofence.tag
+let geofenceExternalId = geofence.externalId
+let geofenceMetadata = geofence.metadata
+
+if let circleGeometry = geofence.geometry as? RadarCircleGeometry {
+    let center = circleGeometry.center
+    let radius = circleGeometry.radius
+} else if let polygonGeometry = geofence.geometry as? RadarPolygonGeometry {
+    let center = polygonGeometry.center
+    let radius = polygonGeometry.radius
+    let coordinates = polygonGeometry._coordinates
+}
+```
+
+```objective-c
+RadarGeofence *geofence = event.geofence;
+NSString *geofenceId = geofence._id;
+NSString *geofenceDescription = geofence.__description;
+NSString *geofenceTag = geofence.tag;
+NSString *geofenceExternalId = geofence.externalId;
+NSDictionary *geofenceMetadata = geofence.metadata;
+
+if ([geofence.geometry isKindOfClass:[RadarCircleGeometry class]]) {
+    RadarCircleGeometry *circleGeometry = (RadarCircleGeometry *)geofence.geometry;
+    RadarCoordinate *center = circleGeometry.center;
+    double radius = circleGeometry.radius;
+} else if ([geofence.geometry isKindOfClass:[RadarPolygonGeometry class]]) {
+    RadarPolygonGeometry *polygonGeometry = (RadarPolygonGeometry *)geofence.geometry;
+    RadarCoordinate *center = polygonGeometry.center;
+    double radius = polygonGeometry.radius;
+    NSArray<RadarCoordinate *> *coordinates = polygonGeometry._coordinates;
+}
+```

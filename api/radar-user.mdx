@@ -1,0 +1,518 @@
+---
+title: RadarUser
+description: API reference for the RadarUser class
+---
+
+Represents the current user state. This includes the user's location, geofences, place, beacons, regions, segments, and trip information.
+
+## Properties
+
+<ResponseField name="_id" type="String" required>
+  The Radar ID of the user.
+</ResponseField>
+
+<ResponseField name="userId" type="String">
+  The unique ID of the user, provided when you identified the user. May be `nil` if the user has not been identified.
+</ResponseField>
+
+<ResponseField name="deviceId" type="String">
+  The device ID of the user.
+</ResponseField>
+
+<ResponseField name="__description" type="String">
+  The optional description of the user. Not to be confused with the `NSObject` `description` property.
+</ResponseField>
+
+<ResponseField name="metadata" type="[String: Any]">
+  The optional set of custom key-value pairs for the user.
+</ResponseField>
+
+<ResponseField name="location" type="CLLocation" required>
+  The user's current location.
+</ResponseField>
+
+<ResponseField name="altitude" type="Double" required>
+  The user's current altitude in meters.
+</ResponseField>
+
+<ResponseField name="activityType" type="RadarActivityType" required>
+  The user's current activity type. See [Activity Types](#activity-types) for possible values.
+</ResponseField>
+
+<ResponseField name="geofences" type="[RadarGeofence]">
+  An array of the user's current geofences. May be `nil` or empty if the user is not in any geofences.
+
+  See the [Geofences documentation](https://radar.com/documentation/geofences) for more information.
+</ResponseField>
+
+<ResponseField name="place" type="RadarPlace">
+  The user's current place. May be `nil` if the user is not at a place or if Places is not enabled.
+
+  See the [Places documentation](https://radar.com/documentation/places) for more information.
+</ResponseField>
+
+<ResponseField name="beacons" type="[RadarBeacon]">
+  An array of the user's nearby beacons. May be `nil` or empty if the user is not near any beacons or if Beacons is not enabled.
+
+  See the [Beacons documentation](https://radar.com/documentation/beacons) for more information.
+</ResponseField>
+
+<ResponseField name="stopped" type="Bool" required>
+  A boolean indicating whether the user is stopped.
+</ResponseField>
+
+<ResponseField name="foreground" type="Bool" required>
+  A boolean indicating whether the user was last updated in the foreground.
+</ResponseField>
+
+<ResponseField name="country" type="RadarRegion">
+  The user's current country. May be `nil` if country is not available or if Regions is not enabled.
+
+  See the [Regions documentation](https://radar.com/documentation/regions) for more information.
+</ResponseField>
+
+<ResponseField name="state" type="RadarRegion">
+  The user's current state. May be `nil` if state is not available or if Regions is not enabled.
+
+  See the [Regions documentation](https://radar.com/documentation/regions) for more information.
+</ResponseField>
+
+<ResponseField name="dma" type="RadarRegion">
+  The user's current designated market area (DMA). May be `nil` if DMA is not available or if Regions is not enabled.
+
+  See the [Regions documentation](https://radar.com/documentation/regions) for more information.
+</ResponseField>
+
+<ResponseField name="postalCode" type="RadarRegion">
+  The user's current postal code. May be `nil` if postal code is not available or if Regions is not enabled.
+
+  See the [Regions documentation](https://radar.com/documentation/regions) for more information.
+</ResponseField>
+
+<ResponseField name="nearbyPlaceChains" type="[RadarChain]">
+  The user's nearby chains. May be `nil` if no chains are nearby or if nearby chains are not enabled.
+</ResponseField>
+
+<ResponseField name="segments" type="[RadarSegment]">
+  The user's segments. May be `nil` if segments are not enabled.
+</ResponseField>
+
+<ResponseField name="topChains" type="[RadarChain]">
+  The user's top chains. May be `nil` if segments are not enabled.
+</ResponseField>
+
+<ResponseField name="source" type="RadarLocationSource" required>
+  The source of the user's current location. See [Location Sources](#location-sources) for possible values.
+</ResponseField>
+
+<ResponseField name="trip" type="RadarTrip">
+  The user's current trip. May be `nil` if the user is not currently on a trip.
+
+  See the [Trip Tracking documentation](https://radar.com/documentation/trip-tracking) for more information.
+</ResponseField>
+
+<ResponseField name="debug" type="Bool" required>
+  A boolean indicating whether the user is marked as debug.
+</ResponseField>
+
+<ResponseField name="fraud" type="RadarFraud">
+  The user's current fraud state. May be `nil` if Fraud is not enabled.
+
+  See the [Fraud documentation](https://radar.com/documentation/fraud) for more information.
+</ResponseField>
+
+## Activity Types
+
+The `RadarActivityType` enum defines the types of user activity:
+
+<ResponseField name="unknown" type="RadarActivityType">
+  Unknown activity (0).
+</ResponseField>
+
+<ResponseField name="stationary" type="RadarActivityType">
+  Stationary activity (1).
+</ResponseField>
+
+<ResponseField name="foot" type="RadarActivityType">
+  Walking activity (2).
+</ResponseField>
+
+<ResponseField name="run" type="RadarActivityType">
+  Running activity (3).
+</ResponseField>
+
+<ResponseField name="bike" type="RadarActivityType">
+  Biking activity (4).
+</ResponseField>
+
+<ResponseField name="car" type="RadarActivityType">
+  Driving activity (5).
+</ResponseField>
+
+## Location Sources
+
+The `RadarLocationSource` enum defines the sources for location updates:
+
+<ResponseField name="foregroundLocation" type="RadarLocationSource">
+  Foreground location update.
+</ResponseField>
+
+<ResponseField name="backgroundLocation" type="RadarLocationSource">
+  Background location update.
+</ResponseField>
+
+<ResponseField name="manualLocation" type="RadarLocationSource">
+  Manual location update.
+</ResponseField>
+
+<ResponseField name="visitArrival" type="RadarLocationSource">
+  Visit arrival location update.
+</ResponseField>
+
+<ResponseField name="visitDeparture" type="RadarLocationSource">
+  Visit departure location update.
+</ResponseField>
+
+<ResponseField name="geofenceEnter" type="RadarLocationSource">
+  Geofence enter location update.
+</ResponseField>
+
+<ResponseField name="geofenceExit" type="RadarLocationSource">
+  Geofence exit location update.
+</ResponseField>
+
+<ResponseField name="mockLocation" type="RadarLocationSource">
+  Mock location update.
+</ResponseField>
+
+<ResponseField name="beaconEnter" type="RadarLocationSource">
+  Beacon enter location update.
+</ResponseField>
+
+<ResponseField name="beaconExit" type="RadarLocationSource">
+  Beacon exit location update.
+</ResponseField>
+
+<ResponseField name="unknown" type="RadarLocationSource">
+  Unknown location source.
+</ResponseField>
+
+## Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [AnyHashable: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the user to a dictionary representation.
+
+**Returns:** A dictionary representation of the user.
+
+## Nested Objects
+
+<Expandable title="RadarGeofence">
+  Represents a geofence the user is currently in.
+
+  <ResponseField name="_id" type="String" required>
+    The Radar ID of the geofence.
+  </ResponseField>
+
+  <ResponseField name="__description" type="String" required>
+    The description of the geofence.
+  </ResponseField>
+
+  <ResponseField name="tag" type="String">
+    The tag of the geofence.
+  </ResponseField>
+
+  <ResponseField name="externalId" type="String">
+    The external ID of the geofence.
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The optional set of custom key-value pairs for the geofence.
+  </ResponseField>
+
+  <ResponseField name="geometry" type="RadarGeofenceGeometry" required>
+    The geometry of the geofence, which can be cast to either `RadarCircleGeometry` or `RadarPolygonGeometry`.
+  </ResponseField>
+
+  <ResponseField name="operatingHours" type="RadarOperatingHours">
+    The optional operating hours for the geofence.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarPlace">
+  Represents a place where the user is currently located.
+
+  <ResponseField name="_id" type="String" required>
+    The Radar ID of the place.
+  </ResponseField>
+
+  <ResponseField name="name" type="String" required>
+    The name of the place.
+  </ResponseField>
+
+  <ResponseField name="categories" type="[String]" required>
+    The categories of the place. For a full list of categories, see the [Places categories documentation](https://radar.com/documentation/places/categories).
+  </ResponseField>
+
+  <ResponseField name="chain" type="RadarChain">
+    The chain of the place, if known. May be `nil` for places without a chain. For a full list of chains, see the [Places chains documentation](https://radar.com/documentation/places/chains).
+  </ResponseField>
+
+  <ResponseField name="location" type="RadarCoordinate" required>
+    The location of the place.
+  </ResponseField>
+
+  <ResponseField name="group" type="String">
+    The group for the place, if any. For a full list of groups, see the [Places groups documentation](https://radar.com/documentation/places/groups).
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The metadata for the place, if part of a group.
+  </ResponseField>
+
+  <ResponseField name="address" type="RadarAddress">
+    The address of the place.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarBeacon">
+  Represents a Bluetooth beacon near the user.
+
+  <ResponseField name="_id" type="String">
+    The Radar ID of the beacon.
+  </ResponseField>
+
+  <ResponseField name="__description" type="String">
+    The description of the beacon.
+  </ResponseField>
+
+  <ResponseField name="tag" type="String">
+    The tag of the beacon.
+  </ResponseField>
+
+  <ResponseField name="externalId" type="String">
+    The external ID of the beacon.
+  </ResponseField>
+
+  <ResponseField name="uuid" type="String" required>
+    The UUID of the beacon.
+  </ResponseField>
+
+  <ResponseField name="major" type="String" required>
+    The major ID of the beacon.
+  </ResponseField>
+
+  <ResponseField name="minor" type="String" required>
+    The minor ID of the beacon.
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The optional set of custom key-value pairs for the beacon.
+  </ResponseField>
+
+  <ResponseField name="geometry" type="RadarCoordinate">
+    The location of the beacon.
+  </ResponseField>
+
+  <ResponseField name="rssi" type="Int" required>
+    The RSSI of the beacon, or 0 if not available.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarRegion">
+  Represents a geographic region (country, state, DMA, or postal code).
+
+  <ResponseField name="_id" type="String" required>
+    The Radar ID of the region.
+  </ResponseField>
+
+  <ResponseField name="name" type="String" required>
+    The name of the region.
+  </ResponseField>
+
+  <ResponseField name="code" type="String" required>
+    The unique code for the region.
+  </ResponseField>
+
+  <ResponseField name="type" type="String" required>
+    The type of the region.
+  </ResponseField>
+
+  <ResponseField name="flag" type="String">
+    The optional flag of the region.
+  </ResponseField>
+
+  <ResponseField name="allowed" type="Bool" required>
+    A boolean indicating whether the jurisdiction is allowed. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="passed" type="Bool" required>
+    A boolean indicating whether all jurisdiction checks for the region have passed. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="inExclusionZone" type="Bool" required>
+    A boolean indicating whether the user is in an exclusion zone for the jurisdiction. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="inBufferZone" type="Bool" required>
+    A boolean indicating whether the user is too close to the border for the jurisdiction. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="distanceToBorder" type="Double" required>
+    The distance in meters to the border of the jurisdiction. May be 0 if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="expected" type="Bool" required>
+    A boolean indicating whether the jurisdiction is expected based on the values passed to `setExpectedJurisdiction()`.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarChain">
+  Represents the chain of a place.
+
+  <ResponseField name="slug" type="String" required>
+    The unique ID of the chain. For a full list of chains, see the [Places chains documentation](https://radar.com/documentation/places/chains).
+  </ResponseField>
+
+  <ResponseField name="name" type="String" required>
+    The name of the chain.
+  </ResponseField>
+
+  <ResponseField name="externalId" type="String">
+    The external ID of the chain.
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The optional set of custom key-value pairs for the chain.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarSegment">
+  Represents a user segment.
+
+  <ResponseField name="__description" type="String" required>
+    The description of the segment.
+  </ResponseField>
+
+  <ResponseField name="externalId" type="String" required>
+    The external ID of the segment.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarTrip">
+  Represents a trip the user is currently on.
+
+  <ResponseField name="_id" type="String" required>
+    The Radar ID of the trip.
+  </ResponseField>
+
+  <ResponseField name="externalId" type="String">
+    The external ID of the trip.
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The optional set of custom key-value pairs for the trip.
+  </ResponseField>
+
+  <ResponseField name="destinationGeofenceTag" type="String">
+    For trips with a destination, the tag of the destination geofence.
+  </ResponseField>
+
+  <ResponseField name="destinationGeofenceExternalId" type="String">
+    For trips with a destination, the external ID of the destination geofence.
+  </ResponseField>
+
+  <ResponseField name="destinationLocation" type="RadarCoordinate">
+    For trips with a destination, the location of the destination geofence.
+  </ResponseField>
+
+  <ResponseField name="mode" type="RadarRouteMode" required>
+    The travel mode for the trip.
+  </ResponseField>
+
+  <ResponseField name="etaDistance" type="Float" required>
+    For trips with a destination, the distance to the destination geofence in meters based on the travel mode for the trip.
+  </ResponseField>
+
+  <ResponseField name="etaDuration" type="Float" required>
+    For trips with a destination, the ETA to the destination geofence in minutes based on the travel mode for the trip.
+  </ResponseField>
+
+  <ResponseField name="status" type="RadarTripStatus" required>
+    The status of the trip. Possible values: `unknown`, `started`, `approaching`, `arrived`, `expired`, `completed`, `canceled`.
+  </ResponseField>
+
+  <ResponseField name="orders" type="[RadarTripOrder]">
+    The optional array of trip orders associated with this trip.
+  </ResponseField>
+
+  <ResponseField name="legs" type="[RadarTripLeg]">
+    For multi-destination trips, the array of trip legs. Each leg contains destination info, status, and metadata. Use `leg._id` when calling `updateTripLeg`.
+  </ResponseField>
+
+  <ResponseField name="currentLegId" type="String">
+    For multi-destination trips, the ID of the current active leg.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarFraud">
+  Represents fraud detection signals for location verification.
+
+  <Warning>
+    These values should not be trusted unless you called `trackVerified()` instead of `trackOnce()`.
+  </Warning>
+
+  <ResponseField name="passed" type="Bool" required>
+    A boolean indicating whether the user passed fraud detection checks. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="bypassed" type="Bool" required>
+    A boolean indicating whether fraud detection checks were bypassed for the user for testing. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="verified" type="Bool" required>
+    A boolean indicating whether the request was made with SSL pinning configured successfully. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="proxy" type="Bool" required>
+    A boolean indicating whether the user's IP address is a known proxy. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="mocked" type="Bool" required>
+    A boolean indicating whether the user's location is being mocked, such as in the simulator or using a location spoofing app. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="compromised" type="Bool" required>
+    A boolean indicating whether the user's device or app has been compromised according to `DeviceCheck`. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="jumped" type="Bool" required>
+    A boolean indicating whether the user moved too far too fast. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="inaccurate" type="Bool" required>
+    A boolean indicating whether the user's location is not accurate enough. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="sharing" type="Bool" required>
+    A boolean indicating whether the user is sharing location. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="blocked" type="Bool" required>
+    A boolean indicating whether the user has been manually blocked. May be `false` if Fraud is not enabled.
+  </ResponseField>
+</Expandable>
+
+## See Also
+
+- [RadarEvent](/api/radar-event)
+- [RadarContext](/api/radar-context)
+- [SDK Documentation](https://radar.com/documentation/sdk/ios)

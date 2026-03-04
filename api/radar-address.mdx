@@ -1,0 +1,213 @@
+---
+title: RadarAddress
+description: Represents an address with geocoding information
+---
+
+`RadarAddress` represents an address returned from geocoding operations.
+
+## Properties
+
+<ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+  The location coordinate of the address.
+</ResponseField>
+
+<ResponseField name="formattedAddress" type="string">
+  The formatted string representation of the address.
+</ResponseField>
+
+<ResponseField name="country" type="string">
+  The name of the country of the address.
+</ResponseField>
+
+<ResponseField name="countryCode" type="string">
+  The unique code of the country of the address.
+</ResponseField>
+
+<ResponseField name="countryFlag" type="string">
+  The flag of the country of the address.
+</ResponseField>
+
+<ResponseField name="dma" type="string">
+  The name of the DMA of the address.
+</ResponseField>
+
+<ResponseField name="dmaCode" type="string">
+  The unique code of the DMA of the address.
+</ResponseField>
+
+<ResponseField name="state" type="string">
+  The name of the state of the address.
+</ResponseField>
+
+<ResponseField name="stateCode" type="string">
+  The unique code of the state of the address.
+</ResponseField>
+
+<ResponseField name="postalCode" type="string">
+  The postal code of the address.
+</ResponseField>
+
+<ResponseField name="city" type="string">
+  The city of the address.
+</ResponseField>
+
+<ResponseField name="borough" type="string">
+  The borough of the address.
+</ResponseField>
+
+<ResponseField name="county" type="string">
+  The county of the address.
+</ResponseField>
+
+<ResponseField name="neighborhood" type="string">
+  The neighborhood of the address.
+</ResponseField>
+
+<ResponseField name="number" type="string">
+  The street number of the address.
+</ResponseField>
+
+<ResponseField name="street" type="string">
+  The street name of the address.
+</ResponseField>
+
+<ResponseField name="addressLabel" type="string">
+  The label of the address.
+</ResponseField>
+
+<ResponseField name="placeLabel" type="string">
+  The label of the place.
+</ResponseField>
+
+<ResponseField name="unit" type="string">
+  The unit of the address.
+</ResponseField>
+
+<ResponseField name="plus4" type="string">
+  The plus4 value for the zip of the address.
+</ResponseField>
+
+<ResponseField name="distance" type="number">
+  The distance to the search anchor in meters.
+</ResponseField>
+
+<ResponseField name="layer" type="string">
+  The layer of the address, e.g. 'place', 'address', 'intersection', 'street', 'state', etc.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  The metadata of the address.
+</ResponseField>
+
+<ResponseField name="confidence" type="RadarAddressConfidence" required>
+  The confidence level of the geocoding result.
+  
+  <Expandable title="values">
+    - `none` - Unknown
+    - `exact` - Exact
+    - `interpolated` - Interpolated
+    - `fallback` - Fallback
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="timeZone" type="RadarTimeZone">
+  The time zone information of the address.
+  
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string" required>
+      The ID of the time zone.
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      The name of the time zone.
+    </ResponseField>
+    
+    <ResponseField name="code" type="string" required>
+      The time zone abbreviation.
+    </ResponseField>
+    
+    <ResponseField name="currentTime" type="Date" required>
+      The current time for the time zone.
+    </ResponseField>
+    
+    <ResponseField name="utcOffset" type="number" required>
+      The UTC offset for the time zone.
+    </ResponseField>
+    
+    <ResponseField name="dstOffset" type="number" required>
+      The DST offset for the time zone.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="categories" type="string[]">
+  The categories of the address.
+</ResponseField>
+
+## Class Methods
+
+### addressFromObject
+
+```swift
+class func address(from object: Any) -> RadarAddress?
+```
+
+```objective-c
++ (RadarAddress *_Nullable)addressFromObject:(id _Nonnull)object;
+```
+
+Creates a `RadarAddress` instance from a dictionary object.
+
+#### Parameters
+
+<ResponseField name="object" type="Any" required>
+  The dictionary object to parse.
+</ResponseField>
+
+#### Returns
+
+A `RadarAddress` instance, or `nil` if the object could not be parsed.
+
+### arrayForAddresses
+
+```swift
+class func array(for addresses: [RadarAddress]?) -> [[String: Any]]?
+```
+
+```objective-c
++ (NSArray<NSDictionary *> *_Nullable)arrayForAddresses:(NSArray<RadarAddress *> *_Nullable)addresses;
+```
+
+Converts an array of `RadarAddress` objects to an array of dictionaries.
+
+#### Parameters
+
+<ResponseField name="addresses" type="RadarAddress[]">
+  The array of addresses to convert.
+</ResponseField>
+
+#### Returns
+
+An array of dictionaries representing the addresses.
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the address to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the address.
+
+## See Also
+
+- [Geocoding API Documentation](https://radar.com/documentation/api#geocoding)

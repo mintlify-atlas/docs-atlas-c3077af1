@@ -1,0 +1,113 @@
+---
+title: RadarRoute
+description: Represents a route between an origin and a destination
+---
+
+`RadarRoute` represents a route between an origin and a destination, including distance, duration, and geometry information.
+
+## Properties
+
+<ResponseField name="distance" type="RadarRouteDistance" required>
+  The distance of the route.
+  
+  <Expandable title="properties">
+    <ResponseField name="value" type="number" required>
+      The distance in feet (for imperial units) or meters (for metric units).
+    </ResponseField>
+    
+    <ResponseField name="text" type="string" required>
+      A display string for the distance.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="duration" type="RadarRouteDuration" required>
+  The duration of the route.
+  
+  <Expandable title="properties">
+    <ResponseField name="value" type="number" required>
+      The duration in minutes.
+    </ResponseField>
+    
+    <ResponseField name="text" type="string" required>
+      A display string for the duration.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="geometry" type="RadarRouteGeometry" required>
+  The geometry of the route.
+  
+  <Expandable title="properties">
+    <ResponseField name="coordinates" type="RadarCoordinate[]">
+      The geometry of the route as an array of coordinates.
+      
+      Each `RadarCoordinate` contains a `CLLocationCoordinate2D` coordinate property.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the route to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the route.
+
+## Example
+
+```swift
+// Get routing information
+Radar.getDistance(
+    origin: origin,
+    destination: destination,
+    modes: [.car],
+    units: .imperial
+) { (status, routes) in
+    if let route = routes?.car {
+        print("Distance: \(route.distance.text)")
+        print("Duration: \(route.duration.text)")
+        
+        if let coordinates = route.geometry.coordinates {
+            print("Route has \(coordinates.count) points")
+        }
+    }
+}
+```
+
+```objective-c
+// Get routing information
+[Radar getDistanceFromOrigin:origin
+                 destination:destination
+                       modes:RadarRouteModeCar
+                       units:RadarRouteUnitsImperial
+           completionHandler:^(RadarStatus status, RadarRoutes * _Nullable routes) {
+    RadarRoute *route = routes.car;
+    if (route) {
+        NSLog(@"Distance: %@", route.distance.text);
+        NSLog(@"Duration: %@", route.duration.text);
+        
+        if (route.geometry.coordinates) {
+            NSLog(@"Route has %lu points", (unsigned long)route.geometry.coordinates.count);
+        }
+    }
+}];
+```
+
+## See Also
+
+- [Routing API Documentation](https://radar.com/documentation/api#routing)
+- [RadarRouteDistance](/api/radar-route-distance)
+- [RadarRouteDuration](/api/radar-route-duration)
+- [RadarRouteGeometry](/api/radar-route-geometry)

@@ -1,0 +1,478 @@
+---
+title: "Location Tracking"
+description: "Background location tracking with configurable tracking options for iOS"
+---
+
+## Overview
+
+The Radar iOS SDK provides flexible location tracking capabilities, from foreground tracking to continuous background tracking with configurable presets. You can track location once in the foreground, or start background tracking with options optimized for different use cases.
+
+## Foreground Tracking
+
+Track the user's location once in the foreground using `trackOnce()`.
+
+<CodeGroup>
+
+```swift Swift
+Radar.trackOnce { (status, location, events, user) in
+    if status == .success {
+        // do something with events, user
+    } else {
+        // handle error
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar trackOnceWithCompletionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarEvent *> * _Nullable events, RadarUser * _Nullable user) {
+    if (status == RadarStatusSuccess) {
+        // do something with events, user
+    } else {
+        // handle error
+    }
+}];
+```
+
+</CodeGroup>
+
+### Track with Custom Accuracy
+
+You can specify desired accuracy and beacon ranging options:
+
+<CodeGroup>
+
+```swift Swift
+Radar.trackOnce(desiredAccuracy: .high, beacons: false) { (status, location, events, user) in
+    // handle response
+}
+```
+
+```objective-c Objective-C
+[Radar trackOnceWithDesiredAccuracy:RadarTrackingOptionsDesiredAccuracyHigh
+                            beacons:NO
+                  completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarEvent *> * _Nullable events, RadarUser * _Nullable user) {
+    // handle response
+}];
+```
+
+</CodeGroup>
+
+<Info>
+**Accuracy Options**
+- `RadarTrackingOptionsDesiredAccuracyHigh` - Uses `kCLLocationAccuracyBest`
+- `RadarTrackingOptionsDesiredAccuracyMedium` - Uses `kCLLocationAccuracyHundredMeters` (default)
+- `RadarTrackingOptionsDesiredAccuracyLow` - Uses `kCLLocationAccuracyKilometer`
+</Info>
+
+### Track with Manual Location
+
+You can manually update the user's location:
+
+<CodeGroup>
+
+```swift Swift
+let location = CLLocation(latitude: 40.7128, longitude: -74.0060)
+
+Radar.trackOnce(location: location) { (status, location, events, user) in
+    // handle response
+}
+```
+
+```objective-c Objective-C
+CLLocation *location = [[CLLocation alloc] initWithLatitude:40.7128 longitude:-74.0060];
+
+[Radar trackOnceWithLocation:location
+           completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarEvent *> * _Nullable events, RadarUser * _Nullable user) {
+    // handle response
+}];
+```
+
+</CodeGroup>
+
+<Warning>
+Manual location tracking calls are subject to rate limits. Use background tracking for continuous location updates.
+</Warning>
+
+## Background Tracking
+
+Start background tracking with configurable options to monitor location continuously.
+
+### Tracking Presets
+
+Radar provides three built-in tracking presets optimized for different use cases:
+
+<Steps>
+
+<Step title="Continuous Tracking">
+
+Updates about every 30 seconds while moving or stopped. Moderate battery usage. Shows the flashing blue status bar during tracking.
+
+<CodeGroup>
+
+```swift Swift
+Radar.startTracking(trackingOptions: .presetContinuous)
+```
+
+```objective-c Objective-C
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetContinuous];
+```
+
+</CodeGroup>
+
+**Use Cases**: Real-time delivery tracking, ride-sharing, live location sharing
+
+</Step>
+
+<Step title="Responsive Tracking">
+
+Updates about every 2.5 minutes when moving and shuts down when stopped to save battery. Once stopped, the device will need to move more than 100 meters to wake up and start moving again. Low battery usage.
+
+<CodeGroup>
+
+```swift Swift
+Radar.startTracking(trackingOptions: .presetResponsive)
+```
+
+```objective-c Objective-C
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetResponsive];
+```
+
+</CodeGroup>
+
+**Use Cases**: Curbside pickup, fleet tracking, asset tracking
+
+<Note>
+Location updates may be delayed significantly by Low Power Mode, or if the device has connectivity issues, low battery, or Wi-Fi disabled.
+</Note>
+
+</Step>
+
+<Step title="Efficient Tracking">
+
+Uses the iOS visit monitoring service to update only on stops and exits. Once stopped, the device will need to move several hundred meters and trigger a visit departure to wake up. Lowest battery usage.
+
+<CodeGroup>
+
+```swift Swift
+Radar.startTracking(trackingOptions: .presetEfficient)
+```
+
+```objective-c Objective-C
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetEfficient];
+```
+
+</CodeGroup>
+
+**Use Cases**: Store visits, loyalty programs, analytics
+
+</Step>
+
+</Steps>
+
+### Custom Tracking Options
+
+You can create custom tracking options for fine-grained control:
+
+<CodeGroup>
+
+```swift Swift
+let trackingOptions = RadarTrackingOptions.presetContinuous
+trackingOptions.desiredStoppedUpdateInterval = 180 // 3 minutes
+trackingOptions.desiredMovingUpdateInterval = 60 // 1 minute
+trackingOptions.desiredSyncInterval = 50
+trackingOptions.desiredAccuracy = .medium
+trackingOptions.stopDuration = 140
+trackingOptions.stopDistance = 70
+trackingOptions.replay = .stops
+trackingOptions.syncLocations = .all
+trackingOptions.showBlueBar = false
+trackingOptions.useStoppedGeofence = true
+trackingOptions.stoppedGeofenceRadius = 100
+trackingOptions.useMovingGeofence = false
+trackingOptions.syncGeofences = true
+trackingOptions.useVisits = false
+trackingOptions.useSignificantLocationChanges = false
+trackingOptions.beacons = false
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objective-c Objective-C
+RadarTrackingOptions *trackingOptions = RadarTrackingOptions.presetContinuous;
+trackingOptions.desiredStoppedUpdateInterval = 180; // 3 minutes
+trackingOptions.desiredMovingUpdateInterval = 60; // 1 minute
+trackingOptions.desiredSyncInterval = 50;
+trackingOptions.desiredAccuracy = RadarTrackingOptionsDesiredAccuracyMedium;
+trackingOptions.stopDuration = 140;
+trackingOptions.stopDistance = 70;
+trackingOptions.replay = RadarTrackingOptionsReplayStops;
+trackingOptions.syncLocations = RadarTrackingOptionsSyncAll;
+trackingOptions.showBlueBar = NO;
+trackingOptions.useStoppedGeofence = YES;
+trackingOptions.stoppedGeofenceRadius = 100;
+trackingOptions.useMovingGeofence = NO;
+trackingOptions.syncGeofences = YES;
+trackingOptions.useVisits = NO;
+trackingOptions.useSignificantLocationChanges = NO;
+trackingOptions.beacons = NO;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+
+</CodeGroup>
+
+### Tracking Options Reference
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `desiredStoppedUpdateInterval` | `int` | Location update interval in seconds when stopped. Use 0 to shut down when stopped. |
+| `desiredMovingUpdateInterval` | `int` | Location update interval in seconds when moving. |
+| `desiredSyncInterval` | `int` | Sync interval in seconds. |
+| `desiredAccuracy` | `RadarTrackingOptionsDesiredAccuracy` | Desired accuracy of location updates (high, medium, low). |
+| `stopDuration` | `int` | Duration in seconds after which the device is considered stopped. |
+| `stopDistance` | `int` | Distance in meters within which the device is considered stopped. |
+| `startTrackingAfter` | `NSDate?` | When to start tracking. Use `nil` to start immediately. |
+| `stopTrackingAfter` | `NSDate?` | When to stop tracking. Use `nil` to track indefinitely. |
+| `replay` | `RadarTrackingOptionsReplay` | Which failed location updates to replay (stops, none, all). |
+| `syncLocations` | `RadarTrackingOptionsSyncLocations` | Which location updates to sync (all, stopsAndExits, none). |
+| `showBlueBar` | `BOOL` | Whether to show the flashing blue status bar when tracking. |
+| `useStoppedGeofence` | `BOOL` | Use iOS region monitoring to create a geofence when stopped. |
+| `stoppedGeofenceRadius` | `int` | Radius in meters of the geofence when stopped. |
+| `useMovingGeofence` | `BOOL` | Use iOS region monitoring to create a geofence when moving. |
+| `movingGeofenceRadius` | `int` | Radius in meters of the geofence when moving. |
+| `syncGeofences` | `BOOL` | Sync nearby geofences from server to improve responsiveness. |
+| `useVisits` | `BOOL` | Use the iOS visit monitoring service. |
+| `useSignificantLocationChanges` | `BOOL` | Use the iOS significant location change service. |
+| `beacons` | `BOOL` | Monitor beacons. |
+| `useMotion` | `BOOL` | Use the iOS motion activity service. |
+| `usePressure` | `BOOL` | Use the iOS pressure service. |
+
+### Stop Tracking
+
+Stop background tracking:
+
+<CodeGroup>
+
+```swift Swift
+Radar.stopTracking()
+```
+
+```objective-c Objective-C
+[Radar stopTracking];
+```
+
+</CodeGroup>
+
+### Check Tracking Status
+
+Check if tracking has been started:
+
+<CodeGroup>
+
+```swift Swift
+let isTracking = Radar.isTracking()
+print("Tracking status: \(isTracking)")
+```
+
+```objective-c Objective-C
+BOOL isTracking = [Radar isTracking];
+NSLog(@"Tracking status: %d", isTracking);
+```
+
+</CodeGroup>
+
+### Get Current Tracking Options
+
+Retrieve the current tracking options:
+
+<CodeGroup>
+
+```swift Swift
+let trackingOptions = Radar.getTrackingOptions()
+print("Update interval: \(trackingOptions.desiredMovingUpdateInterval)")
+```
+
+```objective-c Objective-C
+RadarTrackingOptions *trackingOptions = [Radar getTrackingOptions];
+NSLog(@"Update interval: %d", trackingOptions.desiredMovingUpdateInterval);
+```
+
+</CodeGroup>
+
+## Get Location
+
+Get the device's current location without tracking:
+
+<CodeGroup>
+
+```swift Swift
+Radar.getLocation { (status, location, stopped) in
+    if status == .success {
+        print("Location: \(location)")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar getLocationWithCompletionHandler:^(RadarStatus status, CLLocation * _Nullable location, BOOL stopped) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Location: %@", location);
+    }
+}];
+```
+
+</CodeGroup>
+
+## Mock Tracking for Testing
+
+Simulate user movement for testing:
+
+<CodeGroup>
+
+```swift Swift
+let origin = CLLocation(latitude: 40.7128, longitude: -74.0060)
+let destination = CLLocation(latitude: 40.7589, longitude: -73.9851)
+
+Radar.mockTracking(
+    origin: origin,
+    destination: destination,
+    mode: .car,
+    steps: 10,
+    interval: 3
+) { (status, location, events, user) in
+    // receive updates at each step
+}
+```
+
+```objective-c Objective-C
+CLLocation *origin = [[CLLocation alloc] initWithLatitude:40.7128 longitude:-74.0060];
+CLLocation *destination = [[CLLocation alloc] initWithLatitude:40.7589 longitude:-73.9851];
+
+[Radar mockTrackingWithOrigin:origin
+                  destination:destination
+                         mode:RadarRouteModeCar
+                        steps:10
+                     interval:3
+            completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarEvent *> * _Nullable events, RadarUser * _Nullable user) {
+    // receive updates at each step
+}];
+```
+
+</CodeGroup>
+
+<Tip>
+Mock tracking is useful for testing geofence entry/exit events and trip tracking during development.
+</Tip>
+
+## Anonymous Tracking
+
+Enable anonymous tracking to avoid creating user records on the server:
+
+<CodeGroup>
+
+```swift Swift
+Radar.setAnonymousTrackingEnabled(true)
+```
+
+```objective-c Objective-C
+[Radar setAnonymousTrackingEnabled:YES];
+```
+
+</CodeGroup>
+
+<Warning>
+Anonymous tracking avoids sending stable device IDs, user IDs, and user metadata to the server. This limits some functionality but enhances privacy.
+</Warning>
+
+## Listening for Events
+
+Implement the `RadarDelegate` protocol to receive location updates and events client-side:
+
+<CodeGroup>
+
+```swift Swift
+class MyRadarDelegate: NSObject, RadarDelegate {
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        for event in events {
+            // handle geofence entry, exit, dwell, etc.
+            print("Event type: \(event.type)")
+        }
+    }
+    
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        // location was updated and synced to server
+        print("User location: \(location.coordinate)")
+    }
+    
+    func didUpdateClientLocation(_ location: CLLocation, stopped: Bool, source: RadarLocationSource) {
+        // location was updated locally (may not be synced)
+    }
+    
+    func didFail(status: RadarStatus) {
+        // handle error
+    }
+}
+
+// Set the delegate
+Radar.setDelegate(MyRadarDelegate())
+```
+
+```objective-c Objective-C
+@interface MyRadarDelegate : NSObject <RadarDelegate>
+@end
+
+@implementation MyRadarDelegate
+
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        // handle geofence entry, exit, dwell, etc.
+        NSLog(@"Event type: %ld", (long)event.type);
+    }
+}
+
+- (void)didUpdateLocation:(CLLocation *)location user:(RadarUser *)user {
+    // location was updated and synced to server
+    NSLog(@"User location: %@", @(location.coordinate));
+}
+
+- (void)didUpdateClientLocation:(CLLocation *)location stopped:(BOOL)stopped source:(RadarLocationSource)source {
+    // location was updated locally (may not be synced)
+}
+
+- (void)didFailWithStatus:(RadarStatus)status {
+    // handle error
+}
+
+@end
+
+// Set the delegate
+[Radar setDelegate:[[MyRadarDelegate alloc] init]];
+```
+
+</CodeGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+
+<Card title="Choose the Right Preset" icon="sliders">
+Select a tracking preset based on your use case. Continuous for real-time tracking, Responsive for balanced updates, Efficient for visit-based tracking.
+</Card>
+
+<Card title="Request Permissions" icon="shield-check">
+Request location permissions before starting tracking. Use `requestAlwaysAuthorization()` for background tracking.
+</Card>
+
+<Card title="Test with Mock Tracking" icon="flask">
+Use mock tracking during development to simulate user movement and test your integration.
+</Card>
+
+<Card title="Monitor Battery Usage" icon="battery-three-quarters">
+Balance location accuracy and update frequency with battery usage. Use Efficient preset for best battery life.
+</Card>
+
+</CardGroup>
+
+<Note>
+For more details on tracking, visit the [Radar documentation](https://radar.com/documentation/sdk/ios#tracking).
+</Note>

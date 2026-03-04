@@ -1,0 +1,261 @@
+---
+title: Installation
+description: Install the Radar iOS SDK using CocoaPods or Swift Package Manager
+---
+
+This guide will walk you through installing the Radar iOS SDK in your iOS application.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- Xcode 12.0 or later
+- iOS 10.0+ deployment target
+- A Radar account with a publishable API key ([sign up here](https://radar.com/signup))
+
+## Installation Methods
+
+The Radar iOS SDK can be installed using CocoaPods or Swift Package Manager.
+
+<Tabs>
+  <Tab title="CocoaPods">
+    <Steps>
+      <Step title="Install CocoaPods">
+        If you don't have CocoaPods installed, install it:
+        
+        ```bash
+        sudo gem install cocoapods
+        ```
+      </Step>
+      
+      <Step title="Create or update Podfile">
+        In your project directory, create a `Podfile` (if you don't have one) or add the Radar SDK:
+        
+        ```ruby
+        platform :ios, '10.0'
+        use_frameworks!
+
+        target 'YourApp' do
+          pod 'RadarSDK', '~> 3.27.0'
+        end
+        ```
+        
+        <Info>
+          The current version is **3.27.0**. Check [radar.com](https://radar.com) for the latest version.
+        </Info>
+      </Step>
+      
+      <Step title="Install the SDK">
+        Run the following command in your project directory:
+        
+        ```bash
+        pod install
+        ```
+        
+        <Warning>
+          After running `pod install`, always open your project using the `.xcworkspace` file, not the `.xcodeproj` file.
+        </Warning>
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Swift Package Manager">
+    <Steps>
+      <Step title="Add package dependency">
+        In Xcode, go to **File > Add Packages...**
+        
+        Enter the Radar SDK repository URL:
+        
+        ```
+        https://github.com/radarlabs/radar-sdk-ios-spm
+        ```
+        
+        <Note>
+          For Swift Package Manager, use the [radar-sdk-ios-spm](https://github.com/radarlabs/radar-sdk-ios-spm) repository instead of the main repository.
+        </Note>
+      </Step>
+      
+      <Step title="Select version">
+        Choose the version rule:
+        - **Up to Next Major**: Recommended for automatic minor updates
+        - **Exact Version**: 3.27.0 for the current release
+      </Step>
+      
+      <Step title="Add to target">
+        Select your app target and click **Add Package**.
+        
+        Choose **RadarSDK** from the list of products.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Configure Info.plist
+
+The Radar SDK requires location permissions. Add the following keys to your `Info.plist` file:
+
+<Steps>
+  <Step title="Add location usage descriptions">
+    Add usage description strings that explain why your app needs location access. These are shown to users in permission prompts.
+    
+    ```xml
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We use your location to provide location-based features and notifications.</string>
+    
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We use your location to provide location-based features.</string>
+    ```
+    
+    <Warning>
+      **Required**: Both keys are required even if you only need foreground location access. Customize the descriptions to match your app's use case.
+    </Warning>
+  </Step>
+  
+  <Step title="Add motion usage description (optional)">
+    If you want to use motion tracking for improved accuracy, add:
+    
+    ```xml
+    <key>NSMotionUsageDescription</key>
+    <string>We use motion data to improve location accuracy.</string>
+    ```
+  </Step>
+</Steps>
+
+## Enable Background Modes
+
+If you need background location tracking, enable the **Location updates** background mode:
+
+<Steps>
+  <Step title="Open project settings">
+    In Xcode, select your project in the Project Navigator.
+  </Step>
+  
+  <Step title="Select your target">
+    Select your app target from the **TARGETS** list.
+  </Step>
+  
+  <Step title="Enable background modes">
+    Go to the **Signing & Capabilities** tab.
+    
+    Click **+ Capability** and add **Background Modes**.
+    
+    Check **Location updates**.
+    
+    <Info>
+      This allows your app to receive location updates while running in the background, which is required for features like geofencing and background tracking.
+    </Info>
+  </Step>
+</Steps>
+
+## Import the SDK
+
+In your Swift files, import the Radar SDK:
+
+```swift
+import RadarSDK
+```
+
+For Objective-C:
+
+```objective-c
+#import <RadarSDK/RadarSDK.h>
+```
+
+## Initialize the SDK
+
+Initialize the SDK in your `AppDelegate` before using any Radar methods:
+
+<CodeGroup>
+```swift Swift
+import UIKit
+import RadarSDK
+
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        // Initialize Radar with your publishable key
+        Radar.initialize(publishableKey: "prj_live_pk_...")
+        
+        return true
+    }
+}
+```
+
+```objective-c Objective-C
+#import "AppDelegate.h"
+#import <RadarSDK/RadarSDK.h>
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    // Initialize Radar with your publishable key
+    [Radar initializeWithPublishableKey:@"prj_live_pk_..."];
+    
+    return YES;
+}
+
+@end
+```
+</CodeGroup>
+
+<Warning>
+  **Replace `prj_live_pk_...`** with your actual publishable API key from the [Radar dashboard](https://radar.com/dashboard).
+  
+  Never use your secret key in client-side code!
+</Warning>
+
+## Advanced Initialization Options
+
+You can pass additional options during initialization:
+
+```swift
+let options = RadarInitializeOptions()
+options.autoLogNotificationConversions = true
+options.autoHandleNotificationDeepLinks = true
+
+Radar.initialize(publishableKey: "prj_live_pk_...", options: options)
+```
+
+### Available Options
+
+- `autoLogNotificationConversions`: Automatically log conversions when users interact with notifications
+- `autoHandleNotificationDeepLinks`: Automatically open deep links from Radar notifications
+- `silentPush`: Enable silent push notifications for location updates
+
+## Verify Installation
+
+To verify the SDK is installed correctly, check the SDK version:
+
+```swift
+print("Radar SDK version: \(Radar.sdkVersion)")
+```
+
+You should see output like:
+
+```
+Radar SDK version: 3.27.0
+```
+
+## Minimum iOS Version
+
+The Radar iOS SDK supports:
+
+- **iOS 10.0+** for Swift Package Manager
+- **iOS 12.0+** for CocoaPods (recommended)
+
+<Note>
+  While the SDK supports iOS 10.0+, we recommend targeting iOS 12.0+ for the best experience and full feature support.
+</Note>
+
+## Next Steps
+
+Now that you've installed the SDK, you're ready to start tracking location!
+
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Complete your first location tracking implementation
+</Card>

@@ -1,0 +1,598 @@
+---
+title: "Routing"
+description: "Calculate travel distances, durations, and optimal routes between locations"
+---
+
+Radar's Routing API calculates travel distances, durations, and route geometries between locations across multiple transportation modes.
+
+## Overview
+
+The Routing API supports:
+
+<CardGroup cols={2}>
+
+<Card title="Multiple Modes" icon="car">
+Foot, bike, car, truck, and motorbike routing
+</Card>
+
+<Card title="Route Matrices" icon="table">
+Calculate routes between multiple origins and destinations
+</Card>
+
+<Card title="Distance Units" icon="ruler">
+Imperial (feet/miles) or metric (meters/kilometers)
+</Card>
+
+<Card title="Route Geometry" icon="route">
+Get detailed route paths and turn-by-turn directions
+</Card>
+
+</CardGroup>
+
+## Calculate Distance
+
+### Distance from Current Location
+
+Calculate travel distance and duration from the device's current location to a destination:
+
+<CodeGroup>
+
+```swift Swift
+let destination = CLLocation(latitude: 40.70390, longitude: -73.98670)
+
+Radar.getDistance(
+    destination: destination,
+    modes: [.foot, .car],
+    units: .imperial
+) { status, routes in
+    if status == .success, let routes = routes {
+        // Car route
+        if let car = routes.car {
+            print("Car distance: \(car.distance.text)")
+            print("Car duration: \(car.duration.text)")
+            print("Raw distance: \(car.distance.value) feet")
+            print("Raw duration: \(car.duration.value) minutes")
+        }
+        
+        // Walking route
+        if let foot = routes.foot {
+            print("Walking distance: \(foot.distance.text)")
+            print("Walking duration: \(foot.duration.text)")
+        }
+        
+        // Geodesic (straight line) distance
+        if let geodesic = routes.geodesic {
+            print("Straight-line distance: \(geodesic.text)")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *destination = [[CLLocation alloc] initWithLatitude:40.70390 longitude:-73.98670];
+
+[Radar getDistanceToDestination:destination
+                          modes:RadarRouteModeFoot | RadarRouteModeCar
+                          units:RadarRouteUnitsImperial
+              completionHandler:^(RadarStatus status, RadarRoutes * _Nullable routes) {
+    if (status == RadarStatusSuccess && routes) {
+        // Car route
+        if (routes.car) {
+            NSLog(@"Car distance: %@", routes.car.distance.text);
+            NSLog(@"Car duration: %@", routes.car.duration.text);
+            NSLog(@"Raw distance: %f feet", routes.car.distance.value);
+            NSLog(@"Raw duration: %f minutes", routes.car.duration.value);
+        }
+        
+        // Walking route
+        if (routes.foot) {
+            NSLog(@"Walking distance: %@", routes.foot.distance.text);
+            NSLog(@"Walking duration: %@", routes.foot.duration.text);
+        }
+        
+        // Geodesic distance
+        if (routes.geodesic) {
+            NSLog(@"Straight-line distance: %@", routes.geodesic.text);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Distance Between Two Locations
+
+Calculate travel distance between any two coordinates:
+
+<CodeGroup>
+
+```swift Swift
+let origin = CLLocation(latitude: 40.78382, longitude: -73.97536)
+let destination = CLLocation(latitude: 40.70390, longitude: -73.98670)
+
+Radar.getDistance(
+    origin: origin,
+    destination: destination,
+    modes: [.foot, .bike, .car],
+    units: .metric
+) { status, routes in
+    if status == .success, let routes = routes {
+        // Compare travel times across modes
+        if let car = routes.car {
+            print("By car: \(car.duration.text) (\(car.distance.text))")
+        }
+        if let bike = routes.bike {
+            print("By bike: \(bike.duration.text) (\(bike.distance.text))")
+        }
+        if let foot = routes.foot {
+            print("Walking: \(foot.duration.text) (\(foot.distance.text))")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *origin = [[CLLocation alloc] initWithLatitude:40.78382 longitude:-73.97536];
+CLLocation *destination = [[CLLocation alloc] initWithLatitude:40.70390 longitude:-73.98670];
+
+[Radar getDistanceFromOrigin:origin
+                 destination:destination
+                       modes:RadarRouteModeFoot | RadarRouteModeBike | RadarRouteModeCar
+                       units:RadarRouteUnitsMetric
+           completionHandler:^(RadarStatus status, RadarRoutes * _Nullable routes) {
+    if (status == RadarStatusSuccess && routes) {
+        if (routes.car) {
+            NSLog(@"By car: %@ (%@)", routes.car.duration.text, routes.car.distance.text);
+        }
+        if (routes.bike) {
+            NSLog(@"By bike: %@ (%@)", routes.bike.duration.text, routes.bike.distance.text);
+        }
+        if (routes.foot) {
+            NSLog(@"Walking: %@ (%@)", routes.foot.duration.text, routes.foot.distance.text);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+## Travel Modes
+
+Radar supports multiple transportation modes:
+
+<Steps>
+
+<Step title="Foot">
+Walking routes optimized for pedestrians.
+
+```swift
+modes: [.foot]
+```
+</Step>
+
+<Step title="Bike">
+Bicycle routes using bike lanes and paths where available.
+
+```swift
+modes: [.bike]
+```
+</Step>
+
+<Step title="Car">
+Driving routes for passenger vehicles.
+
+```swift
+modes: [.car]
+```
+</Step>
+
+<Step title="Truck">
+Routes optimized for trucks, considering weight and height restrictions.
+
+```swift
+modes: [.truck]
+```
+</Step>
+
+<Step title="Motorbike">
+Motorcycle routes that may differ from car routes.
+
+```swift
+modes: [.motorbike]
+```
+</Step>
+
+</Steps>
+
+<Tip>
+You can request multiple modes in a single call to compare travel times:
+
+```swift
+modes: [.foot, .bike, .car]
+```
+</Tip>
+
+## Distance Units
+
+Choose between imperial and metric units:
+
+<CodeGroup>
+
+```swift Imperial
+Radar.getDistance(
+    destination: destination,
+    modes: [.car],
+    units: .imperial  // Feet and miles
+) { status, routes in
+    // distance.value is in feet
+    // duration.value is in minutes
+}
+```
+
+```swift Metric
+Radar.getDistance(
+    destination: destination,
+    modes: [.car],
+    units: .metric  // Meters and kilometers
+) { status, routes in
+    // distance.value is in meters
+    // duration.value is in minutes
+}
+```
+
+</CodeGroup>
+
+## Route Geometry
+
+Access detailed route geometry for mapping:
+
+```swift
+Radar.getDistance(
+    origin: origin,
+    destination: destination,
+    modes: [.car],
+    units: .imperial
+) { status, routes in
+    if let car = routes?.car {
+        let geometry = car.geometry
+        
+        // Get coordinates for drawing on map
+        let coordinates = geometry.coordinates
+        print("Route has \(coordinates.count) points")
+        
+        // Draw route on map
+        let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+        mapView.addOverlay(polyline)
+    }
+}
+```
+
+## Route Matrix
+
+Calculate routes between multiple origins and destinations in a single request (up to 25 routes).
+
+### Basic Matrix Calculation
+
+<CodeGroup>
+
+```swift Swift
+let origins = [
+    CLLocation(latitude: 40.78382, longitude: -73.97536),
+    CLLocation(latitude: 40.70390, longitude: -73.98670)
+]
+
+let destinations = [
+    CLLocation(latitude: 40.64189, longitude: -73.78779),
+    CLLocation(latitude: 35.99801, longitude: -78.94294)
+]
+
+Radar.getMatrix(
+    origins: origins,
+    destinations: destinations,
+    mode: .car,
+    units: .imperial
+) { status, matrix in
+    if status == .success, let matrix = matrix {
+        // Get route from origin 0 to destination 0
+        if let route = matrix.routeBetween(originIndex: 0, destinationIndex: 0) {
+            print("Route [0,0]: \(route.duration.text)")
+        }
+        
+        // Get route from origin 0 to destination 1
+        if let route = matrix.routeBetween(originIndex: 0, destinationIndex: 1) {
+            print("Route [0,1]: \(route.duration.text)")
+        }
+        
+        // Get route from origin 1 to destination 0
+        if let route = matrix.routeBetween(originIndex: 1, destinationIndex: 0) {
+            print("Route [1,0]: \(route.duration.text)")
+        }
+        
+        // Get route from origin 1 to destination 1
+        if let route = matrix.routeBetween(originIndex: 1, destinationIndex: 1) {
+            print("Route [1,1]: \(route.duration.text)")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+NSArray<CLLocation *> *origins = @[
+    [[CLLocation alloc] initWithLatitude:40.78382 longitude:-73.97536],
+    [[CLLocation alloc] initWithLatitude:40.70390 longitude:-73.98670]
+];
+
+NSArray<CLLocation *> *destinations = @[
+    [[CLLocation alloc] initWithLatitude:40.64189 longitude:-73.78779],
+    [[CLLocation alloc] initWithLatitude:35.99801 longitude:-78.94294]
+];
+
+[Radar getMatrixFromOrigins:origins
+               destinations:destinations
+                       mode:RadarRouteModeCar
+                      units:RadarRouteUnitsImperial
+          completionHandler:^(RadarStatus status, RadarRouteMatrix * _Nullable matrix) {
+    if (status == RadarStatusSuccess && matrix) {
+        // Get routes between origins and destinations
+        RadarRoute *route00 = [matrix routeBetweenOriginIndex:0 destinationIndex:0];
+        if (route00) {
+            NSLog(@"Route [0,0]: %@", route00.duration.text);
+        }
+        
+        RadarRoute *route01 = [matrix routeBetweenOriginIndex:0 destinationIndex:1];
+        if (route01) {
+            NSLog(@"Route [0,1]: %@", route01.duration.text);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Matrix Use Cases
+
+<Accordion title="Delivery Route Optimization">
+
+Find the optimal driver assignment for multiple deliveries:
+
+```swift
+let driverLocations = [ /* driver CLLocations */ ]
+let deliveryLocations = [ /* delivery CLLocations */ ]
+
+Radar.getMatrix(
+    origins: driverLocations,
+    destinations: deliveryLocations,
+    mode: .car,
+    units: .imperial
+) { status, matrix in
+    // Find shortest route for each delivery
+    for destIndex in 0..<deliveryLocations.count {
+        var shortestDuration = Double.infinity
+        var bestDriver = 0
+        
+        for driverIndex in 0..<driverLocations.count {
+            if let route = matrix?.routeBetween(originIndex: driverIndex, destinationIndex: destIndex) {
+                if route.duration.value < shortestDuration {
+                    shortestDuration = route.duration.value
+                    bestDriver = driverIndex
+                }
+            }
+        }
+        
+        print("Delivery \(destIndex) closest to driver \(bestDriver)")
+    }
+}
+```
+
+</Accordion>
+
+<Accordion title="Store Locator with Drive Time">
+
+Show stores sorted by actual drive time, not straight-line distance:
+
+```swift
+let userLocation = [ /* user location */ ]
+let storeLocations = [ /* store locations */ ]
+
+Radar.getMatrix(
+    origins: [userLocation],
+    destinations: storeLocations,
+    mode: .car,
+    units: .imperial
+) { status, matrix in
+    var storesWithTimes: [(index: Int, duration: Double)] = []
+    
+    for storeIndex in 0..<storeLocations.count {
+        if let route = matrix?.routeBetween(originIndex: 0, destinationIndex: storeIndex) {
+            storesWithTimes.append((storeIndex, route.duration.value))
+        }
+    }
+    
+    // Sort by drive time
+    storesWithTimes.sort { $0.duration < $1.duration }
+    
+    // Display sorted stores
+    for (storeIndex, duration) in storesWithTimes {
+        print("Store \(storeIndex): \(duration) minutes away")
+    }
+}
+```
+
+</Accordion>
+
+<Note>
+Route matrices support up to 25 total routes (e.g., 5 origins × 5 destinations).
+</Note>
+
+## Response Objects
+
+### RadarRoutes
+
+The `RadarRoutes` object contains route information for each requested mode:
+
+```swift
+public class RadarRoutes {
+    public let geodesic: RadarRouteDistance?  // Straight-line distance
+    public let foot: RadarRoute?              // Walking route
+    public let bike: RadarRoute?              // Biking route
+    public let car: RadarRoute?               // Driving route
+    public let truck: RadarRoute?             // Truck route
+    public let motorbike: RadarRoute?         // Motorcycle route
+}
+```
+
+### RadarRoute
+
+Each route contains distance, duration, and geometry:
+
+```swift
+public class RadarRoute {
+    public let distance: RadarRouteDistance   // Distance information
+    public let duration: RadarRouteDuration   // Duration information
+    public let geometry: RadarRouteGeometry   // Route coordinates
+}
+```
+
+### RadarRouteDistance
+
+Distance with both numeric value and formatted text:
+
+```swift
+public class RadarRouteDistance {
+    public let value: Double     // Distance in feet (imperial) or meters (metric)
+    public let text: String      // Formatted string (e.g., "2.4 mi" or "3.8 km")
+}
+```
+
+### RadarRouteDuration
+
+Duration with both numeric value and formatted text:
+
+```swift
+public class RadarRouteDuration {
+    public let value: Double     // Duration in minutes
+    public let text: String      // Formatted string (e.g., "23 min")
+}
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+
+<Card title="Delivery ETA" icon="clock">
+Calculate accurate delivery time estimates based on real routes.
+</Card>
+
+<Card title="Store Locator" icon="store">
+Show users the nearest stores by actual drive time.
+</Card>
+
+<Card title="Fleet Management" icon="truck">
+Optimize driver assignments and route planning.
+</Card>
+
+<Card title="Geofence Radius" icon="draw-circle">
+Determine if a location is within a travel time threshold.
+</Card>
+
+</CardGroup>
+
+## Performance Tips
+
+<Steps>
+
+<Step title="Request Only Needed Modes">
+Only request the transportation modes you'll actually use:
+
+```swift
+// Good: Only what you need
+modes: [.car]
+
+// Wasteful: Requesting modes you won't use
+modes: [.foot, .bike, .car, .truck, .motorbike]
+```
+</Step>
+
+<Step title="Use Matrices Efficiently">
+Batch multiple route calculations into a single matrix request:
+
+```swift
+// Good: Single matrix request
+Radar.getMatrix(origins: origins, destinations: destinations, ...)
+
+// Bad: Multiple individual requests
+for origin in origins {
+    for destination in destinations {
+        Radar.getDistance(origin: origin, destination: destination, ...)
+    }
+}
+```
+</Step>
+
+<Step title="Cache Route Results">
+Cache route calculations to avoid redundant API calls:
+
+```swift
+let routeCache = NSCache<NSString, RadarRoute>()
+
+let cacheKey = "\(origin.coordinate),\(destination.coordinate)" as NSString
+if let cached = routeCache.object(forKey: cacheKey) {
+    return cached
+}
+```
+</Step>
+
+</Steps>
+
+## Error Handling
+
+```swift
+Radar.getDistance(
+    origin: origin,
+    destination: destination,
+    modes: [.car],
+    units: .imperial
+) { status, routes in
+    switch status {
+    case .success:
+        print("Route calculated successfully")
+        
+    case .errorLocation:
+        print("Invalid location coordinates")
+        
+    case .errorNetwork:
+        print("Network error occurred")
+        
+    case .errorRateLimit:
+        print("Rate limit exceeded")
+        
+    case .errorBadRequest:
+        print("Invalid request parameters")
+        
+    default:
+        print("Error: \(Radar.stringForStatus(status))")
+    }
+}
+```
+
+## Learn More
+
+<CardGroup cols={2}>
+
+<Card title="Routing API" icon="route" href="https://radar.com/documentation/api#routing">
+Explore the complete Routing API reference
+</Card>
+
+<Card title="Trip Tracking" icon="location-arrow" href="/trip-tracking">
+Track trips with live ETA updates
+</Card>
+
+<Card title="Search" icon="magnifying-glass" href="/location/search">
+Search for places and geofences
+</Card>
+
+<Card title="Context" icon="map-location-dot" href="/location/context">
+Get comprehensive location context
+</Card>
+
+</CardGroup>

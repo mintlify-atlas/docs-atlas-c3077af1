@@ -1,122 +1,153 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Radar iOS SDK",
+  "theme": "aspen",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#040454",
+    "light": "#7c84ac",
+    "dark": "#c5c6d8"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/69780c9d-6118-4b67-9bc6-57799057eaa4.png",
+  "logo": {
+    "light": "https://media.brand.dev/cf6247b7-f981-4682-9a40-055d1ead2fde.svg",
+    "dark": "https://media.brand.dev/cf6247b7-f981-4682-9a40-055d1ead2fde.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/radarlabs/radar-sdk-ios"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/radarlabs/radar-sdk-ios"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Features",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "features/tracking",
+              "features/geofencing",
+              "features/trip-tracking",
+              "features/beacons",
+              "features/fraud-verification"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Location Services",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "location/geocoding",
+              "location/search",
+              "location/context",
+              "location/routing"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Configuration",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "configuration/tracking-options",
+              "configuration/permissions",
+              "configuration/delegates",
+              "configuration/anonymous-tracking"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/background-modes",
+              "advanced/motion-detection",
+              "advanced/indoors",
+              "advanced/push-notifications",
+              "advanced/in-app-messages"
+            ]
+          },
+          {
+            "group": "Migration & Support",
+            "pages": [
+              "migration-guide",
+              "troubleshooting",
+              "faq"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core",
             "pages": [
-              "api-reference/introduction"
+              "api/radar",
+              "api/radar-delegate",
+              "api/radar-status"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Tracking",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/radar-tracking-options",
+              "api/radar-trip-options",
+              "api/radar-trip",
+              "api/radar-trip-leg"
+            ]
+          },
+          {
+            "group": "Events & Context",
+            "pages": [
+              "api/radar-event",
+              "api/radar-user",
+              "api/radar-context"
+            ]
+          },
+          {
+            "group": "Geofences & Places",
+            "pages": [
+              "api/radar-geofence",
+              "api/radar-place",
+              "api/radar-region",
+              "api/radar-chain",
+              "api/radar-beacon"
+            ]
+          },
+          {
+            "group": "Location Data",
+            "pages": [
+              "api/radar-address",
+              "api/radar-route",
+              "api/radar-route-matrix"
+            ]
+          },
+          {
+            "group": "Fraud & Verification",
+            "pages": [
+              "api/radar-verified-location-token",
+              "api/radar-fraud",
+              "api/radar-verified-delegate"
+            ]
+          },
+          {
+            "group": "Extensions",
+            "pages": [
+              "api/radar-in-app-message",
+              "api/radar-motion-protocol",
+              "api/radar-indoors-protocol"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

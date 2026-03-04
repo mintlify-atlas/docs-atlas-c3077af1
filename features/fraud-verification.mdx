@@ -1,0 +1,653 @@
+---
+title: "Location Verification & Fraud Detection"
+description: "Verify user location and detect fraud with device integrity checks on iOS"
+---
+
+## Overview
+
+Radar's location verification feature enables you to verify a user's location with high confidence using device integrity checks and cryptographic attestation. Perfect for geofencing compliance, location-based promotions, fraud prevention, and regulatory requirements.
+
+## How It Works
+
+Location verification combines:
+
+1. **Device Integrity**: Uses Apple's DeviceCheck framework to verify the device is genuine
+2. **Location Accuracy**: Validates GPS accuracy and checks for spoofing
+3. **Cryptographic Token**: Returns a signed JWT that can be verified server-side
+4. **Fraud Detection**: Checks for VPNs, proxies, emulators, and location spoofing
+5. **Jurisdiction Validation**: Optionally validates the user is in expected country/state
+
+<Info>
+**Prerequisites**: SSL pinning must be configured before using verified tracking. This prevents man-in-the-middle attacks and ensures secure communication.
+</Info>
+
+## Setting Up SSL Pinning
+
+Configure SSL pinning before calling any verified tracking methods:
+
+<CodeGroup>
+
+```swift Swift
+import RadarSDK
+
+// In your AppDelegate or app initialization
+let initializeOptions = RadarInitializeOptions()
+initializeOptions.enableCertificatePinning = true
+
+Radar.initialize(
+    publishableKey: "prj_live_pk_...",
+    options: initializeOptions
+)
+```
+
+```objective-c Objective-C
+#import <RadarSDK/RadarSDK.h>
+
+// In your AppDelegate or app initialization
+RadarInitializeOptions *initializeOptions = [[RadarInitializeOptions alloc] init];
+initializeOptions.enableCertificatePinning = YES;
+
+[Radar initializeWithPublishableKey:@"prj_live_pk_..."
+                            options:initializeOptions];
+```
+
+</CodeGroup>
+
+<Warning>
+SSL pinning is required for location verification. Calls to `trackVerified()` will fail without it.
+</Warning>
+
+## Track Verified Location
+
+Track a user's location with device integrity verification:
+
+<CodeGroup>
+
+```swift Swift
+Radar.trackVerified { (status, token) in
+    if status == .success {
+        if let token = token {
+            print("Verified location token: \(token.token ?? "")")
+            print("Passed verification: \(token.passed)")
+            
+            if token.passed {
+                // User passed all checks
+                print("User verified at location")
+            } else {
+                // User failed one or more checks
+                if let reasons = token.failureReasons {
+                    print("Failed verification: \(reasons.joined(separator: ", "))")
+                }
+            }
+            
+            // Send token to your server for verification
+            sendTokenToServer(token.token)
+        }
+    } else {
+        // Handle error
+        print("Verification failed: \(status)")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar trackVerifiedWithCompletionHandler:^(RadarStatus status, RadarVerifiedLocationToken * _Nullable token) {
+    if (status == RadarStatusSuccess) {
+        if (token) {
+            NSLog(@"Verified location token: %@", token.token);
+            NSLog(@"Passed verification: %d", token.passed);
+            
+            if (token.passed) {
+                // User passed all checks
+                NSLog(@"User verified at location");
+            } else {
+                // User failed one or more checks
+                if (token.failureReasons) {
+                    NSLog(@"Failed verification: %@", [token.failureReasons componentsJoinedByString:@", "]);
+                }
+            }
+            
+            // Send token to your server for verification
+            [self sendTokenToServer:token.token];
+        }
+    } else {
+        // Handle error
+        NSLog(@"Verification failed: %ld", (long)status);
+    }
+}];
+```
+
+</CodeGroup>
+
+### Track Verified with Options
+
+Specify accuracy, beacon ranging, and additional context:
+
+<CodeGroup>
+
+```swift Swift
+Radar.trackVerified(
+    beacons: false,
+    desiredAccuracy: .high,
+    reason: "checkout",
+    transactionId: "txn-123"
+) { (status, token) in
+    if status == .success {
+        // handle verification token
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar trackVerifiedWithBeacons:NO
+                 desiredAccuracy:RadarTrackingOptionsDesiredAccuracyHigh
+                          reason:@"checkout"
+                   transactionId:@"txn-123"
+               completionHandler:^(RadarStatus status, RadarVerifiedLocationToken * _Nullable token) {
+    if (status == RadarStatusSuccess) {
+        // handle verification token
+    }
+}];
+```
+
+</CodeGroup>
+
+### Track Verified Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `beacons` | `BOOL` | Whether to range nearby beacons for additional verification. |
+| `desiredAccuracy` | `RadarTrackingOptionsDesiredAccuracy` | Desired GPS accuracy (high, medium, low). |
+| `reason` | `String?` | Optional reason for verification (e.g., "checkout", "sign_in"). |
+| `transactionId` | `String?` | Optional transaction or session ID for tracking. |
+
+## Continuous Verified Tracking
+
+Start continuous background tracking with verification:
+
+<CodeGroup>
+
+```swift Swift
+// Start verified tracking with 30-second intervals
+Radar.startTrackingVerified(interval: 30, beacons: false)
+
+// Check if verified tracking is active
+let isTracking = Radar.isTrackingVerified()
+print("Verified tracking active: \(isTracking)")
+```
+
+```objective-c Objective-C
+// Start verified tracking with 30-second intervals
+[Radar startTrackingVerifiedWithInterval:30 beacons:NO];
+
+// Check if verified tracking is active
+BOOL isTracking = [Radar isTrackingVerified];
+NSLog(@"Verified tracking active: %d", isTracking);
+```
+
+</CodeGroup>
+
+### Stop Verified Tracking
+
+<CodeGroup>
+
+```swift Swift
+Radar.stopTrackingVerified()
+```
+
+```objective-c Objective-C
+[Radar stopTrackingVerified];
+```
+
+</CodeGroup>
+
+<Note>
+Verified tracking runs in addition to regular tracking. It generates verified location tokens at specified intervals.
+</Note>
+
+## Getting Verified Location Token
+
+Retrieve a cached verified location token if still valid:
+
+<CodeGroup>
+
+```swift Swift
+Radar.getVerifiedLocationToken { (status, token) in
+    if status == .success {
+        if let token = token, token.expiresIn > 0 {
+            print("Valid token expires in: \(token.expiresIn) seconds")
+            // Use cached token
+        } else {
+            print("Token expired or unavailable, requesting fresh token")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar getVerifiedLocationToken:^(RadarStatus status, RadarVerifiedLocationToken * _Nullable token) {
+    if (status == RadarStatusSuccess) {
+        if (token && token.expiresIn > 0) {
+            NSLog(@"Valid token expires in: %f seconds", token.expiresIn);
+            // Use cached token
+        } else {
+            NSLog(@"Token expired or unavailable, requesting fresh token");
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Clear Cached Token
+
+<CodeGroup>
+
+```swift Swift
+Radar.clearVerifiedLocationToken()
+```
+
+```objective-c Objective-C
+[Radar clearVerifiedLocationToken];
+```
+
+</CodeGroup>
+
+## Verified Location Token
+
+The `RadarVerifiedLocationToken` object contains:
+
+<CodeGroup>
+
+```swift Swift
+let token: RadarVerifiedLocationToken
+
+// JWT token - verify server-side with your secret key
+let jwt = token.token
+
+// Verification result
+let passed = token.passed // true if all checks passed
+
+// User and events
+let user = token.user
+let events = token.events
+
+// Failure reasons (if any)
+if let reasons = token.failureReasons {
+    for reason in reasons {
+        print("Failed check: \(reason)")
+    }
+}
+
+// Token metadata
+let checkId = token._id // Radar check ID
+let expiresAt = token.expiresAt // Expiration date
+let expiresIn = token.expiresIn // Seconds until expiration
+
+// Full dictionary value
+let fullDict = token.fullDict
+```
+
+```objective-c Objective-C
+RadarVerifiedLocationToken *token;
+
+// JWT token - verify server-side with your secret key
+NSString *jwt = token.token;
+
+// Verification result
+BOOL passed = token.passed; // true if all checks passed
+
+// User and events
+RadarUser *user = token.user;
+NSArray<RadarEvent *> *events = token.events;
+
+// Failure reasons (if any)
+if (token.failureReasons) {
+    for (NSString *reason in token.failureReasons) {
+        NSLog(@"Failed check: %@", reason);
+    }
+}
+
+// Token metadata
+NSString *checkId = token._id; // Radar check ID
+NSDate *expiresAt = token.expiresAt; // Expiration date
+NSTimeInterval expiresIn = token.expiresIn; // Seconds until expiration
+
+// Full dictionary value
+NSDictionary *fullDict = token.fullDict;
+```
+
+</CodeGroup>
+
+## Jurisdiction Validation
+
+Set expected jurisdiction (country and state) to verify user location:
+
+<CodeGroup>
+
+```swift Swift
+// Set expected jurisdiction
+Radar.setExpectedJurisdiction(countryCode: "US", stateCode: "NY")
+
+// Track verified
+Radar.trackVerified { (status, token) in
+    if let token = token {
+        if token.passed {
+            print("User verified in expected jurisdiction")
+        } else if let reasons = token.failureReasons {
+            // May include "jurisdiction_mismatch"
+            print("Failed: \(reasons)")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+// Set expected jurisdiction
+[Radar setExpectedJurisdictionWithCountryCode:@"US" stateCode:@"NY"];
+
+// Track verified
+[Radar trackVerifiedWithCompletionHandler:^(RadarStatus status, RadarVerifiedLocationToken * _Nullable token) {
+    if (token) {
+        if (token.passed) {
+            NSLog(@"User verified in expected jurisdiction");
+        } else if (token.failureReasons) {
+            // May include "jurisdiction_mismatch"
+            NSLog(@"Failed: %@", token.failureReasons);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+<Tip>
+Use jurisdiction validation for geofencing compliance, region-restricted content, or regulatory requirements.
+</Tip>
+
+## Listening for Verified Tokens
+
+Implement `RadarVerifiedDelegate` to receive verified location tokens:
+
+<CodeGroup>
+
+```swift Swift
+class MyVerifiedDelegate: NSObject, RadarVerifiedDelegate {
+    func didUpdateToken(_ token: RadarVerifiedLocationToken) {
+        print("Received verified token: \(token.token ?? "")")
+        print("Passed: \(token.passed)")
+        
+        if token.passed {
+            // User location verified
+            sendTokenToServer(token.token)
+        } else {
+            // Verification failed
+            handleVerificationFailure(token.failureReasons)
+        }
+    }
+    
+    func didFail(status: RadarStatus) {
+        print("Verification failed: \(status)")
+    }
+}
+
+// Set the verified delegate
+Radar.setVerifiedDelegate(MyVerifiedDelegate())
+```
+
+```objective-c Objective-C
+@interface MyVerifiedDelegate : NSObject <RadarVerifiedDelegate>
+@end
+
+@implementation MyVerifiedDelegate
+
+- (void)didUpdateToken:(RadarVerifiedLocationToken *)token {
+    NSLog(@"Received verified token: %@", token.token);
+    NSLog(@"Passed: %d", token.passed);
+    
+    if (token.passed) {
+        // User location verified
+        [self sendTokenToServer:token.token];
+    } else {
+        // Verification failed
+        [self handleVerificationFailure:token.failureReasons];
+    }
+}
+
+- (void)didFailWithStatus:(RadarStatus)status {
+    NSLog(@"Verification failed: %ld", (long)status);
+}
+
+@end
+
+// Set the verified delegate
+[Radar setVerifiedDelegate:[[MyVerifiedDelegate alloc] init]];
+```
+
+</CodeGroup>
+
+## Server-Side Verification
+
+Verify the JWT token server-side using your Radar secret key:
+
+```bash
+curl https://api.radar.io/v1/verify \
+  -H "Authorization: your_secret_key" \
+  -d token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+The token payload includes:
+
+```json
+{
+  "user": { /* User object */ },
+  "events": [ /* Array of events */ ],
+  "passed": true,
+  "failureReasons": [],
+  "location": { /* Location coordinates */ },
+  "fraud": { /* Fraud check results */ }
+}
+```
+
+<Warning>
+**Always verify tokens server-side**. Never trust client-side verification alone for security-critical decisions.
+</Warning>
+
+## Failure Reasons
+
+Common failure reasons include:
+
+| Reason | Description |
+|--------|-------------|
+| `jurisdiction_mismatch` | User is not in the expected country or state |
+| `location_spoofing` | Location spoofing detected |
+| `device_integrity_failed` | Device failed integrity checks |
+| `inaccurate_location` | GPS accuracy is insufficient |
+| `vpn_detected` | VPN or proxy detected |
+| `emulator_detected` | App running on emulator/simulator |
+| `low_confidence` | Location confidence is below threshold |
+
+<CodeGroup>
+
+```swift Swift
+if let reasons = token.failureReasons {
+    for reason in reasons {
+        switch reason {
+        case "jurisdiction_mismatch":
+            print("User outside expected region")
+        case "location_spoofing":
+            print("Location spoofing detected")
+        case "vpn_detected":
+            print("VPN/proxy detected")
+        case "device_integrity_failed":
+            print("Device integrity check failed")
+        default:
+            print("Verification failed: \(reason)")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+if (token.failureReasons) {
+    for (NSString *reason in token.failureReasons) {
+        if ([reason isEqualToString:@"jurisdiction_mismatch"]) {
+            NSLog(@"User outside expected region");
+        } else if ([reason isEqualToString:@"location_spoofing"]) {
+            NSLog(@"Location spoofing detected");
+        } else if ([reason isEqualToString:@"vpn_detected"]) {
+            NSLog(@"VPN/proxy detected");
+        } else if ([reason isEqualToString:@"device_integrity_failed"]) {
+            NSLog(@"Device integrity check failed");
+        } else {
+            NSLog(@"Verification failed: %@", reason);
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+## Fraud Detection Events
+
+When fraud is detected, Radar generates a fraud event:
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        if event.type == .userFailedFraud {
+            if let fraud = event.fraud {
+                print("Fraud detected")
+                print("Passed: \(fraud.passed)")
+                
+                // Check specific fraud flags
+                if fraud.proxy {
+                    print("Proxy detected")
+                }
+                if fraud.mocked {
+                    print("Location mocking detected")
+                }
+                if fraud.jumped {
+                    print("Location jump detected")
+                }
+                if fraud.compromised {
+                    print("Device compromised")
+                }
+            }
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        if (event.type == RadarEventTypeUserFailedFraud) {
+            RadarFraud *fraud = event.fraud;
+            if (fraud) {
+                NSLog(@"Fraud detected");
+                NSLog(@"Passed: %d", fraud.passed);
+                
+                // Check specific fraud flags
+                if (fraud.proxy) {
+                    NSLog(@"Proxy detected");
+                }
+                if (fraud.mocked) {
+                    NSLog(@"Location mocking detected");
+                }
+                if (fraud.jumped) {
+                    NSLog(@"Location jump detected");
+                }
+                if (fraud.compromised) {
+                    NSLog(@"Device compromised");
+                }
+            }
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+## Use Cases
+
+<CardGroup cols={2}>
+
+<Card title="Sports Betting" icon="dice">
+Verify users are within legal jurisdictions before allowing betting transactions.
+</Card>
+
+<Card title="Age-Restricted Content" icon="shield-check">
+Confirm user location for geo-restricted content and compliance with regional regulations.
+</Card>
+
+<Card title="Fraud Prevention" icon="lock">
+Detect location spoofing, VPNs, and other fraudulent behavior for financial transactions.
+</Card>
+
+<Card title="Promotional Eligibility" icon="ticket">
+Verify customers are at physical store locations for in-store promotions and offers.
+</Card>
+
+<Card title="Attendance Verification" icon="user-check">
+Confirm employees or students are physically present at required locations.
+</Card>
+
+<Card title="Insurance Claims" icon="file-shield">
+Verify location of insurance claims to prevent fraud and ensure accuracy.
+</Card>
+
+</CardGroup>
+
+## Best Practices
+
+<Steps>
+
+<Step title="Enable SSL Pinning">
+Always configure SSL pinning before using verified tracking. This is required and prevents security vulnerabilities.
+</Step>
+
+<Step title="Verify Tokens Server-Side">
+Never trust client-side verification alone. Always verify JWT tokens on your server using your secret key.
+</Step>
+
+<Step title="Handle Failures Gracefully">
+Check `passed` status and `failureReasons`. Provide clear messaging to users when verification fails.
+</Step>
+
+<Step title="Set Appropriate Jurisdiction">
+If using jurisdiction validation, ensure country and state codes are set before tracking.
+</Step>
+
+<Step title="Monitor Token Expiration">
+Verified tokens expire after a short time. Request fresh tokens when needed rather than caching indefinitely.
+</Step>
+
+<Step title="Balance Security and UX">
+Consider when to require verification. Not every action needs location verification—use it for high-value or compliance-critical operations.
+</Step>
+
+</Steps>
+
+## Testing
+
+<Warning>
+Location verification requires physical devices. It will not work in simulators or when running on jailbroken devices.
+</Warning>
+
+### Test Checklist
+
+- [ ] SSL pinning configured
+- [ ] Test on physical iOS device (not simulator)
+- [ ] Test with real GPS location (not mocked)
+- [ ] Verify tokens server-side
+- [ ] Test with VPN enabled (should fail)
+- [ ] Test jurisdiction validation
+- [ ] Test token expiration handling
+- [ ] Test failure scenarios
+
+<Note>
+For more details on fraud detection, visit the [Radar documentation](https://radar.com/documentation/fraud).
+</Note>

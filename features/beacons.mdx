@@ -1,0 +1,532 @@
+---
+title: "Beacon Monitoring"
+description: "Monitor iBeacons for proximity-based experiences on iOS"
+---
+
+## Overview
+
+Radar's beacon monitoring capabilities enable you to detect and range iBeacons for proximity-based experiences. Use beacons for indoor location, asset tracking, proximity marketing, and more.
+
+## Understanding Beacons
+
+Beacons are Bluetooth Low Energy (BLE) devices that broadcast a signal containing:
+
+- **UUID**: Universal unique identifier (typically organization-specific)
+- **Major**: Major identifier (e.g., for a specific location or building)
+- **Minor**: Minor identifier (e.g., for a specific beacon within a location)
+- **RSSI**: Signal strength indicator (received signal strength)
+
+Radar beacon objects include additional metadata:
+
+- **Radar ID**: Unique Radar identifier
+- **Tag**: Categorize beacons (e.g., "entrance", "checkout", "shelf")
+- **External ID**: Your unique identifier
+- **Description**: Human-readable name
+- **Metadata**: Custom key-value pairs
+- **Geometry**: Location coordinates of the beacon
+
+## Setting Up Beacon Monitoring
+
+To monitor beacons, you first need to configure them in your Radar dashboard with their UUID, major, and minor values.
+
+### Enable Beacon Monitoring
+
+Enable beacon monitoring in your tracking options:
+
+<CodeGroup>
+
+```swift Swift
+let trackingOptions = RadarTrackingOptions.presetResponsive
+trackingOptions.beacons = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objective-c Objective-C
+RadarTrackingOptions *trackingOptions = RadarTrackingOptions.presetResponsive;
+trackingOptions.beacons = YES;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+
+</CodeGroup>
+
+<Info>
+Enabling beacon monitoring requires Bluetooth permissions. Ensure your app's `Info.plist` includes `NSBluetoothAlwaysUsageDescription` and `NSBluetoothPeripheralUsageDescription`.
+</Info>
+
+## Beacon Ranging
+
+Range nearby beacons in the foreground:
+
+<CodeGroup>
+
+```swift Swift
+Radar.trackOnce(desiredAccuracy: .high, beacons: true) { (status, location, events, user) in
+    if status == .success {
+        // events may include beacon entry/exit events
+        for event in events ?? [] {
+            if event.type == .userEnteredBeacon {
+                if let beacon = event.beacon {
+                    print("Entered beacon: \(beacon.__description ?? "")")
+                    print("UUID: \(beacon.uuid)")
+                    print("Major: \(beacon.major)")
+                    print("Minor: \(beacon.minor)")
+                    print("RSSI: \(beacon.rssi)")
+                }
+            }
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar trackOnceWithDesiredAccuracy:RadarTrackingOptionsDesiredAccuracyHigh
+                            beacons:YES
+                  completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarEvent *> * _Nullable events, RadarUser * _Nullable user) {
+    if (status == RadarStatusSuccess) {
+        // events may include beacon entry/exit events
+        for (RadarEvent *event in events) {
+            if (event.type == RadarEventTypeUserEnteredBeacon) {
+                RadarBeacon *beacon = event.beacon;
+                if (beacon) {
+                    NSLog(@"Entered beacon: %@", beacon.__description);
+                    NSLog(@"UUID: %@", beacon.uuid);
+                    NSLog(@"Major: %@", beacon.major);
+                    NSLog(@"Minor: %@", beacon.minor);
+                    NSLog(@"RSSI: %ld", (long)beacon.rssi);
+                }
+            }
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+## Beacon Events
+
+Radar generates beacon events when users enter or exit beacon range:
+
+<Steps>
+
+<Step title="Beacon Entry">
+
+Triggered when a user enters the range of a beacon.
+
+**Event type**: `RadarEventTypeUserEnteredBeacon`
+
+**Location source**: `RadarLocationSourceBeaconEnter`
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        if event.type == .userEnteredBeacon {
+            if let beacon = event.beacon {
+                print("Entered beacon: \(beacon.tag ?? "")")
+                print("RSSI: \(beacon.rssi)")
+                
+                // Access beacon metadata
+                if let metadata = beacon.metadata {
+                    let locationName = metadata["location_name"] as? String
+                    let floor = metadata["floor"] as? String
+                    print("Location: \(locationName ?? ""), Floor: \(floor ?? "")")
+                }
+            }
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        if (event.type == RadarEventTypeUserEnteredBeacon) {
+            RadarBeacon *beacon = event.beacon;
+            if (beacon) {
+                NSLog(@"Entered beacon: %@", beacon.tag);
+                NSLog(@"RSSI: %ld", (long)beacon.rssi);
+                
+                // Access beacon metadata
+                if (beacon.metadata) {
+                    NSString *locationName = beacon.metadata[@"location_name"];
+                    NSString *floor = beacon.metadata[@"floor"];
+                    NSLog(@"Location: %@, Floor: %@", locationName, floor);
+                }
+            }
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Beacon Exit">
+
+Triggered when a user exits the range of a beacon.
+
+**Event type**: `RadarEventTypeUserExitedBeacon`
+
+**Location source**: `RadarLocationSourceBeaconExit`
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        if event.type == .userExitedBeacon {
+            if let beacon = event.beacon {
+                let duration = event.duration // minutes
+                print("Exited beacon: \(beacon.tag ?? "")")
+                print("Duration: \(duration) minutes")
+            }
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        if (event.type == RadarEventTypeUserExitedBeacon) {
+            RadarBeacon *beacon = event.beacon;
+            if (beacon) {
+                float duration = event.duration; // minutes
+                NSLog(@"Exited beacon: %@", beacon.tag);
+                NSLog(@"Duration: %.0f minutes", duration);
+            }
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+<Info>
+Beacon exit events include a `duration` property indicating how long the user was in range of the beacon (in minutes).
+</Info>
+
+</Step>
+
+</Steps>
+
+## Beacon Properties
+
+Access beacon properties from the `RadarBeacon` object:
+
+<CodeGroup>
+
+```swift Swift
+let beacon: RadarBeacon = event.beacon!
+
+// Identifiers
+let radarId = beacon._id
+let externalId = beacon.externalId
+let tag = beacon.tag
+
+// Description
+let description = beacon.__description
+
+// Beacon identifiers
+let uuid = beacon.uuid
+let major = beacon.major
+let minor = beacon.minor
+
+// Signal strength
+let rssi = beacon.rssi // 0 if not available
+
+// Location
+if let geometry = beacon.geometry {
+    let latitude = geometry.coordinates[1]
+    let longitude = geometry.coordinates[0]
+    print("Beacon location: \(latitude), \(longitude)")
+}
+
+// Metadata
+if let metadata = beacon.metadata {
+    print("Metadata: \(metadata)")
+}
+```
+
+```objective-c Objective-C
+RadarBeacon *beacon = event.beacon;
+
+// Identifiers
+NSString *radarId = beacon._id;
+NSString *externalId = beacon.externalId;
+NSString *tag = beacon.tag;
+
+// Description
+NSString *description = beacon.__description;
+
+// Beacon identifiers
+NSString *uuid = beacon.uuid;
+NSString *major = beacon.major;
+NSString *minor = beacon.minor;
+
+// Signal strength
+NSInteger rssi = beacon.rssi; // 0 if not available
+
+// Location
+if (beacon.geometry) {
+    double latitude = [beacon.geometry.coordinates[1] doubleValue];
+    double longitude = [beacon.geometry.coordinates[0] doubleValue];
+    NSLog(@"Beacon location: %f, %f", latitude, longitude);
+}
+
+// Metadata
+if (beacon.metadata) {
+    NSLog(@"Metadata: %@", beacon.metadata);
+}
+```
+
+</CodeGroup>
+
+## Understanding RSSI
+
+RSSI (Received Signal Strength Indicator) measures the signal strength between the device and beacon:
+
+- **Values**: Typically range from -100 (weak) to 0 (strong)
+- **Proximity estimation**:
+  - **Immediate**: RSSI > -50 (within 1 meter)
+  - **Near**: RSSI -50 to -70 (1-3 meters)
+  - **Far**: RSSI -70 to -90 (3-10 meters)
+  - **Very far**: RSSI < -90 (10+ meters)
+
+<Warning>
+RSSI values can fluctuate due to environmental factors, interference, and device orientation. Use RSSI for relative proximity, not precise distance.
+</Warning>
+
+## Use Cases
+
+<CardGroup cols={2}>
+
+<Card title="Indoor Navigation" icon="map-location-dot">
+Use beacons to provide turn-by-turn directions inside buildings where GPS is unavailable.
+</Card>
+
+<Card title="Retail Experiences" icon="store">
+Trigger product information, promotions, or personalized content when customers approach specific shelves or displays.
+</Card>
+
+<Card title="Asset Tracking" icon="boxes-stacked">
+Monitor valuable equipment, inventory, or assets by detecting when they enter or leave specific areas.
+</Card>
+
+<Card title="Museum Guides" icon="landmark">
+Provide contextual information about exhibits when visitors approach beacon-equipped displays.
+</Card>
+
+<Card title="Contactless Check-in" icon="clipboard-check">
+Automate check-ins at venues, airports, or facilities when users enter beacon range.
+</Card>
+
+<Card title="Workplace Analytics" icon="building">
+Track office occupancy, desk usage, and employee presence for space optimization.
+</Card>
+
+</CardGroup>
+
+## Beacon Deployment Best Practices
+
+<Steps>
+
+<Step title="Choose the Right Beacon Hardware">
+Select beacons with appropriate range, battery life, and environmental durability for your use case. Consider factors like mounting options and replaceable batteries.
+</Step>
+
+<Step title="Plan Beacon Placement">
+Place beacons strategically based on your desired range and coverage area. Consider signal interference from walls, metal, and other obstacles.
+
+**Recommended spacing**: 3-10 meters apart for reliable coverage
+</Step>
+
+<Step title="Calibrate Signal Strength">
+Test beacon RSSI at various distances in your environment. Adjust transmit power if your beacons support it.
+</Step>
+
+<Step title="Use Meaningful Identifiers">
+Organize beacons with a clear UUID/major/minor scheme:
+- **UUID**: Organization or project
+- **Major**: Building or floor
+- **Minor**: Specific location or area
+</Step>
+
+<Step title="Include Rich Metadata">
+Store contextual information in beacon metadata (location names, floor numbers, zone types) for easy reference in your app.
+</Step>
+
+</Steps>
+
+## Combining Beacons with Geofencing
+
+Use beacons together with geofences for enhanced accuracy:
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        // Check if user entered a store geofence
+        if event.type == .userEnteredGeofence,
+           let geofenceTag = event.geofence?.tag,
+           geofenceTag == "store" {
+            print("User entered store geofence")
+        }
+        
+        // Use beacon to determine specific location within store
+        if event.type == .userEnteredBeacon,
+           let beaconTag = event.beacon?.tag {
+            switch beaconTag {
+            case "entrance":
+                print("User at store entrance")
+            case "checkout":
+                print("User at checkout area")
+            case "electronics":
+                print("User in electronics department")
+            default:
+                break
+            }
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        // Check if user entered a store geofence
+        if (event.type == RadarEventTypeUserEnteredGeofence &&
+            [event.geofence.tag isEqualToString:@"store"]) {
+            NSLog(@"User entered store geofence");
+        }
+        
+        // Use beacon to determine specific location within store
+        if (event.type == RadarEventTypeUserEnteredBeacon) {
+            NSString *beaconTag = event.beacon.tag;
+            if ([beaconTag isEqualToString:@"entrance"]) {
+                NSLog(@"User at store entrance");
+            } else if ([beaconTag isEqualToString:@"checkout"]) {
+                NSLog(@"User at checkout area");
+            } else if ([beaconTag isEqualToString:@"electronics"]) {
+                NSLog(@"User in electronics department");
+            }
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+<Tip>
+Combine geofence entry events (outdoor accuracy) with beacon events (indoor precision) for seamless indoor-outdoor location experiences.
+</Tip>
+
+## Testing Beacon Integration
+
+Test your beacon integration during development:
+
+### Physical Testing
+
+1. Configure test beacons in your Radar dashboard
+2. Enable beacon monitoring in your app
+3. Move in and out of beacon range
+4. Verify entry and exit events are received
+5. Check RSSI values at different distances
+
+### Beacon Simulators
+
+Use beacon simulator apps to test without physical hardware:
+
+- **iOS**: Locate Beacon, BeaconScope, or similar apps
+- Configure with your test beacon UUIDs, major, and minor values
+
+<Note>
+Beacon simulator apps require Bluetooth and may not work in iOS Simulator. Test on physical devices.
+</Note>
+
+## Troubleshooting
+
+<AccordionGroup>
+
+<Accordion title="Beacons not detected" icon="circle-exclamation">
+
+**Common causes**:
+- Bluetooth is disabled on the device
+- Missing Bluetooth permissions in `Info.plist`
+- Beacon monitoring not enabled in tracking options
+- Beacons not configured in Radar dashboard
+- Beacons out of range or powered off
+
+**Solutions**:
+- Verify Bluetooth is enabled
+- Add required permission keys to `Info.plist`
+- Check tracking options have `beacons = true`
+- Confirm beacon UUID/major/minor in dashboard
+- Test with beacon nearby (< 5 meters)
+
+</Accordion>
+
+<Accordion title="Inconsistent RSSI values" icon="signal">
+
+**Common causes**:
+- Environmental interference (walls, metal, people)
+- Device orientation changes
+- Beacon battery low
+- Multiple signal reflections
+
+**Solutions**:
+- Average RSSI values over time
+- Use relative proximity, not absolute distance
+- Test in your actual deployment environment
+- Replace beacon batteries
+- Consider using multiple beacons for redundancy
+
+</Accordion>
+
+<Accordion title="Delayed beacon events" icon="clock">
+
+**Common causes**:
+- Background tracking limitations
+- App suspended or terminated
+- Rate limiting to conserve battery
+
+**Solutions**:
+- Use foreground tracking for immediate updates
+- Enable background modes in Xcode
+- Test with app in foreground first
+- Consider beacon ranging frequency vs battery trade-offs
+
+</Accordion>
+
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+
+<Card title="Test in Real Environments" icon="vial">
+Always test beacon ranging in your actual deployment environment. Signal behavior varies significantly between locations.
+</Card>
+
+<Card title="Handle RSSI Fluctuations" icon="wave-pulse">
+Use averaging or filtering to smooth RSSI values. Don't rely on instantaneous readings for proximity decisions.
+</Card>
+
+<Card title="Provide Fallback Experiences" icon="arrows-turn-to-dots">
+Design your app to work without beacons. Treat beacon data as enhancement, not a requirement.
+</Card>
+
+<Card title="Monitor Battery Life" icon="battery-half">
+Bluetooth scanning impacts battery. Balance update frequency with power consumption.
+</Card>
+
+</CardGroup>
+
+<Note>
+For more details on beacon monitoring, visit the [Radar documentation](https://radar.com/documentation/beacons).
+</Note>

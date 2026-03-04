@@ -1,0 +1,499 @@
+---
+title: "Context"
+description: "Get comprehensive location context including places, geofences, regions, and neighborhoods"
+---
+
+Radar's Context API provides rich location context for any geographic coordinate, including nearby places, active geofences, country, state, DMA, and postal code information.
+
+## Overview
+
+The Context API returns location information without requiring device or user identifiers, making it ideal for privacy-conscious applications and server-side integrations.
+
+### What's Included
+
+<CardGroup cols={2}>
+
+<Card title="Geofences" icon="draw-circle">
+All geofences containing the location
+</Card>
+
+<Card title="Place" icon="location-dot">
+The place at the location, if any
+</Card>
+
+<Card title="Regions" icon="globe">
+Country, state, DMA, and postal code
+</Card>
+
+<Card title="No Tracking" icon="shield">
+No device or user identifiers sent
+</Card>
+
+</CardGroup>
+
+## Get Context
+
+### Context for Current Location
+
+Get context for the device's current location:
+
+<CodeGroup>
+
+```swift Swift
+Radar.getContext { status, location, context in
+    if status == .success, let context = context {
+        // Geofences
+        print("Geofences: \(context.geofences.count)")
+        context.geofences.forEach { geofence in
+            print("  - \(geofence.__description)")
+        }
+        
+        // Place
+        if let place = context.place {
+            print("Place: \(place.name)")
+            print("Categories: \(place.categories.joined(separator: ", "))")
+        }
+        
+        // Country
+        if let country = context.country {
+            print("Country: \(country.name) (\(country.code))")
+            if let flag = country.flag {
+                print("Flag: \(flag)")
+            }
+        }
+        
+        // State
+        if let state = context.state {
+            print("State: \(state.name) (\(state.code))")
+        }
+        
+        // DMA
+        if let dma = context.dma {
+            print("DMA: \(dma.name) (\(dma.code))")
+        }
+        
+        // Postal code
+        if let postalCode = context.postalCode {
+            print("Postal code: \(postalCode.name)")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar getContextWithCompletionHandler:^(RadarStatus status, CLLocation * _Nullable location, RadarContext * _Nullable context) {
+    if (status == RadarStatusSuccess && context) {
+        // Geofences
+        NSLog(@"Geofences: %lu", (unsigned long)context.geofences.count);
+        for (RadarGeofence *geofence in context.geofences) {
+            NSLog(@"  - %@", geofence.__description);
+        }
+        
+        // Place
+        if (context.place) {
+            NSLog(@"Place: %@", context.place.name);
+            NSLog(@"Categories: %@", [context.place.categories componentsJoinedByString:@", "]);
+        }
+        
+        // Country
+        if (context.country) {
+            NSLog(@"Country: %@ (%@)", context.country.name, context.country.code);
+            if (context.country.flag) {
+                NSLog(@"Flag: %@", context.country.flag);
+            }
+        }
+        
+        // State
+        if (context.state) {
+            NSLog(@"State: %@ (%@)", context.state.name, context.state.code);
+        }
+        
+        // DMA
+        if (context.dma) {
+            NSLog(@"DMA: %@ (%@)", context.dma.name, context.dma.code);
+        }
+        
+        // Postal code
+        if (context.postalCode) {
+            NSLog(@"Postal code: %@", context.postalCode.name);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Context for Specific Location
+
+Get context for any geographic coordinate:
+
+<CodeGroup>
+
+```swift Swift
+let location = CLLocation(latitude: 40.7128, longitude: -74.0060)
+
+Radar.getContext(location: location) { status, location, context in
+    if status == .success, let context = context {
+        print("Location: \(location?.coordinate.latitude ?? 0), \(location?.coordinate.longitude ?? 0)")
+        
+        if let place = context.place {
+            print("At place: \(place.name)")
+        }
+        
+        if let country = context.country {
+            print("In country: \(country.name)")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *location = [[CLLocation alloc] initWithLatitude:40.7128 longitude:-74.0060];
+
+[Radar getContextForLocation:location completionHandler:^(RadarStatus status, CLLocation * _Nullable location, RadarContext * _Nullable context) {
+    if (status == RadarStatusSuccess && context) {
+        NSLog(@"Location: %f, %f", location.coordinate.latitude, location.coordinate.longitude);
+        
+        if (context.place) {
+            NSLog(@"At place: %@", context.place.name);
+        }
+        
+        if (context.country) {
+            NSLog(@"In country: %@", context.country.name);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+## Context Properties
+
+The `RadarContext` object provides comprehensive location information:
+
+### Geofences
+
+An array of all geofences that contain the location:
+
+```swift
+Radar.getContext { status, location, context in
+    if let geofences = context?.geofences {
+        for geofence in geofences {
+            print("Geofence ID: \(geofence._id)")
+            print("Description: \(geofence.__description)")
+            print("Tag: \(geofence.tag ?? "None")")
+            print("External ID: \(geofence.externalId ?? "None")")
+            
+            if let metadata = geofence.metadata {
+                print("Metadata: \(metadata)")
+            }
+            
+            if let operatingHours = geofence.operatingHours {
+                print("Operating hours available")
+            }
+        }
+    }
+}
+```
+
+### Place
+
+The place at the location, if any:
+
+```swift
+Radar.getContext { status, location, context in
+    if let place = context?.place {
+        print("Place ID: \(place._id)")
+        print("Name: \(place.name)")
+        print("Categories: \(place.categories)")
+        
+        if let chain = place.chain {
+            print("Chain: \(chain.name) (\(chain.slug))")
+            if let chainMetadata = chain.metadata {
+                print("Chain metadata: \(chainMetadata)")
+            }
+        }
+        
+        if let group = place.group {
+            print("Group: \(group)")
+        }
+        
+        if let address = place.address {
+            print("Address: \(address.formattedAddress ?? "")")
+        }
+        
+        // Check place properties
+        if place.isChain("starbucks") {
+            print("This is a Starbucks")
+        }
+        
+        if place.hasCategory("restaurant") {
+            print("This is a restaurant")
+        }
+    } else {
+        print("Not at a known place")
+    }
+}
+```
+
+### Country
+
+Country information for the location:
+
+```swift
+Radar.getContext { status, location, context in
+    if let country = context?.country {
+        print("Country ID: \(country._id)")
+        print("Name: \(country.name)")
+        print("Code: \(country.code)")
+        print("Type: \(country.type)")
+        
+        if let flag = country.flag {
+            print("Flag: \(flag)")
+        }
+        
+        // Jurisdiction properties (for fraud detection)
+        print("Allowed: \(country.allowed)")
+        print("Passed: \(country.passed)")
+        print("Expected: \(country.expected)")
+        print("In exclusion zone: \(country.inExclusionZone)")
+        print("In buffer zone: \(country.inBufferZone)")
+        print("Distance to border: \(country.distanceToBorder)m")
+    }
+}
+```
+
+### State
+
+State or province information:
+
+```swift
+Radar.getContext { status, location, context in
+    if let state = context?.state {
+        print("State ID: \(state._id)")
+        print("Name: \(state.name)")
+        print("Code: \(state.code)")
+        print("Type: \(state.type)")
+        
+        // Jurisdiction properties
+        print("Allowed: \(state.allowed)")
+        print("Distance to border: \(state.distanceToBorder)m")
+    }
+}
+```
+
+### DMA (Designated Market Area)
+
+Media market information:
+
+```swift
+Radar.getContext { status, location, context in
+    if let dma = context?.dma {
+        print("DMA ID: \(dma._id)")
+        print("Name: \(dma.name)")
+        print("Code: \(dma.code)")
+    }
+}
+```
+
+### Postal Code
+
+Postal code or ZIP code information:
+
+```swift
+Radar.getContext { status, location, context in
+    if let postalCode = context?.postalCode {
+        print("Postal code ID: \(postalCode._id)")
+        print("Code: \(postalCode.name)")
+    }
+}
+```
+
+## Use Cases
+
+<Steps>
+
+<Step title="Geofence Detection">
+Detect when a user enters specific geofences without continuous tracking:
+
+```swift
+Radar.getContext { status, location, context in
+    let isInDeliveryZone = context?.geofences.contains { geofence in
+        geofence.tag == "delivery-zone"
+    } ?? false
+    
+    if isInDeliveryZone {
+        print("User is in delivery zone")
+    }
+}
+```
+</Step>
+
+<Step title="Location Verification">
+Verify a user's location for compliance or fraud prevention:
+
+```swift
+Radar.getContext { status, location, context in
+    if let country = context?.country {
+        if country.code == "US" && country.passed {
+            print("User verified in United States")
+        }
+    }
+}
+```
+</Step>
+
+<Step title="Place Detection">
+Determine if a user is at a specific type of location:
+
+```swift
+Radar.getContext { status, location, context in
+    if let place = context?.place {
+        if place.hasCategory("airport") {
+            print("User is at an airport")
+        }
+    }
+}
+```
+</Step>
+
+<Step title="Regional Customization">
+Customize app experience based on location:
+
+```swift
+Radar.getContext { status, location, context in
+    if let state = context?.state {
+        // Show state-specific content
+        print("Showing content for \(state.name)")
+    }
+    
+    if let dma = context?.dma {
+        // Target ads by media market
+        print("DMA: \(dma.name)")
+    }
+}
+```
+</Step>
+
+</Steps>
+
+## Privacy Considerations
+
+The Context API is designed with privacy in mind:
+
+<Info>
+**No User Tracking**: Context requests do not send device identifiers, user IDs, or other personally identifiable information to the server.
+</Info>
+
+<Tip>
+Use the Context API instead of full tracking when you only need occasional location context without continuous monitoring.
+</Tip>
+
+## Comparison with Track API
+
+| Feature | Context API | Track API |
+|---------|-------------|------------|
+| Returns geofences | ✅ Yes | ✅ Yes |
+| Returns places | ✅ Yes | ✅ Yes |
+| Returns regions | ✅ Yes | ✅ Yes |
+| Sends device ID | ❌ No | ✅ Yes |
+| Sends user ID | ❌ No | ✅ Yes |
+| Generates events | ❌ No | ✅ Yes |
+| Updates user state | ❌ No | ✅ Yes |
+| Background tracking | ❌ No | ✅ Yes |
+
+<Note>
+Use the Context API for one-time location queries. Use the Track API for continuous location monitoring and event generation.
+</Note>
+
+## Error Handling
+
+Handle errors gracefully with status codes:
+
+```swift
+Radar.getContext { status, location, context in
+    switch status {
+    case .success:
+        print("Context retrieved successfully")
+        
+    case .errorLocation:
+        print("Could not determine location")
+        
+    case .errorPermissions:
+        print("Location permissions not granted")
+        
+    case .errorNetwork:
+        print("Network error occurred")
+        
+    case .errorRateLimit:
+        print("Rate limit exceeded")
+        
+    default:
+        print("Error: \(Radar.stringForStatus(status))")
+    }
+}
+```
+
+## Best Practices
+
+<Steps>
+
+<Step title="Check for nil">
+Always check if context properties are nil before using them:
+
+```swift
+if let context = context, let place = context.place {
+    // Use place
+}
+```
+</Step>
+
+<Step title="Handle empty arrays">
+Geofences array may be empty if the location isn't in any geofences:
+
+```swift
+if let geofences = context?.geofences, !geofences.isEmpty {
+    // Process geofences
+}
+```
+</Step>
+
+<Step title="Respect rate limits">
+The Context API is subject to rate limits. Don't call it too frequently:
+
+```swift
+// Good: Call on user action
+button.addTarget { 
+    Radar.getContext { status, location, context in
+        // Handle context
+    }
+}
+
+// Bad: Call repeatedly in a loop
+// Don't do this!
+```
+</Step>
+
+</Steps>
+
+## Learn More
+
+<CardGroup cols={2}>
+
+<Card title="Context API" icon="map-location-dot" href="https://radar.com/documentation/api#context">
+Explore the complete Context API reference
+</Card>
+
+<Card title="Geofences" icon="draw-circle" href="/geofencing">
+Learn about geofencing capabilities
+</Card>
+
+<Card title="Places" icon="location-dot" href="/places">
+Understand place detection
+</Card>
+
+<Card title="Regions" icon="globe" href="/regions">
+Explore region-based features
+</Card>
+
+</CardGroup>

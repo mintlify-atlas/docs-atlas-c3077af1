@@ -1,0 +1,447 @@
+---
+title: "RadarStatus"
+description: "Status codes and error states for Radar SDK requests."
+---
+
+## Overview
+
+The `RadarStatus` enum represents the status of a Radar SDK request. It is returned in completion handlers and delegate methods to indicate whether a request succeeded or failed, and if it failed, why.
+
+## Enum Declaration
+
+```swift
+enum RadarStatus: Int
+```
+
+```objective-c
+typedef NS_ENUM(NSInteger, RadarStatus)
+```
+
+## Cases
+
+### success
+
+```swift
+case success
+```
+
+```objective-c
+RadarStatusSuccess
+```
+
+Success.
+
+### errorPublishableKey
+
+```swift
+case errorPublishableKey
+```
+
+```objective-c
+RadarStatusErrorPublishableKey
+```
+
+SDK not initialized. Call `Radar.initialize(publishableKey:)` before making any other SDK calls.
+
+### errorPermissions
+
+```swift
+case errorPermissions
+```
+
+```objective-c
+RadarStatusErrorPermissions
+```
+
+Location permissions not granted. Request location permissions from the user before calling location-based methods.
+
+### errorLocation
+
+```swift
+case errorLocation
+```
+
+```objective-c
+RadarStatusErrorLocation
+```
+
+Location services error or timeout (20 seconds). This may occur if:
+- Location services are disabled
+- The device cannot determine its location
+- The location request timed out
+
+### errorBluetooth
+
+```swift
+case errorBluetooth
+```
+
+```objective-c
+RadarStatusErrorBluetooth
+```
+
+Bluetooth (beacon ranging) error or timeout (5 seconds). This occurs when:
+- Bluetooth is disabled
+- Beacon ranging is not available
+- The beacon ranging request timed out
+
+### errorNetwork
+
+```swift
+case errorNetwork
+```
+
+```objective-c
+RadarStatusErrorNetwork
+```
+
+Network error or timeout (10 seconds). This may occur if:
+- The device has no network connectivity
+- The network request timed out
+- There was a network communication error
+
+### errorBadRequest
+
+```swift
+case errorBadRequest
+```
+
+```objective-c
+RadarStatusErrorBadRequest
+```
+
+Bad request (missing or invalid parameters). Check that all required parameters are provided and valid.
+
+### errorUnauthorized
+
+```swift
+case errorUnauthorized
+```
+
+```objective-c
+RadarStatusErrorUnauthorized
+```
+
+Unauthorized (invalid API key). Verify that your publishable key is correct and valid.
+
+### errorPaymentRequired
+
+```swift
+case errorPaymentRequired
+```
+
+```objective-c
+RadarStatusErrorPaymentRequired
+```
+
+Payment required. This occurs when:
+- Your organization is disabled
+- Your usage has exceeded your plan limits
+
+### errorForbidden
+
+```swift
+case errorForbidden
+```
+
+```objective-c
+RadarStatusErrorForbidden
+```
+
+Forbidden. This occurs when:
+- Your account has insufficient permissions
+- You don't have beta access to a feature
+
+### errorNotFound
+
+```swift
+case errorNotFound
+```
+
+```objective-c
+RadarStatusErrorNotFound
+```
+
+Not found. The requested resource was not found.
+
+### errorPlugin
+
+```swift
+case errorPlugin
+```
+
+```objective-c
+RadarStatusErrorPlugin
+```
+
+Missing plugin. A required plugin or framework is not available.
+
+### errorRateLimit
+
+```swift
+case errorRateLimit
+```
+
+```objective-c
+RadarStatusErrorRateLimit
+```
+
+Too many requests (rate limit exceeded). Reduce the frequency of your API calls.
+
+### errorServer
+
+```swift
+case errorServer
+```
+
+```objective-c
+RadarStatusErrorServer
+```
+
+Internal server error. Try the request again. If the problem persists, contact support.
+
+### errorUnknown
+
+```swift
+case errorUnknown
+```
+
+```objective-c
+RadarStatusErrorUnknown
+```
+
+Unknown error. An unexpected error occurred.
+
+## Helper Method
+
+### stringForStatus(_:)
+
+```swift
+class func stringForStatus(_ status: RadarStatus) -> String
+```
+
+```objective-c
++ (NSString *)stringForStatus:(RadarStatus)status;
+```
+
+Returns a human-readable display string for a status value.
+
+## Usage Examples
+
+### Swift
+
+```swift
+Radar.trackOnce { (status, location, events, user) in
+    if status == .success {
+        print("Track successful")
+        if let location = location {
+            print("Location: \(location.coordinate)")
+        }
+    } else {
+        print("Track failed: \(Radar.stringForStatus(status))")
+        
+        switch status {
+        case .errorPublishableKey:
+            print("Initialize Radar first")
+            
+        case .errorPermissions:
+            print("Request location permissions")
+            
+        case .errorLocation:
+            print("Could not determine location")
+            
+        case .errorNetwork:
+            print("Check network connectivity")
+            
+        case .errorBadRequest:
+            print("Invalid request parameters")
+            
+        case .errorUnauthorized:
+            print("Check your API key")
+            
+        case .errorPaymentRequired:
+            print("Check your billing status")
+            
+        case .errorRateLimit:
+            print("Rate limit exceeded")
+            
+        case .errorServer:
+            print("Server error, try again")
+            
+        default:
+            print("Unknown error")
+        }
+    }
+}
+```
+
+### Objective-C
+
+```objective-c
+[Radar trackOnceWithCompletionHandler:^(RadarStatus status, CLLocation *location, NSArray<RadarEvent *> *events, RadarUser *user) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Track successful");
+        if (location) {
+            NSLog(@"Location: %f, %f", location.coordinate.latitude, location.coordinate.longitude);
+        }
+    } else {
+        NSLog(@"Track failed: %@", [Radar stringForStatus:status]);
+        
+        switch (status) {
+            case RadarStatusErrorPublishableKey:
+                NSLog(@"Initialize Radar first");
+                break;
+                
+            case RadarStatusErrorPermissions:
+                NSLog(@"Request location permissions");
+                break;
+                
+            case RadarStatusErrorLocation:
+                NSLog(@"Could not determine location");
+                break;
+                
+            case RadarStatusErrorNetwork:
+                NSLog(@"Check network connectivity");
+                break;
+                
+            case RadarStatusErrorBadRequest:
+                NSLog(@"Invalid request parameters");
+                break;
+                
+            case RadarStatusErrorUnauthorized:
+                NSLog(@"Check your API key");
+                break;
+                
+            case RadarStatusErrorPaymentRequired:
+                NSLog(@"Check your billing status");
+                break;
+                
+            case RadarStatusErrorRateLimit:
+                NSLog(@"Rate limit exceeded");
+                break;
+                
+            case RadarStatusErrorServer:
+                NSLog(@"Server error, try again");
+                break;
+                
+            default:
+                NSLog(@"Unknown error");
+                break;
+        }
+    }
+}];
+```
+
+### Handling Errors in RadarDelegate
+
+```swift
+func didFail(status: RadarStatus) {
+    let statusString = Radar.stringForStatus(status)
+    print("Radar request failed: \(statusString)")
+    
+    // Log to your analytics system
+    Analytics.logError("RadarError", properties: [
+        "status": statusString,
+        "statusCode": status.rawValue
+    ])
+    
+    // Show user-friendly error messages
+    if status == .errorPermissions {
+        showAlert(title: "Location Required", 
+                 message: "Please enable location permissions to use this feature.")
+    } else if status == .errorNetwork {
+        showAlert(title: "Network Error", 
+                 message: "Please check your internet connection.")
+    }
+}
+```
+
+```objective-c
+- (void)didFailWithStatus:(RadarStatus)status {
+    NSString *statusString = [Radar stringForStatus:status];
+    NSLog(@"Radar request failed: %@", statusString);
+    
+    // Log to your analytics system
+    [Analytics logError:@"RadarError" properties:@{
+        @"status": statusString,
+        @"statusCode": @(status)
+    }];
+    
+    // Show user-friendly error messages
+    if (status == RadarStatusErrorPermissions) {
+        [self showAlertWithTitle:@"Location Required" 
+                         message:@"Please enable location permissions to use this feature."];
+    } else if (status == RadarStatusErrorNetwork) {
+        [self showAlertWithTitle:@"Network Error" 
+                         message:@"Please check your internet connection."];
+    }
+}
+```
+
+## Common Status Handling Patterns
+
+### Retry Logic
+
+```swift
+func trackWithRetry(maxRetries: Int = 3) {
+    var retryCount = 0
+    
+    func attemptTrack() {
+        Radar.trackOnce { (status, location, events, user) in
+            if status == .success {
+                print("Track successful")
+            } else if status == .errorNetwork && retryCount < maxRetries {
+                retryCount += 1
+                print("Retrying... (\(retryCount)/\(maxRetries))")
+                
+                // Wait before retrying
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    attemptTrack()
+                }
+            } else {
+                print("Track failed: \(Radar.stringForStatus(status))")
+            }
+        }
+    }
+    
+    attemptTrack()
+}
+```
+
+### Permission Checking
+
+```swift
+import CoreLocation
+
+func checkAndTrack() {
+    let authStatus = CLLocationManager.authorizationStatus()
+    
+    switch authStatus {
+    case .authorizedAlways, .authorizedWhenInUse:
+        Radar.trackOnce { (status, location, events, user) in
+            if status == .success {
+                print("Track successful")
+            } else {
+                print("Track failed: \(Radar.stringForStatus(status))")
+            }
+        }
+        
+    case .notDetermined:
+        // Request permissions first
+        locationManager.requestWhenInUseAuthorization()
+        
+    case .denied, .restricted:
+        print("Location permissions denied")
+        showSettingsAlert()
+        
+    @unknown default:
+        break
+    }
+}
+```
+
+## See Also
+
+- [Radar](/api/radar)
+- [RadarDelegate](/api/radar-delegate)
+- [Foreground Tracking](https://radar.com/documentation/sdk/ios#foreground-tracking)

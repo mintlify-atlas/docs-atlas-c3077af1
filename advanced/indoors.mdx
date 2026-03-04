@@ -1,0 +1,361 @@
+---
+title: Indoor Positioning
+description: Enable indoor positioning support with floor level detection and indoor scanning
+---
+
+The Radar iOS SDK supports indoor positioning to track users inside buildings with floor-level accuracy. This is achieved through indoor scanning and pressure sensor integration.
+
+## Overview
+
+Indoor positioning features:
+
+- **Floor level detection**: Use barometric pressure to determine which floor the user is on
+- **Indoor scanning**: Integrate with third-party indoor positioning systems
+- **Beacon ranging**: Track proximity to iBeacons for precise indoor location
+- **Altitude tracking**: Monitor relative and absolute altitude changes
+
+## Enable indoor scanning
+
+To enable indoor scanning, set the `useIndoorScan` property on your tracking options:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+let trackingOptions = RadarTrackingOptions()
+trackingOptions.useIndoorScan = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+trackingOptions.useIndoorScan = YES;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+</CodeGroup>
+
+<Info>
+  Indoor scanning requires configuration on the Radar dashboard and integration with a supported indoor positioning provider.
+</Info>
+
+## Indoor positioning protocol
+
+The SDK provides a protocol for integrating custom indoor positioning systems:
+
+<CodeGroup>
+```swift Swift
+import CoreLocation
+import RadarSDK
+
+@objc protocol RadarIndoorsProtocol: NSObjectProtocol {
+    @objc static func startIndoorScan(
+        _ geofenceId: String,
+        forLength scanLengthSeconds: Int32,
+        withKnownLocation knownLocation: CLLocation?,
+        completionHandler: @escaping RadarIndoorsScanCompletionHandler
+    )
+}
+```
+
+```objectivec Objective-C
+@import CoreLocation;
+@import RadarSDK;
+
+@protocol RadarIndoorsProtocol <NSObject>
+
++ (void)startIndoorScan:(NSString *)geofenceId
+              forLength:(int)scanLengthSeconds
+      withKnownLocation:(CLLocation *_Nullable)knownLocation
+      completionHandler:(RadarIndoorsScanCompletionHandler)completionHandler;
+
+@end
+```
+</CodeGroup>
+
+The completion handler returns:
+- A scan result string with positioning data
+- The device's location at the start of the scan
+
+## Floor level detection
+
+Enable pressure sensor integration to detect floor changes:
+
+<CodeGroup>
+```swift Swift
+let trackingOptions = RadarTrackingOptions()
+trackingOptions.usePressure = true
+trackingOptions.useMotion = true // Required for pressure sensor access
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objectivec Objective-C
+RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+trackingOptions.usePressure = YES;
+trackingOptions.useMotion = YES; // Required for pressure sensor access
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+</CodeGroup>
+
+<Note>
+  Pressure sensor data requires:
+  - The **RadarSDKMotion** framework to be integrated
+  - Motion & Fitness permissions to be granted
+  - A device with a barometer (iPhone 6 and later)
+</Note>
+
+## Beacon-based indoor positioning
+
+Use iBeacons for precise indoor location tracking:
+
+<Steps>
+  <Step title="Enable beacon monitoring">
+    <CodeGroup>
+    ```swift Swift
+    let trackingOptions = RadarTrackingOptions()
+    trackingOptions.beacons = true
+
+    Radar.startTracking(trackingOptions: trackingOptions)
+    ```
+
+    ```objectivec Objective-C
+    RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+    trackingOptions.beacons = YES;
+
+    [Radar startTrackingWithOptions:trackingOptions];
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Track with beacon ranging">
+    When calling `trackOnce`, enable beacon ranging:
+
+    <CodeGroup>
+    ```swift Swift
+    Radar.trackOnce(desiredAccuracy: .high, beacons: true) { status, location, events, user in
+        if status == .success {
+            print("Tracked with beacons")
+        }
+    }
+    ```
+
+    ```objectivec Objective-C
+    [Radar trackOnceWithDesiredAccuracy:RadarTrackingOptionsDesiredAccuracyHigh
+                                beacons:YES
+                      completionHandler:^(RadarStatus status,
+                                         CLLocation * _Nullable location,
+                                         NSArray<RadarEvent *> * _Nullable events,
+                                         RadarUser * _Nullable user) {
+        if (status == RadarStatusSuccess) {
+            NSLog(@"Tracked with beacons");
+        }
+    }];
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Configure beacons in the dashboard">
+    Set up your iBeacon UUIDs, majors, and minors in the [Radar dashboard](https://radar.com/dashboard) under the Beacons section.
+  </Step>
+</Steps>
+
+## Altitude tracking
+
+The SDK tracks altitude using both relative and absolute altitude data:
+
+### Relative altitude (pressure-based)
+
+Uses the device's barometer to measure changes in altitude:
+
+```swift
+// Automatically enabled when usePressure = true
+trackingOptions.usePressure = true
+```
+
+Relative altitude provides:
+- Altitude change in meters from a reference point
+- Barometric pressure in kilopascals (kPa)
+
+### Absolute altitude (iOS 15+)
+
+On iOS 15 and later, the SDK also uses absolute altitude data:
+
+```swift
+// Automatically enabled when available (iOS 15+)
+if #available(iOS 15.0, *) {
+    // CMAbsoluteAltitudeData is used automatically
+}
+```
+
+Absolute altitude provides:
+- Altitude above sea level in meters
+- Accuracy of the altitude measurement
+- Precision of the altitude data
+
+## Indoor scan workflow
+
+When indoor scanning is enabled, the SDK follows this workflow:
+
+1. User enters a configured geofence
+2. SDK checks if indoor scanning is enabled for that geofence
+3. Indoor scan is triggered automatically
+4. Scan results are sent to the Radar API with location data
+5. Indoor positioning data is returned in the track response
+
+<CodeGroup>
+```swift Swift
+// Indoor scanning happens automatically when configured
+let trackingOptions = RadarTrackingOptions()
+trackingOptions.useIndoorScan = true
+trackingOptions.syncGeofences = true // Sync nearby geofences
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objectivec Objective-C
+// Indoor scanning happens automatically when configured
+RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+trackingOptions.useIndoorScan = YES;
+trackingOptions.syncGeofences = YES; // Sync nearby geofences
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+</CodeGroup>
+
+## Combining indoor positioning methods
+
+For best results, combine multiple indoor positioning methods:
+
+<CodeGroup>
+```swift Swift
+let trackingOptions = RadarTrackingOptions()
+
+// Enable all indoor positioning features
+trackingOptions.beacons = true
+trackingOptions.useIndoorScan = true
+trackingOptions.usePressure = true
+trackingOptions.useMotion = true
+trackingOptions.syncGeofences = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objectivec Objective-C
+RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+
+// Enable all indoor positioning features
+trackingOptions.beacons = YES;
+trackingOptions.useIndoorScan = YES;
+trackingOptions.usePressure = YES;
+trackingOptions.useMotion = YES;
+trackingOptions.syncGeofences = YES;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+</CodeGroup>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Test in real environments" icon="building">
+    Test indoor positioning in actual buildings with multiple floors to verify accuracy.
+  </Card>
+  
+  <Card title="Calibrate beacons" icon="signal">
+    Ensure beacons are properly positioned and configured in the Radar dashboard.
+  </Card>
+  
+  <Card title="Monitor permission status" icon="lock">
+    Check that Motion & Fitness and Bluetooth permissions are granted for full functionality.
+  </Card>
+  
+  <Card title="Combine with outdoor tracking" icon="location-dot">
+    Seamlessly transition between indoor and outdoor positioning.
+  </Card>
+</CardGroup>
+
+## Receive indoor location updates
+
+Receive indoor positioning data through the delegate:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+class MyRadarDelegate: NSObject, RadarDelegate {
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        // Check for beacon proximity
+        if let beacons = user.beacons, !beacons.isEmpty {
+            print("Near \(beacons.count) beacon(s)")
+        }
+        
+        // Check altitude data
+        if let altitude = location.altitude {
+            print("Altitude: \(altitude) meters")
+        }
+    }
+}
+
+Radar.setDelegate(MyRadarDelegate())
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+@interface MyRadarDelegate : NSObject <RadarDelegate>
+@end
+
+@implementation MyRadarDelegate
+
+- (void)didUpdateLocation:(CLLocation *)location user:(RadarUser *)user {
+    // Check for beacon proximity
+    if (user.beacons && user.beacons.count > 0) {
+        NSLog(@"Near %lu beacon(s)", (unsigned long)user.beacons.count);
+    }
+    
+    // Check altitude data
+    if (location.altitude) {
+        NSLog(@"Altitude: %.2f meters", location.altitude);
+    }
+}
+
+@end
+
+[Radar setDelegate:[[MyRadarDelegate alloc] init]];
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<Accordion title="Floor detection not working">
+  - Verify the device has a barometer (iPhone 6 and later)
+  - Ensure both `useMotion` and `usePressure` are set to `true`
+  - Check that Motion & Fitness permissions are granted
+  - Verify the **RadarSDKMotion** framework is integrated
+</Accordion>
+
+<Accordion title="Beacons not detected">
+  - Verify Bluetooth is enabled on the device
+  - Check that `beacons` is set to `true` in tracking options
+  - Ensure beacons are configured in the Radar dashboard
+  - Test beacon ranging with a known beacon nearby
+</Accordion>
+
+<Accordion title="Indoor scan not triggering">
+  - Verify `useIndoorScan` is enabled
+  - Check that indoor scanning is configured for your geofences in the dashboard
+  - Ensure the device is within a configured geofence
+  - Check that `syncGeofences` is enabled to receive geofence data
+</Accordion>
+
+## Related resources
+
+- [Beacon ranging documentation](/beacons)
+- [Motion detection](/advanced/motion-detection)
+- [Background modes](/advanced/background-modes)
+- [Apple Core Location Beacons](https://developer.apple.com/documentation/corelocation/determining_the_proximity_to_an_ibeacon_device)

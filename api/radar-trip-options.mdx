@@ -1,0 +1,314 @@
+---
+title: RadarTripOptions
+description: Configuration options for trip tracking in the Radar iOS SDK
+---
+
+`RadarTripOptions` is a configuration class used to set up trip tracking with destination information. It supports single-destination trips and multi-destination trips with multiple legs.
+
+## Initializers
+
+### initWithExternalId:destinationGeofenceTag:destinationGeofenceExternalId:
+
+```swift
+init(externalId: String, 
+     destinationGeofenceTag: String?, 
+     destinationGeofenceExternalId: String?)
+```
+
+```objective-c
+- (instancetype)initWithExternalId:(NSString *_Nonnull)externalId
+            destinationGeofenceTag:(NSString *_Nullable)destinationGeofenceTag
+     destinationGeofenceExternalId:(NSString *_Nullable)destinationGeofenceExternalId;
+```
+
+Initializes trip options with a destination geofence identified by tag and external ID.
+
+<ParamField path="externalId" type="String" required>
+  A stable unique ID for the trip.
+</ParamField>
+
+<ParamField path="destinationGeofenceTag" type="String" optional>
+  The tag of the destination geofence.
+</ParamField>
+
+<ParamField path="destinationGeofenceExternalId" type="String" optional>
+  The external ID of the destination geofence.
+</ParamField>
+
+### initWithExternalId:destinationGeofenceTag:destinationGeofenceExternalId:scheduledArrivalAt:
+
+```swift
+init(externalId: String,
+     destinationGeofenceTag: String?,
+     destinationGeofenceExternalId: String?,
+     scheduledArrivalAt: Date?)
+```
+
+```objective-c
+- (instancetype)initWithExternalId:(NSString *_Nonnull)externalId
+            destinationGeofenceTag:(NSString *_Nullable)destinationGeofenceTag
+     destinationGeofenceExternalId:(NSString *_Nullable)destinationGeofenceExternalId
+                scheduledArrivalAt:(NSDate *_Nullable)scheduledArrivalAt;
+```
+
+Initializes trip options with a destination geofence and scheduled arrival time.
+
+<ParamField path="externalId" type="String" required>
+  A stable unique ID for the trip.
+</ParamField>
+
+<ParamField path="destinationGeofenceTag" type="String" optional>
+  The tag of the destination geofence.
+</ParamField>
+
+<ParamField path="destinationGeofenceExternalId" type="String" optional>
+  The external ID of the destination geofence.
+</ParamField>
+
+<ParamField path="scheduledArrivalAt" type="Date" optional>
+  The scheduled arrival time for the trip.
+</ParamField>
+
+### initWithExternalId:destinationGeofenceTag:destinationGeofenceExternalId:scheduledArrivalAt:startTracking:
+
+```swift
+init(externalId: String,
+     destinationGeofenceTag: String?,
+     destinationGeofenceExternalId: String?,
+     scheduledArrivalAt: Date?,
+     startTracking: Bool)
+```
+
+```objective-c
+- (instancetype)initWithExternalId:(NSString *_Nonnull)externalId
+            destinationGeofenceTag:(NSString *_Nullable)destinationGeofenceTag
+     destinationGeofenceExternalId:(NSString *_Nullable)destinationGeofenceExternalId
+                scheduledArrivalAt:(NSDate *_Nullable)scheduledArrivalAt
+                     startTracking:(BOOL)startTracking;
+```
+
+Initializes trip options with full configuration including whether to start tracking automatically.
+
+<ParamField path="externalId" type="String" required>
+  A stable unique ID for the trip.
+</ParamField>
+
+<ParamField path="destinationGeofenceTag" type="String" optional>
+  The tag of the destination geofence.
+</ParamField>
+
+<ParamField path="destinationGeofenceExternalId" type="String" optional>
+  The external ID of the destination geofence.
+</ParamField>
+
+<ParamField path="scheduledArrivalAt" type="Date" optional>
+  The scheduled arrival time for the trip.
+</ParamField>
+
+<ParamField path="startTracking" type="Bool" required>
+  Whether to automatically start tracking when the trip is created. Defaults to `true` when not specified.
+</ParamField>
+
+## Properties
+
+<ResponseField name="externalId" type="String">
+  A stable unique ID for the trip. This is required and should be unique across all trips.
+</ResponseField>
+
+<ResponseField name="metadata" type="NSDictionary" optional>
+  An optional set of custom key-value pairs for the trip. Use this to attach any custom data to the trip.
+</ResponseField>
+
+<ResponseField name="destinationGeofenceTag" type="String" optional>
+  For trips with a destination, the tag of the destination geofence. Used together with `destinationGeofenceExternalId` to identify the destination.
+</ResponseField>
+
+<ResponseField name="destinationGeofenceExternalId" type="String" optional>
+  For trips with a destination, the external ID of the destination geofence. Used together with `destinationGeofenceTag` to identify the destination.
+</ResponseField>
+
+<ResponseField name="scheduledArrivalAt" type="NSDate" optional>
+  The scheduled arrival time for the trip. Used to calculate whether the trip is on time or delayed.
+</ResponseField>
+
+<ResponseField name="mode" type="RadarRouteMode">
+  For trips with a destination, the travel mode used to calculate ETA and distance.
+  
+  **Values:**
+  - `RadarRouteModeFoot` - Walking
+  - `RadarRouteModeBike` - Biking
+  - `RadarRouteModeCar` - Driving (default)
+  - `RadarRouteModeTruck` - Truck
+  - `RadarRouteModeMotorbike` - Motorcycle
+</ResponseField>
+
+<ResponseField name="approachingThreshold" type="UInt16">
+  The distance threshold in meters for triggering the approaching state. When the device is within this distance of the destination, the trip status will change to `approaching`.
+</ResponseField>
+
+<ResponseField name="startTracking" type="BOOL">
+  Whether to automatically start tracking when the trip is created. Defaults to `true`.
+</ResponseField>
+
+<ResponseField name="legs" type="NSArray<RadarTripLeg *>" optional>
+  For multi-destination trips, an optional array of trip legs. Each leg represents a stop along the trip route.
+  
+  See [RadarTripLeg](/api/radar-trip-leg) for more details.
+</ResponseField>
+
+## Class Methods
+
+### tripOptionsFromDictionary
+
+```swift
+class func tripOptions(from dictionary: [AnyHashable : Any]) -> RadarTripOptions?
+```
+
+```objective-c
++ (RadarTripOptions *_Nullable)tripOptionsFromDictionary:(NSDictionary *)dict;
+```
+
+Creates a `RadarTripOptions` instance from a dictionary.
+
+<ParamField path="dict" type="NSDictionary" required>
+  A dictionary containing trip options configuration.
+</ParamField>
+
+**Returns:** A `RadarTripOptions` instance, or `nil` if the dictionary is invalid.
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [AnyHashable : Any]
+```
+
+```objective-c
+- (NSDictionary *)dictionaryValue;
+```
+
+Converts the trip options instance to a dictionary representation.
+
+**Returns:** A dictionary containing all trip options properties.
+
+## Usage Examples
+
+### Single Destination Trip
+
+```swift
+// Create trip options with a destination geofence
+let tripOptions = RadarTripOptions(
+    externalId: "order-123",
+    destinationGeofenceTag: "store",
+    destinationGeofenceExternalId: "store-456"
+)
+
+// Optionally set additional properties
+tripOptions.mode = .car
+tripOptions.metadata = ["orderId": "123", "customerId": "456"]
+
+// Start the trip
+Radar.startTrip(options: tripOptions)
+```
+
+```objective-c
+// Create trip options with a destination geofence
+RadarTripOptions *tripOptions = [[RadarTripOptions alloc] 
+    initWithExternalId:@"order-123"
+    destinationGeofenceTag:@"store"
+    destinationGeofenceExternalId:@"store-456"];
+
+// Optionally set additional properties
+tripOptions.mode = RadarRouteModeCar;
+tripOptions.metadata = @{@"orderId": @"123", @"customerId": @"456"};
+
+// Start the trip
+[Radar startTripWithOptions:tripOptions];
+```
+
+### Trip with Scheduled Arrival
+
+```swift
+// Create trip with scheduled arrival time
+let arrivalTime = Date(timeIntervalSinceNow: 1800) // 30 minutes from now
+
+let tripOptions = RadarTripOptions(
+    externalId: "delivery-789",
+    destinationGeofenceTag: "customer",
+    destinationGeofenceExternalId: "customer-123",
+    scheduledArrivalAt: arrivalTime
+)
+
+tripOptions.mode = .car
+tripOptions.approachingThreshold = 500 // 500 meters
+
+Radar.startTrip(options: tripOptions)
+```
+
+```objective-c
+// Create trip with scheduled arrival time
+NSDate *arrivalTime = [NSDate dateWithTimeIntervalSinceNow:1800]; // 30 minutes from now
+
+RadarTripOptions *tripOptions = [[RadarTripOptions alloc]
+    initWithExternalId:@"delivery-789"
+    destinationGeofenceTag:@"customer"
+    destinationGeofenceExternalId:@"customer-123"
+    scheduledArrivalAt:arrivalTime];
+
+tripOptions.mode = RadarRouteModeCar;
+tripOptions.approachingThreshold = 500; // 500 meters
+
+[Radar startTripWithOptions:tripOptions];
+```
+
+### Multi-Destination Trip
+
+```swift
+// Create trip legs
+let leg1 = RadarTripLeg(
+    destinationGeofenceTag: "store",
+    destinationGeofenceExternalId: "store-1"
+)
+leg1.stopDuration = 10 // 10 minutes
+
+let leg2 = RadarTripLeg(
+    destinationGeofenceTag: "store",
+    destinationGeofenceExternalId: "store-2"
+)
+leg2.stopDuration = 15 // 15 minutes
+
+// Create trip options with legs
+let tripOptions = RadarTripOptions(
+    externalId: "route-456",
+    destinationGeofenceTag: nil,
+    destinationGeofenceExternalId: nil
+)
+tripOptions.legs = [leg1, leg2]
+tripOptions.mode = .car
+
+Radar.startTrip(options: tripOptions)
+```
+
+```objective-c
+// Create trip legs
+RadarTripLeg *leg1 = [[RadarTripLeg alloc]
+    initWithDestinationGeofenceTag:@"store"
+    destinationGeofenceExternalId:@"store-1"];
+leg1.stopDuration = 10; // 10 minutes
+
+RadarTripLeg *leg2 = [[RadarTripLeg alloc]
+    initWithDestinationGeofenceTag:@"store"
+    destinationGeofenceExternalId:@"store-2"];
+leg2.stopDuration = 15; // 15 minutes
+
+// Create trip options with legs
+RadarTripOptions *tripOptions = [[RadarTripOptions alloc]
+    initWithExternalId:@"route-456"
+    destinationGeofenceTag:nil
+    destinationGeofenceExternalId:nil];
+tripOptions.legs = @[leg1, leg2];
+tripOptions.mode = RadarRouteModeCar;
+
+[Radar startTripWithOptions:tripOptions];
+```

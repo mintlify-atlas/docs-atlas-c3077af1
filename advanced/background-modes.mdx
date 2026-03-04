@@ -1,0 +1,341 @@
+---
+title: Background Modes
+description: Configure your iOS app for background location updates and geofencing
+---
+
+The Radar iOS SDK provides powerful background tracking capabilities to monitor user location even when your app is not in the foreground. This guide covers the necessary configuration and implementation details.
+
+## Required capabilities
+
+<Steps>
+  <Step title="Enable Location Updates background mode">
+    Open your Xcode project and navigate to your app target's **Signing & Capabilities** tab.
+
+    Click the **+ Capability** button and add **Background Modes**.
+
+    Enable **Location updates** to allow the SDK to receive location updates in the background.
+  </Step>
+
+  <Step title="Configure Info.plist">
+    Add the required location usage descriptions to your `Info.plist`:
+
+    ```xml
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We use your location to provide location-based features and notifications.</string>
+    
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We use your location to provide location-based features.</string>
+    ```
+
+    <Note>
+      Customize these descriptions to accurately reflect how your app uses location data.
+    </Note>
+  </Step>
+
+  <Step title="Request location permissions">
+    Request the appropriate location permission level from the user:
+
+    <CodeGroup>
+    ```swift Swift
+    import CoreLocation
+
+    let locationManager = CLLocationManager()
+
+    // Request when-in-use permission first
+    locationManager.requestWhenInUseAuthorization()
+
+    // Then request always authorization for background tracking
+    locationManager.requestAlwaysAuthorization()
+    ```
+
+    ```objectivec Objective-C
+    @import CoreLocation;
+
+    CLLocationManager *locationManager = [[CLLocationManager alloc] init];
+
+    // Request when-in-use permission first
+    [locationManager requestWhenInUseAuthorization];
+
+    // Then request always authorization for background tracking
+    [locationManager requestAlwaysAuthorization];
+    ```
+    </CodeGroup>
+
+    <Warning>
+      Always request `WhenInUse` permission before requesting `Always` permission to follow Apple's recommended flow.
+    </Warning>
+  </Step>
+</Steps>
+
+## Background tracking presets
+
+Radar provides three preset tracking configurations optimized for different use cases:
+
+### Continuous tracking
+
+Updates about every 30 seconds while moving or stopped. Moderate battery usage. Shows the flashing blue status bar during tracking.
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+Radar.startTracking(trackingOptions: .presetContinuous)
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetContinuous];
+```
+</CodeGroup>
+
+### Responsive tracking
+
+Updates about every 2.5 minutes when moving and shuts down when stopped to save battery. Once stopped, the device will need to move more than 100 meters to wake up and start moving again. Low battery usage.
+
+<CodeGroup>
+```swift Swift
+Radar.startTracking(trackingOptions: .presetResponsive)
+```
+
+```objectivec Objective-C
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetResponsive];
+```
+</CodeGroup>
+
+<Info>
+  Location updates may be delayed significantly by Low Power Mode, or if the device has connectivity issues, low battery, or Wi-Fi disabled.
+</Info>
+
+### Efficient tracking
+
+Uses the iOS visit monitoring service to update only on stops and exits. Lowest battery usage. Once stopped, the device will need to move several hundred meters and trigger a visit departure to wake up.
+
+<CodeGroup>
+```swift Swift
+Radar.startTracking(trackingOptions: .presetEfficient)
+```
+
+```objectivec Objective-C
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetEfficient];
+```
+</CodeGroup>
+
+## Custom tracking options
+
+For more control, create custom tracking options:
+
+<CodeGroup>
+```swift Swift
+let trackingOptions = RadarTrackingOptions()
+
+// Location update intervals
+trackingOptions.desiredStoppedUpdateInterval = 0 // seconds (0 = shut down when stopped)
+trackingOptions.desiredMovingUpdateInterval = 150 // seconds
+trackingOptions.desiredSyncInterval = 20 // seconds
+
+// Accuracy
+trackingOptions.desiredAccuracy = .medium
+
+// Stop detection
+trackingOptions.stopDuration = 140 // seconds
+trackingOptions.stopDistance = 70 // meters
+
+// Replay failed updates
+trackingOptions.replay = .stops
+
+// Sync behavior
+trackingOptions.syncLocations = .all
+
+// Background modes
+trackingOptions.showBlueBar = false
+trackingOptions.useStoppedGeofence = true
+trackingOptions.stoppedGeofenceRadius = 100 // meters
+trackingOptions.useMovingGeofence = true
+trackingOptions.movingGeofenceRadius = 100 // meters
+trackingOptions.syncGeofences = true
+trackingOptions.useVisits = true
+trackingOptions.useSignificantLocationChanges = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objectivec Objective-C
+RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+
+// Location update intervals
+trackingOptions.desiredStoppedUpdateInterval = 0; // seconds (0 = shut down when stopped)
+trackingOptions.desiredMovingUpdateInterval = 150; // seconds
+trackingOptions.desiredSyncInterval = 20; // seconds
+
+// Accuracy
+trackingOptions.desiredAccuracy = RadarTrackingOptionsDesiredAccuracyMedium;
+
+// Stop detection
+trackingOptions.stopDuration = 140; // seconds
+trackingOptions.stopDistance = 70; // meters
+
+// Replay failed updates
+trackingOptions.replay = RadarTrackingOptionsReplayStops;
+
+// Sync behavior
+trackingOptions.syncLocations = RadarTrackingOptionsSyncAll;
+
+// Background modes
+trackingOptions.showBlueBar = NO;
+trackingOptions.useStoppedGeofence = YES;
+trackingOptions.stoppedGeofenceRadius = 100; // meters
+trackingOptions.useMovingGeofence = YES;
+trackingOptions.movingGeofenceRadius = 100; // meters
+trackingOptions.syncGeofences = YES;
+trackingOptions.useVisits = YES;
+trackingOptions.useSignificantLocationChanges = YES;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+</CodeGroup>
+
+## Background mode options
+
+### Blue status bar
+
+The `showBlueBar` property determines whether the flashing blue status bar is shown when tracking in the background:
+
+```swift
+trackingOptions.showBlueBar = true // Show blue bar (required for continuous tracking)
+trackingOptions.showBlueBar = false // Hide blue bar (use geofencing instead)
+```
+
+### Client-side geofencing
+
+Use iOS region monitoring to create client geofences around the device's current location:
+
+```swift
+// When stopped
+trackingOptions.useStoppedGeofence = true
+trackingOptions.stoppedGeofenceRadius = 100 // meters
+
+// When moving
+trackingOptions.useMovingGeofence = true
+trackingOptions.movingGeofenceRadius = 100 // meters
+```
+
+### Visit monitoring
+
+Use the iOS visit monitoring service for lowest battery usage:
+
+```swift
+trackingOptions.useVisits = true
+```
+
+Learn more about [visit monitoring](https://developer.apple.com/documentation/corelocation/getting_the_user_s_location/using_the_visits_location_service) in Apple's documentation.
+
+### Significant location changes
+
+Use the iOS significant location change service:
+
+```swift
+trackingOptions.useSignificantLocationChanges = true
+```
+
+Learn more about [significant location changes](https://developer.apple.com/documentation/corelocation/getting_the_user_s_location/using_the_significant-change_location_service) in Apple's documentation.
+
+### Geofence syncing
+
+Sync nearby geofences from the server to improve responsiveness:
+
+```swift
+trackingOptions.syncGeofences = true
+```
+
+## Check tracking status
+
+Check whether tracking is currently active:
+
+<CodeGroup>
+```swift Swift
+if Radar.isTracking() {
+    print("Tracking is active")
+}
+```
+
+```objectivec Objective-C
+if ([Radar isTracking]) {
+    NSLog(@"Tracking is active");
+}
+```
+</CodeGroup>
+
+Get the current tracking options:
+
+<CodeGroup>
+```swift Swift
+let options = Radar.getTrackingOptions()
+print("Desired accuracy: \(options.desiredAccuracy)")
+```
+
+```objectivec Objective-C
+RadarTrackingOptions *options = [Radar getTrackingOptions];
+NSLog(@"Desired accuracy: %ld", (long)options.desiredAccuracy);
+```
+</CodeGroup>
+
+## Stop tracking
+
+Stop background tracking:
+
+<CodeGroup>
+```swift Swift
+Radar.stopTracking()
+```
+
+```objectivec Objective-C
+[Radar stopTracking];
+```
+</CodeGroup>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Request permissions carefully" icon="hand">
+    Follow Apple's guidelines for requesting location permissions. Always explain why you need the permission before requesting it.
+  </Card>
+  
+  <Card title="Choose the right preset" icon="sliders">
+    Use the preset that matches your use case. Don't use continuous tracking if responsive or efficient will work.
+  </Card>
+  
+  <Card title="Test in background" icon="mobile">
+    Test your app's background tracking behavior with the device locked and the app in the background.
+  </Card>
+  
+  <Card title="Monitor battery usage" icon="battery-full">
+    Use Xcode's Energy Log instrument to monitor your app's battery impact.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<Accordion title="Background tracking not working">
+  - Verify the **Location updates** background mode is enabled
+  - Ensure you have requested "Always" location authorization
+  - Check that location services are enabled on the device
+  - Verify your Info.plist includes the required usage descriptions
+</Accordion>
+
+<Accordion title="Blue status bar showing unexpectedly">
+  Set `showBlueBar` to `false` and use `useStoppedGeofence` or `useMovingGeofence` instead for background tracking without the blue bar.
+</Accordion>
+
+<Accordion title="High battery usage">
+  - Use `.presetResponsive` or `.presetEfficient` instead of `.presetContinuous`
+  - Increase `desiredMovingUpdateInterval` and `desiredStoppedUpdateInterval`
+  - Set `desiredAccuracy` to `.medium` or `.low`
+  - Enable `useStoppedGeofence` and set `desiredStoppedUpdateInterval` to `0` to shut down when stopped
+</Accordion>
+
+## Related resources
+
+- [Tracking options](/sdk-reference/ios#tracking-options)
+- [Motion detection](/advanced/motion-detection)
+- [iOS Location Services](https://developer.apple.com/documentation/corelocation/)

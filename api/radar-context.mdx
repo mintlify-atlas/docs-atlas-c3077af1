@@ -1,0 +1,411 @@
+---
+title: RadarContext
+description: API reference for the RadarContext class
+---
+
+Represents the context for a location. The context includes geofences, places, and regions that are relevant to a specific location.
+
+Learn more in the [Context API documentation](https://radar.com/documentation/api#context).
+
+## Properties
+
+<ResponseField name="geofences" type="[RadarGeofence]" required>
+  An array of the geofences for the location. May be empty if the location is not in any geofences.
+
+  See the [Geofences documentation](https://radar.com/documentation/geofences) for more information.
+</ResponseField>
+
+<ResponseField name="place" type="RadarPlace">
+  The place for the location. May be `nil` if the location is not at a place or if Places is not enabled.
+
+  See the [Places documentation](https://radar.com/documentation/places) for more information.
+</ResponseField>
+
+<ResponseField name="country" type="RadarRegion">
+  The country of the location. May be `nil` if country is not available or if Regions is not enabled.
+
+  See the [Regions documentation](https://radar.com/documentation/regions) for more information.
+</ResponseField>
+
+<ResponseField name="state" type="RadarRegion">
+  The state of the location. May be `nil` if state is not available or if Regions is not enabled.
+
+  See the [Regions documentation](https://radar.com/documentation/regions) for more information.
+</ResponseField>
+
+<ResponseField name="dma" type="RadarRegion">
+  The designated market area (DMA) of the location. May be `nil` if DMA is not available or if Regions is not enabled.
+
+  See the [Regions documentation](https://radar.com/documentation/regions) for more information.
+</ResponseField>
+
+<ResponseField name="postalCode" type="RadarRegion">
+  The postal code of the location. May be `nil` if postal code is not available or if Regions is not enabled.
+
+  See the [Regions documentation](https://radar.com/documentation/regions) for more information.
+</ResponseField>
+
+## Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [AnyHashable: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the context to a dictionary representation.
+
+**Returns:** A dictionary representation of the context.
+
+## Nested Objects
+
+<Expandable title="RadarGeofence">
+  Represents a geofence at the location.
+
+  <ResponseField name="_id" type="String" required>
+    The Radar ID of the geofence.
+  </ResponseField>
+
+  <ResponseField name="__description" type="String" required>
+    The description of the geofence. Not to be confused with the `NSObject` `description` property.
+  </ResponseField>
+
+  <ResponseField name="tag" type="String">
+    The tag of the geofence.
+  </ResponseField>
+
+  <ResponseField name="externalId" type="String">
+    The external ID of the geofence.
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The optional set of custom key-value pairs for the geofence.
+  </ResponseField>
+
+  <ResponseField name="geometry" type="RadarGeofenceGeometry" required>
+    The geometry of the geofence, which can be cast to either `RadarCircleGeometry` or `RadarPolygonGeometry`.
+  </ResponseField>
+
+  <ResponseField name="operatingHours" type="RadarOperatingHours">
+    The optional operating hours for the geofence.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarPlace">
+  Represents a place at the location.
+
+  <ResponseField name="_id" type="String" required>
+    The Radar ID of the place.
+  </ResponseField>
+
+  <ResponseField name="name" type="String" required>
+    The name of the place.
+  </ResponseField>
+
+  <ResponseField name="categories" type="[String]" required>
+    The categories of the place. For a full list of categories, see the [Places categories documentation](https://radar.com/documentation/places/categories).
+  </ResponseField>
+
+  <ResponseField name="chain" type="RadarChain">
+    The chain of the place, if known. May be `nil` for places without a chain. For a full list of chains, see the [Places chains documentation](https://radar.com/documentation/places/chains).
+  </ResponseField>
+
+  <ResponseField name="location" type="RadarCoordinate" required>
+    The location of the place.
+  </ResponseField>
+
+  <ResponseField name="group" type="String">
+    The group for the place, if any. For a full list of groups, see the [Places groups documentation](https://radar.com/documentation/places/groups).
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The metadata for the place, if part of a group. For details of metadata fields see the [Places groups documentation](https://radar.com/documentation/places/groups).
+  </ResponseField>
+
+  <ResponseField name="address" type="RadarAddress">
+    The address of the place.
+  </ResponseField>
+
+  ### Methods
+
+  ```swift
+  func isChain(_ slug: String?) -> Bool
+  ```
+
+  ```objective-c
+  - (BOOL)isChain:(NSString *_Nullable)slug;
+  ```
+
+  Returns a boolean indicating whether the place is part of the specified chain.
+
+  <ParamField path="slug" type="String">
+    The chain slug to check.
+  </ParamField>
+
+  **Returns:** `true` if the place is part of the specified chain, `false` otherwise.
+
+  ---
+
+  ```swift
+  func hasCategory(_ category: String?) -> Bool
+  ```
+
+  ```objective-c
+  - (BOOL)hasCategory:(NSString *_Nullable)category;
+  ```
+
+  Returns a boolean indicating whether the place has the specified category.
+
+  <ParamField path="category" type="String">
+    The category to check.
+  </ParamField>
+
+  **Returns:** `true` if the place has the specified category, `false` otherwise.
+</Expandable>
+
+<Expandable title="RadarRegion">
+  Represents a geographic region (country, state, DMA, or postal code).
+
+  <ResponseField name="_id" type="String" required>
+    The Radar ID of the region.
+  </ResponseField>
+
+  <ResponseField name="name" type="String" required>
+    The name of the region.
+  </ResponseField>
+
+  <ResponseField name="code" type="String" required>
+    The unique code for the region.
+  </ResponseField>
+
+  <ResponseField name="type" type="String" required>
+    The type of the region (e.g., "country", "state", "dma", "postalCode").
+  </ResponseField>
+
+  <ResponseField name="flag" type="String">
+    The optional flag of the region.
+  </ResponseField>
+
+  <ResponseField name="allowed" type="Bool" required>
+    A boolean indicating whether the jurisdiction is allowed. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="passed" type="Bool" required>
+    A boolean indicating whether all jurisdiction checks for the region have passed. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="inExclusionZone" type="Bool" required>
+    A boolean indicating whether the location is in an exclusion zone for the jurisdiction. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="inBufferZone" type="Bool" required>
+    A boolean indicating whether the location is too close to the border for the jurisdiction. May be `false` if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="distanceToBorder" type="Double" required>
+    The distance in meters to the border of the jurisdiction. May be 0 if Fraud is not enabled.
+  </ResponseField>
+
+  <ResponseField name="expected" type="Bool" required>
+    A boolean indicating whether the jurisdiction is expected based on the values passed to `setExpectedJurisdiction()`.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarChain">
+  Represents the chain of a place.
+
+  <ResponseField name="slug" type="String" required>
+    The unique ID of the chain. For a full list of chains, see the [Places chains documentation](https://radar.com/documentation/places/chains).
+  </ResponseField>
+
+  <ResponseField name="name" type="String" required>
+    The name of the chain.
+  </ResponseField>
+
+  <ResponseField name="externalId" type="String">
+    The external ID of the chain.
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The optional set of custom key-value pairs for the chain.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarAddress">
+  Represents an address.
+
+  <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+    The location coordinate of the address.
+  </ResponseField>
+
+  <ResponseField name="formattedAddress" type="String">
+    The formatted string representation of the address.
+  </ResponseField>
+
+  <ResponseField name="country" type="String">
+    The name of the country of the address.
+  </ResponseField>
+
+  <ResponseField name="countryCode" type="String">
+    The unique code of the country of the address.
+  </ResponseField>
+
+  <ResponseField name="countryFlag" type="String">
+    The flag of the country of the address.
+  </ResponseField>
+
+  <ResponseField name="dma" type="String">
+    The name of the DMA of the address.
+  </ResponseField>
+
+  <ResponseField name="dmaCode" type="String">
+    The unique code of the DMA of the address.
+  </ResponseField>
+
+  <ResponseField name="state" type="String">
+    The name of the state of the address.
+  </ResponseField>
+
+  <ResponseField name="stateCode" type="String">
+    The unique code of the state of the address.
+  </ResponseField>
+
+  <ResponseField name="postalCode" type="String">
+    The postal code of the address.
+  </ResponseField>
+
+  <ResponseField name="city" type="String">
+    The city of the address.
+  </ResponseField>
+
+  <ResponseField name="borough" type="String">
+    The borough of the address.
+  </ResponseField>
+
+  <ResponseField name="county" type="String">
+    The county of the address.
+  </ResponseField>
+
+  <ResponseField name="neighborhood" type="String">
+    The neighborhood of the address.
+  </ResponseField>
+
+  <ResponseField name="number" type="String">
+    The street number of the address.
+  </ResponseField>
+
+  <ResponseField name="street" type="String">
+    The street name of the address.
+  </ResponseField>
+
+  <ResponseField name="addressLabel" type="String">
+    The label of the address.
+  </ResponseField>
+
+  <ResponseField name="placeLabel" type="String">
+    The label of the place.
+  </ResponseField>
+
+  <ResponseField name="unit" type="String">
+    The unit of the address.
+  </ResponseField>
+
+  <ResponseField name="plus4" type="String">
+    The plus4 value for the zip of the address.
+  </ResponseField>
+
+  <ResponseField name="distance" type="NSNumber">
+    The distance to the search anchor in meters.
+  </ResponseField>
+
+  <ResponseField name="layer" type="String">
+    The layer of the address, e.g. 'place', 'address', 'intersection', 'street', 'state', etc.
+  </ResponseField>
+
+  <ResponseField name="metadata" type="[String: Any]">
+    The metadata of the address.
+  </ResponseField>
+
+  <ResponseField name="confidence" type="RadarAddressConfidence" required>
+    The confidence level of the geocoding result. Possible values: `none` (0), `exact` (1), `interpolated` (2), `fallback` (3).
+  </ResponseField>
+
+  <ResponseField name="timeZone" type="RadarTimeZone">
+    The time zone information of the address.
+  </ResponseField>
+
+  <ResponseField name="categories" type="[String]">
+    The categories of the address.
+  </ResponseField>
+</Expandable>
+
+<Expandable title="RadarCoordinate">
+  Represents a location coordinate.
+
+  <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+    The coordinate containing latitude and longitude.
+  </ResponseField>
+</Expandable>
+
+## Example Usage
+
+```swift
+Radar.getContext { (status, location, context) in
+    if status == .success, let context = context {
+        // Access geofences
+        for geofence in context.geofences {
+            print("In geofence: \(geofence.__description)")
+        }
+        
+        // Check place
+        if let place = context.place {
+            print("At place: \(place.name)")
+        }
+        
+        // Check regions
+        if let country = context.country {
+            print("Country: \(country.name)")
+        }
+        if let state = context.state {
+            print("State: \(state.name)")
+        }
+    }
+}
+```
+
+```objective-c
+[Radar getContextWithCompletionHandler:^(RadarStatus status, CLLocation * _Nullable location, RadarContext * _Nullable context) {
+    if (status == RadarStatusSuccess && context) {
+        // Access geofences
+        for (RadarGeofence *geofence in context.geofences) {
+            NSLog(@"In geofence: %@", geofence.__description);
+        }
+        
+        // Check place
+        if (context.place) {
+            NSLog(@"At place: %@", context.place.name);
+        }
+        
+        // Check regions
+        if (context.country) {
+            NSLog(@"Country: %@", context.country.name);
+        }
+        if (context.state) {
+            NSLog(@"State: %@", context.state.name);
+        }
+    }
+}];
+```
+
+## See Also
+
+- [RadarEvent](/api/radar-event)
+- [RadarUser](/api/radar-user)
+- [Context API Documentation](https://radar.com/documentation/api#context)
+- [Geofences Guide](https://radar.com/documentation/geofences)
+- [Places Guide](https://radar.com/documentation/places)
+- [Regions Guide](https://radar.com/documentation/regions)

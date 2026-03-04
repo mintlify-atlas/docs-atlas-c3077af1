@@ -1,0 +1,670 @@
+---
+title: "Trip Tracking"
+description: "Track trips with ETAs, status updates, and destination monitoring on iOS"
+---
+
+## Overview
+
+Radar's trip tracking feature enables you to track journeys from origin to destination with real-time ETAs, status updates, and approaching/arrival events. Perfect for delivery, ride-sharing, and on-demand services.
+
+## Understanding Trips
+
+A trip represents a journey to a destination geofence. Trips include:
+
+- **External ID**: Your unique identifier for the trip
+- **Destination**: A geofence tag or external ID
+- **Metadata**: Custom key-value pairs
+- **Mode**: Travel mode (car, bike, foot)
+- **Status**: Current trip state (started, approaching, arrived, etc.)
+- **ETA**: Real-time distance and duration to destination
+- **Scheduled arrival**: Optional expected arrival time
+- **Multi-destination support**: Multiple legs for complex routes
+
+## Trip Lifecycle
+
+Trips progress through the following statuses:
+
+<Steps>
+
+<Step title="Started">
+Trip has been created and tracking has begun.
+
+**Status**: `RadarTripStatusStarted`
+
+**Event**: `RadarEventTypeUserStartedTrip`
+</Step>
+
+<Step title="Approaching">
+User is approaching the destination (within threshold).
+
+**Status**: `RadarTripStatusApproaching`
+
+**Event**: `RadarEventTypeUserApproachingTripDestination`
+</Step>
+
+<Step title="Arrived">
+User has arrived at the destination geofence.
+
+**Status**: `RadarTripStatusArrived`
+
+**Event**: `RadarEventTypeUserArrivedAtTripDestination`
+</Step>
+
+<Step title="Completed or Canceled">
+Trip has been completed or canceled.
+
+**Status**: `RadarTripStatusCompleted` or `RadarTripStatusCanceled`
+
+**Event**: `RadarEventTypeUserStoppedTrip`
+</Step>
+
+</Steps>
+
+## Starting a Trip
+
+Start a trip with destination geofence tag or external ID:
+
+<CodeGroup>
+
+```swift Swift
+let tripOptions = RadarTripOptions(
+    externalId: "order-123",
+    destinationGeofenceTag: "store",
+    destinationGeofenceExternalId: "store-456"
+)
+
+tripOptions.mode = .car
+tripOptions.metadata = [
+    "order_id": "order-123",
+    "customer_name": "John Doe"
+]
+
+Radar.startTrip(options: tripOptions) { (status, trip, events) in
+    if status == .success {
+        print("Trip started: \(trip?._id ?? "")")
+        print("ETA: \(trip?.etaDuration ?? 0) minutes")
+        print("Distance: \(trip?.etaDistance ?? 0) meters")
+    }
+}
+```
+
+```objective-c Objective-C
+RadarTripOptions *tripOptions = [[RadarTripOptions alloc] 
+    initWithExternalId:@"order-123"
+    destinationGeofenceTag:@"store"
+    destinationGeofenceExternalId:@"store-456"];
+
+tripOptions.mode = RadarRouteModeCar;
+tripOptions.metadata = @{
+    @"order_id": @"order-123",
+    @"customer_name": @"John Doe"
+};
+
+[Radar startTripWithOptions:tripOptions
+          completionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, NSArray<RadarEvent *> * _Nullable events) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Trip started: %@", trip._id);
+        NSLog(@"ETA: %.0f minutes", trip.etaDuration);
+        NSLog(@"Distance: %.0f meters", trip.etaDistance);
+    }
+}];
+```
+
+</CodeGroup>
+
+<Info>
+Either `destinationGeofenceTag` or `destinationGeofenceExternalId` is required. Both can be provided for additional matching.
+</Info>
+
+### Starting with Custom Tracking Options
+
+You can specify custom tracking options for the trip duration:
+
+<CodeGroup>
+
+```swift Swift
+let tripOptions = RadarTripOptions(
+    externalId: "trip-789",
+    destinationGeofenceTag: "restaurant",
+    destinationGeofenceExternalId: nil
+)
+
+let trackingOptions = RadarTrackingOptions.presetContinuous
+trackingOptions.desiredMovingUpdateInterval = 30 // 30 seconds
+
+Radar.startTrip(
+    options: tripOptions,
+    trackingOptions: trackingOptions
+) { (status, trip, events) in
+    // handle response
+}
+```
+
+```objective-c Objective-C
+RadarTripOptions *tripOptions = [[RadarTripOptions alloc]
+    initWithExternalId:@"trip-789"
+    destinationGeofenceTag:@"restaurant"
+    destinationGeofenceExternalId:nil];
+
+RadarTrackingOptions *trackingOptions = RadarTrackingOptions.presetContinuous;
+trackingOptions.desiredMovingUpdateInterval = 30; // 30 seconds
+
+[Radar startTripWithOptions:tripOptions
+            trackingOptions:trackingOptions
+          completionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, NSArray<RadarEvent *> * _Nullable events) {
+    // handle response
+}];
+```
+
+</CodeGroup>
+
+<Warning>
+When you start a trip, Radar automatically starts tracking if not already enabled. You can pass custom tracking options or set `startTracking` to `false` to manage tracking separately.
+</Warning>
+
+### Trip Options Reference
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `externalId` | `String` | Your unique identifier for the trip (required). |
+| `destinationGeofenceTag` | `String?` | Tag of the destination geofence. |
+| `destinationGeofenceExternalId` | `String?` | External ID of the destination geofence. |
+| `mode` | `RadarRouteMode` | Travel mode: `.car`, `.bike`, `.foot`, `.truck`, `.motorbike` (default: `.car`). |
+| `metadata` | `[String: Any]?` | Custom key-value pairs for the trip. |
+| `scheduledArrivalAt` | `Date?` | Expected arrival time. |
+| `approachingThreshold` | `UInt16` | Distance threshold in meters for "approaching" status (default: 0, uses server default). |
+| `startTracking` | `BOOL` | Whether to automatically start tracking (default: `true`). |
+| `legs` | `[RadarTripLeg]?` | Array of trip legs for multi-destination trips. |
+
+## Updating a Trip
+
+Manually update a trip's options or status:
+
+<CodeGroup>
+
+```swift Swift
+let tripOptions = RadarTripOptions(
+    externalId: "order-123",
+    destinationGeofenceTag: "store",
+    destinationGeofenceExternalId: "store-789"
+)
+
+tripOptions.metadata = ["updated": true]
+
+Radar.updateTrip(
+    options: tripOptions,
+    status: .unknown // or specify a status to update
+) { (status, trip, events) in
+    if status == .success {
+        print("Trip updated")
+    }
+}
+```
+
+```objective-c Objective-C
+RadarTripOptions *tripOptions = [[RadarTripOptions alloc]
+    initWithExternalId:@"order-123"
+    destinationGeofenceTag:@"store"
+    destinationGeofenceExternalId:@"store-789"];
+
+tripOptions.metadata = @{@"updated": @YES};
+
+[Radar updateTripWithOptions:tripOptions
+                      status:RadarTripStatusUnknown // or specify a status
+           completionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, NSArray<RadarEvent *> * _Nullable events) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Trip updated");
+    }
+}];
+```
+
+</CodeGroup>
+
+<Note>
+Pass `RadarTripStatusUnknown` to avoid updating the trip status when you only want to update other properties.
+</Note>
+
+## Completing a Trip
+
+Mark a trip as completed:
+
+<CodeGroup>
+
+```swift Swift
+Radar.completeTrip { (status, trip, events) in
+    if status == .success {
+        print("Trip completed")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar completeTripWithCompletionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, NSArray<RadarEvent *> * _Nullable events) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Trip completed");
+    }
+}];
+```
+
+</CodeGroup>
+
+## Canceling a Trip
+
+Cancel an active trip:
+
+<CodeGroup>
+
+```swift Swift
+Radar.cancelTrip { (status, trip, events) in
+    if status == .success {
+        print("Trip canceled")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar cancelTripWithCompletionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, NSArray<RadarEvent *> * _Nullable events) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Trip canceled");
+    }
+}];
+```
+
+</CodeGroup>
+
+<Tip>
+Completing or canceling a trip does not automatically stop tracking. Call `Radar.stopTracking()` if you want to stop location updates.
+</Tip>
+
+## Getting Current Trip
+
+Retrieve the current active trip:
+
+<CodeGroup>
+
+```swift Swift
+if let trip = Radar.getTrip() {
+    print("Trip ID: \(trip._id)")
+    print("External ID: \(trip.externalId ?? "")")
+    print("Status: \(trip.status)")
+    print("ETA: \(trip.etaDuration) minutes")
+    print("Distance: \(trip.etaDistance) meters")
+}
+```
+
+```objective-c Objective-C
+RadarTrip *trip = [Radar getTrip];
+if (trip) {
+    NSLog(@"Trip ID: %@", trip._id);
+    NSLog(@"External ID: %@", trip.externalId);
+    NSLog(@"Status: %ld", (long)trip.status);
+    NSLog(@"ETA: %.0f minutes", trip.etaDuration);
+    NSLog(@"Distance: %.0f meters", trip.etaDistance);
+}
+```
+
+</CodeGroup>
+
+## Trip Events
+
+Receive trip events through the `RadarDelegate`:
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        switch event.type {
+        case .userStartedTrip:
+            print("Trip started")
+            
+        case .userUpdatedTrip:
+            if let trip = event.trip {
+                print("ETA: \(trip.etaDuration) minutes")
+            }
+            
+        case .userApproachingTripDestination:
+            print("User is approaching destination")
+            // Send notification to recipient
+            
+        case .userArrivedAtTripDestination:
+            print("User arrived at destination")
+            // Complete delivery, notify recipient
+            
+        case .userStoppedTrip:
+            print("Trip stopped (completed or canceled)")
+            
+        default:
+            break
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        switch (event.type) {
+            case RadarEventTypeUserStartedTrip:
+                NSLog(@"Trip started");
+                break;
+                
+            case RadarEventTypeUserUpdatedTrip:
+                if (event.trip) {
+                    NSLog(@"ETA: %.0f minutes", event.trip.etaDuration);
+                }
+                break;
+                
+            case RadarEventTypeUserApproachingTripDestination:
+                NSLog(@"User is approaching destination");
+                // Send notification to recipient
+                break;
+                
+            case RadarEventTypeUserArrivedAtTripDestination:
+                NSLog(@"User arrived at destination");
+                // Complete delivery, notify recipient
+                break;
+                
+            case RadarEventTypeUserStoppedTrip:
+                NSLog(@"Trip stopped (completed or canceled)");
+                break;
+                
+            default:
+                break;
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+## Multi-Destination Trips
+
+For trips with multiple stops, use trip legs:
+
+### Creating Multi-Destination Trips
+
+<CodeGroup>
+
+```swift Swift
+let leg1 = RadarTripLeg(
+    destinationGeofenceTag: "restaurant",
+    destinationGeofenceExternalId: "restaurant-123"
+)
+leg1.metadata = ["order_id": "order-1"]
+
+let leg2 = RadarTripLeg(
+    destinationGeofenceTag: "customer",
+    destinationGeofenceExternalId: "customer-456"
+)
+leg2.metadata = ["order_id": "order-2"]
+
+let tripOptions = RadarTripOptions(
+    externalId: "delivery-789",
+    destinationGeofenceTag: nil,
+    destinationGeofenceExternalId: nil
+)
+tripOptions.legs = [leg1, leg2]
+tripOptions.mode = .car
+
+Radar.startTrip(options: tripOptions) { (status, trip, events) in
+    if status == .success {
+        print("Multi-destination trip started")
+        print("Legs: \(trip?.legs?.count ?? 0)")
+        print("Current leg: \(trip?.currentLegId ?? "")")
+    }
+}
+```
+
+```objective-c Objective-C
+RadarTripLeg *leg1 = [[RadarTripLeg alloc]
+    initWithDestinationGeofenceTag:@"restaurant"
+    destinationGeofenceExternalId:@"restaurant-123"];
+leg1.metadata = @{@"order_id": @"order-1"};
+
+RadarTripLeg *leg2 = [[RadarTripLeg alloc]
+    initWithDestinationGeofenceTag:@"customer"
+    destinationGeofenceExternalId:@"customer-456"};
+leg2.metadata = @{@"order_id": @"order-2"};
+
+RadarTripOptions *tripOptions = [[RadarTripOptions alloc]
+    initWithExternalId:@"delivery-789"
+    destinationGeofenceTag:nil
+    destinationGeofenceExternalId:nil];
+tripOptions.legs = @[leg1, leg2];
+tripOptions.mode = RadarRouteModeCar;
+
+[Radar startTripWithOptions:tripOptions
+          completionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, NSArray<RadarEvent *> * _Nullable events) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Multi-destination trip started");
+        NSLog(@"Legs: %lu", (unsigned long)trip.legs.count);
+        NSLog(@"Current leg: %@", trip.currentLegId);
+    }
+}];
+```
+
+</CodeGroup>
+
+### Updating Trip Legs
+
+Update the status of individual legs:
+
+<CodeGroup>
+
+```swift Swift
+let trip = Radar.getTrip()
+if let legId = trip?.legs?.first?._id {
+    Radar.updateTripLeg(
+        legId: legId,
+        status: .arrived
+    ) { (status, trip, leg, events) in
+        if status == .success {
+            print("Leg updated: \(leg?._id ?? "")")
+            print("Leg status: \(leg?.status ?? .unknown)")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+RadarTrip *trip = [Radar getTrip];
+NSString *legId = trip.legs.firstObject._id;
+if (legId) {
+    [Radar updateTripLegWithLegId:legId
+                           status:RadarTripLegStatusArrived
+                completionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, RadarTripLeg * _Nullable leg, NSArray<RadarEvent *> * _Nullable events) {
+        if (status == RadarStatusSuccess) {
+            NSLog(@"Leg updated: %@", leg._id);
+            NSLog(@"Leg status: %ld", (long)leg.status);
+        }
+    }];
+}
+```
+
+</CodeGroup>
+
+### Update Current Leg
+
+Update the current active leg:
+
+<CodeGroup>
+
+```swift Swift
+Radar.updateCurrentTripLeg(status: .completed) { (status, trip, leg, events) in
+    if status == .success {
+        print("Current leg completed")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar updateCurrentTripLegWithStatus:RadarTripLegStatusCompleted
+                    completionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, RadarTripLeg * _Nullable leg, NSArray<RadarEvent *> * _Nullable events) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Current leg completed");
+    }
+}];
+```
+
+</CodeGroup>
+
+### Reordering Trip Legs
+
+Reorder legs in a multi-destination trip:
+
+<CodeGroup>
+
+```swift Swift
+let trip = Radar.getTrip()
+if let legIds = trip?.legs?.map({ $0._id }) {
+    let reorderedLegIds = [legIds[1], legIds[0]] // swap order
+    
+    Radar.reorderTripLegs(legIds: reorderedLegIds) { (status, trip, events) in
+        if status == .success {
+            print("Legs reordered")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+RadarTrip *trip = [Radar getTrip];
+NSMutableArray *legIds = [NSMutableArray array];
+for (RadarTripLeg *leg in trip.legs) {
+    [legIds addObject:leg._id];
+}
+
+NSArray *reorderedLegIds = @[legIds[1], legIds[0]]; // swap order
+
+[Radar reorderTripLegsWithLegIds:reorderedLegIds
+               completionHandler:^(RadarStatus status, RadarTrip * _Nullable trip, NSArray<RadarEvent *> * _Nullable events) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Legs reordered");
+    }
+}];
+```
+
+</CodeGroup>
+
+## Trip Properties
+
+Access trip properties from the `RadarTrip` object:
+
+<CodeGroup>
+
+```swift Swift
+let trip = Radar.getTrip()
+
+// Identifiers
+let radarId = trip?._id
+let externalId = trip?.externalId
+
+// Status
+let status = trip?.status
+
+// ETA information
+let etaDuration = trip?.etaDuration // minutes
+let etaDistance = trip?.etaDistance // meters
+
+// Destination
+let destinationTag = trip?.destinationGeofenceTag
+let destinationExternalId = trip?.destinationGeofenceExternalId
+let destinationLocation = trip?.destinationLocation
+
+// Metadata
+if let metadata = trip?.metadata {
+    print("Metadata: \(metadata)")
+}
+
+// Multi-destination trips
+if let legs = trip?.legs {
+    print("Number of legs: \(legs.count)")
+    let currentLegId = trip?.currentLegId
+}
+```
+
+```objective-c Objective-C
+RadarTrip *trip = [Radar getTrip];
+
+// Identifiers
+NSString *radarId = trip._id;
+NSString *externalId = trip.externalId;
+
+// Status
+RadarTripStatus status = trip.status;
+
+// ETA information
+float etaDuration = trip.etaDuration; // minutes
+float etaDistance = trip.etaDistance; // meters
+
+// Destination
+NSString *destinationTag = trip.destinationGeofenceTag;
+NSString *destinationExternalId = trip.destinationGeofenceExternalId;
+RadarCoordinate *destinationLocation = trip.destinationLocation;
+
+// Metadata
+if (trip.metadata) {
+    NSLog(@"Metadata: %@", trip.metadata);
+}
+
+// Multi-destination trips
+if (trip.legs) {
+    NSLog(@"Number of legs: %lu", (unsigned long)trip.legs.count);
+    NSString *currentLegId = trip.currentLegId;
+}
+```
+
+</CodeGroup>
+
+## Use Cases
+
+<CardGroup cols={2}>
+
+<Card title="Food Delivery" icon="burger">
+Track delivery driver location and provide customers with real-time ETAs and approaching notifications.
+</Card>
+
+<Card title="Ride-Sharing" icon="car">
+Monitor driver progress to pickup location and notify passengers when the driver is approaching.
+</Card>
+
+<Card title="Package Delivery" icon="box">
+Track couriers across multiple delivery stops with multi-destination trip legs.
+</Card>
+
+<Card title="Field Services" icon="wrench">
+Track technicians traveling to service appointments with arrival notifications.
+</Card>
+
+</CardGroup>
+
+## Best Practices
+
+<Steps>
+
+<Step title="Use Unique External IDs">
+Use your own unique identifiers (order IDs, delivery IDs) as the trip's external ID for easy reference.
+</Step>
+
+<Step title="Set Appropriate Travel Modes">
+Choose the correct travel mode (car, bike, foot) for accurate ETA calculations.
+</Step>
+
+<Step title="Include Rich Metadata">
+Store order details, customer information, and other context in trip metadata for personalization.
+</Step>
+
+<Step title="Handle Approaching Events">
+Listen for approaching events to send timely notifications to recipients.
+</Step>
+
+<Step title="Complete or Cancel Trips">
+Always complete or cancel trips when finished to maintain clean trip state.
+</Step>
+
+</Steps>
+
+<Note>
+For more details on trip tracking, visit the [Radar documentation](https://radar.com/documentation/trip-tracking).
+</Note>

@@ -1,0 +1,137 @@
+---
+title: RadarRouteMatrix
+description: Represents routes between multiple origins and destinations
+---
+
+`RadarRouteMatrix` represents routes between multiple origins and destinations, allowing you to efficiently calculate routes for many origin-destination pairs.
+
+## Instance Methods
+
+### routeBetween(originIndex:destinationIndex:)
+
+```swift
+func routeBetween(originIndex: UInt, destinationIndex: UInt) -> RadarRoute?
+```
+
+```objective-c
+- (RadarRoute *_Nullable)routeBetweenOriginIndex:(NSUInteger)originIndex
+                                destinationIndex:(NSUInteger)destinationIndex;
+```
+
+Returns the route between the specified origin and destination.
+
+#### Parameters
+
+<ResponseField name="originIndex" type="number" required>
+  The index of the origin in the origins array used to create the matrix.
+</ResponseField>
+
+<ResponseField name="destinationIndex" type="number" required>
+  The index of the destination in the destinations array used to create the matrix.
+</ResponseField>
+
+#### Returns
+
+A `RadarRoute` object representing the route between the specified origin and destination, or `nil` if no route exists.
+
+### arrayValue
+
+```swift
+func arrayValue() -> [[String: Any]]
+```
+
+```objective-c
+- (NSArray<NSArray<NSDictionary *> *> *_Nonnull)arrayValue;
+```
+
+Converts the route matrix to a 2D array representation.
+
+#### Returns
+
+A 2D array where each element `[i][j]` represents the route from origin `i` to destination `j`.
+
+## Example
+
+```swift
+// Calculate a route matrix
+let origins = [
+    CLLocation(latitude: 40.7128, longitude: -74.0060),
+    CLLocation(latitude: 40.7589, longitude: -73.9851)
+]
+
+let destinations = [
+    CLLocation(latitude: 40.7484, longitude: -73.9857),
+    CLLocation(latitude: 40.6782, longitude: -73.9442)
+]
+
+Radar.getMatrix(
+    origins: origins,
+    destinations: destinations,
+    mode: .car,
+    units: .imperial
+) { (status, matrix) in
+    if let matrix = matrix {
+        // Get route from first origin to first destination
+        if let route = matrix.routeBetween(originIndex: 0, destinationIndex: 0) {
+            print("Distance: \(route.distance.text)")
+            print("Duration: \(route.duration.text)")
+        }
+        
+        // Iterate through all origin-destination pairs
+        for i in 0..<origins.count {
+            for j in 0..<destinations.count {
+                if let route = matrix.routeBetween(originIndex: UInt(i), destinationIndex: UInt(j)) {
+                    print("Route from \(i) to \(j): \(route.distance.text)")
+                }
+            }
+        }
+    }
+}
+```
+
+```objective-c
+// Calculate a route matrix
+NSArray<CLLocation *> *origins = @[
+    [[CLLocation alloc] initWithLatitude:40.7128 longitude:-74.0060],
+    [[CLLocation alloc] initWithLatitude:40.7589 longitude:-73.9851]
+];
+
+NSArray<CLLocation *> *destinations = @[
+    [[CLLocation alloc] initWithLatitude:40.7484 longitude:-73.9857],
+    [[CLLocation alloc] initWithLatitude:40.6782 longitude:-73.9442]
+];
+
+[Radar getMatrixFromOrigins:origins
+               destinations:destinations
+                       mode:RadarRouteModeCar
+                      units:RadarRouteUnitsImperial
+          completionHandler:^(RadarStatus status, RadarRouteMatrix * _Nullable matrix) {
+    if (matrix) {
+        // Get route from first origin to first destination
+        RadarRoute *route = [matrix routeBetweenOriginIndex:0 destinationIndex:0];
+        if (route) {
+            NSLog(@"Distance: %@", route.distance.text);
+            NSLog(@"Duration: %@", route.duration.text);
+        }
+        
+        // Iterate through all origin-destination pairs
+        for (NSUInteger i = 0; i < origins.count; i++) {
+            for (NSUInteger j = 0; j < destinations.count; j++) {
+                RadarRoute *route = [matrix routeBetweenOriginIndex:i destinationIndex:j];
+                if (route) {
+                    NSLog(@"Route from %lu to %lu: %@", (unsigned long)i, (unsigned long)j, route.distance.text);
+                }
+            }
+        }
+    }
+}];
+```
+
+<Note>
+The route matrix API is useful for calculating distances and times between multiple origin-destination pairs efficiently, such as for delivery routing, nearest location searches, or travel time analysis.
+</Note>
+
+## See Also
+
+- [Matrix API Documentation](https://radar.com/documentation/api#matrix)
+- [RadarRoute](/api/radar-route)

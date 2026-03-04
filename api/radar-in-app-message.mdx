@@ -1,0 +1,221 @@
+---
+title: "RadarInAppMessage"
+description: "Represents an in-app message with customizable text, buttons, and images for displaying notifications to users."
+---
+
+## Overview
+
+`RadarInAppMessage` is a data model class that represents an in-app message delivered by the Radar SDK. It contains structured content including title, body text, optional button, optional image, and custom metadata.
+
+The message supports full customization of colors, text, and interactive elements like deep links.
+
+## Properties
+
+<ResponseField name="title" type="RadarInAppMessage.Text" required>
+  The title text and color configuration for the message.
+</ResponseField>
+
+<ResponseField name="body" type="RadarInAppMessage.Text" required>
+  The body text and color configuration for the message.
+</ResponseField>
+
+<ResponseField name="button" type="RadarInAppMessage.Button">
+  Optional button configuration with text, colors, and deep link.
+</ResponseField>
+
+<ResponseField name="image" type="RadarInAppMessage.Image">
+  Optional image configuration with name and URL.
+</ResponseField>
+
+<ResponseField name="metadata" type="[String: Sendable]" required>
+  Custom metadata dictionary associated with the message.
+</ResponseField>
+
+## Nested Types
+
+### RadarInAppMessage.Text
+
+Represents text content with styling.
+
+<ResponseField name="text" type="String" required>
+  The text content to display.
+</ResponseField>
+
+<ResponseField name="color" type="UIColor" required>
+  The color of the text.
+</ResponseField>
+
+### RadarInAppMessage.Button
+
+Represents an interactive button with optional deep link.
+
+<ResponseField name="text" type="String" required>
+  The button text to display.
+</ResponseField>
+
+<ResponseField name="color" type="UIColor" required>
+  The text color of the button.
+</ResponseField>
+
+<ResponseField name="backgroundColor" type="UIColor" required>
+  The background color of the button.
+</ResponseField>
+
+<ResponseField name="deepLink" type="String">
+  Optional deep link URL to open when the button is tapped.
+</ResponseField>
+
+### RadarInAppMessage.Image
+
+Represents an image to display in the message.
+
+<ResponseField name="name" type="String" required>
+  The name identifier for the image.
+</ResponseField>
+
+<ResponseField name="url" type="String" required>
+  The URL where the image can be fetched.
+</ResponseField>
+
+## Initializer
+
+### init(title:body:button:image:metadata:)
+
+Creates a new in-app message with the specified components.
+
+```swift
+public init(
+    title: Text,
+    body: Text,
+    button: Button?,
+    image: Image?,
+    metadata: [String: Sendable]
+)
+```
+
+<ParamField path="title" type="RadarInAppMessage.Text" required>
+  The title text and color configuration.
+</ParamField>
+
+<ParamField path="body" type="RadarInAppMessage.Text" required>
+  The body text and color configuration.
+</ParamField>
+
+<ParamField path="button" type="RadarInAppMessage.Button">
+  Optional button configuration.
+</ParamField>
+
+<ParamField path="image" type="RadarInAppMessage.Image">
+  Optional image configuration.
+</ParamField>
+
+<ParamField path="metadata" type="[String: Sendable]" required>
+  Custom metadata dictionary.
+</ParamField>
+
+## Class Methods
+
+### fromDictionary(_:)
+
+Creates an in-app message from a dictionary representation.
+
+```swift
+public static func fromDictionary(_ dict: [String: Any]) -> RadarInAppMessage?
+```
+
+```objective-c
++ (RadarInAppMessage * _Nullable)fromDictionary:(NSDictionary<NSString *, id> * _Nonnull)dict;
+```
+
+<ParamField path="dict" type="[String: Any]" required>
+  Dictionary containing the message data. Must include "title" and "body" keys at minimum.
+</ParamField>
+
+**Returns:** A `RadarInAppMessage` instance if the dictionary contains valid data, or `nil` if required fields are missing.
+
+### fromArray(_:)
+
+Creates an array of in-app messages from an array representation.
+
+```swift
+public static func fromArray(_ array: Any) -> [RadarInAppMessage]
+```
+
+```objective-c
++ (NSArray<RadarInAppMessage *> * _Nonnull)fromArray:(id _Nonnull)array;
+```
+
+<ParamField path="array" type="Any" required>
+  Array of dictionaries, each representing an in-app message.
+</ParamField>
+
+**Returns:** An array of `RadarInAppMessage` instances. Invalid entries are filtered out.
+
+## Instance Methods
+
+### toDictionary()
+
+Converts the in-app message to a dictionary representation.
+
+```swift
+public func toDictionary() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary<NSString *, id> * _Nonnull)toDictionary;
+```
+
+**Returns:** A dictionary containing all message properties in a serializable format.
+
+## Example Usage
+
+```swift
+// Create a message programmatically
+let title = RadarInAppMessage.Text(
+    text: "Welcome!",
+    color: .black
+)
+
+let body = RadarInAppMessage.Text(
+    text: "Thank you for visiting our store.",
+    color: .darkGray
+)
+
+let button = RadarInAppMessage.Button(
+    text: "Learn More",
+    color: .white,
+    backgroundColor: .blue,
+    deepLink: "myapp://promo"
+)
+
+let message = RadarInAppMessage(
+    title: title,
+    body: body,
+    button: button,
+    image: nil,
+    metadata: ["campaign": "spring_sale"]
+)
+
+// Convert to dictionary for serialization
+let dict = message.toDictionary()
+
+// Parse from dictionary
+if let parsedMessage = RadarInAppMessage.fromDictionary(dict) {
+    print("Message title: \(parsedMessage.title.text)")
+}
+```
+
+```objective-c
+// Parse from dictionary
+NSDictionary *messageDict = @{
+    @"title": @{@"text": @"Welcome!", @"color": @"#000000"},
+    @"body": @{@"text": @"Thank you for visiting.", @"color": @"#666666"},
+    @"metadata": @{}
+};
+
+RadarInAppMessage *message = [RadarInAppMessage fromDictionary:messageDict];
+```
+
+## See Also
+
+- [RadarInAppMessageDelegate](/api/radar-in-app-message-delegate) - Delegate protocol for handling in-app message events

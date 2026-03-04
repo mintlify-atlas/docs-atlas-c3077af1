@@ -1,0 +1,143 @@
+---
+title: RadarFraud
+description: Represents fraud detection signals for location verification.
+---
+
+The `RadarFraud` class contains fraud detection signals that indicate whether a user's location can be trusted. These signals help detect location spoofing, proxies, and other fraudulent behavior.
+
+<Warning>
+  These values should not be trusted unless you called `trackVerified()` instead of `trackOnce()`.
+</Warning>
+
+## Properties
+
+<ResponseField name="passed" type="Bool">
+  A boolean indicating whether the user passed fraud detection checks. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="bypassed" type="Bool">
+  A boolean indicating whether fraud detection checks were bypassed for the user for testing. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="verified" type="Bool">
+  A boolean indicating whether the request was made with SSL pinning configured successfully. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="proxy" type="Bool">
+  A boolean indicating whether the user's IP address is a known proxy. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="mocked" type="Bool">
+  A boolean indicating whether the user's location is being mocked, such as in the simulator or using a location spoofing app. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="compromised" type="Bool">
+  A boolean indicating whether the user's device or app has been compromised according to `DeviceCheck`. May be `false` if Fraud is not enabled.
+  
+  <Note>
+    Learn more about [DeviceCheck](https://developer.apple.com/documentation/devicecheck) on Apple's developer documentation.
+  </Note>
+</ResponseField>
+
+<ResponseField name="jumped" type="Bool">
+  A boolean indicating whether the user moved too far too fast. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="inaccurate" type="Bool">
+  A boolean indicating whether the user's location is not accurate enough. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="sharing" type="Bool">
+  A boolean indicating whether the user's location is being shared from another device. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+<ResponseField name="blocked" type="Bool">
+  A boolean indicating whether the user has been manually blocked. May be `false` if Fraud is not enabled.
+</ResponseField>
+
+## Methods
+
+### dictionaryValue
+
+Returns a dictionary representation of the fraud detection signals.
+
+```swift
+func dictionaryValue() -> [AnyHashable : Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+**Returns:** A dictionary containing all fraud detection properties.
+
+## Example
+
+```swift
+// Access fraud signals from a RadarUser
+if let fraud = user.fraud {
+    if fraud.passed {
+        print("User passed fraud detection")
+    } else {
+        // Check specific fraud signals
+        if fraud.mocked {
+            print("Location is being mocked")
+        }
+        if fraud.proxy {
+            print("User is using a proxy")
+        }
+        if fraud.compromised {
+            print("Device or app is compromised")
+        }
+        if fraud.jumped {
+            print("User jumped location")
+        }
+    }
+}
+```
+
+```objective-c
+// Access fraud signals from a RadarUser
+if (user.fraud) {
+    RadarFraud *fraud = user.fraud;
+    if (fraud.passed) {
+        NSLog(@"User passed fraud detection");
+    } else {
+        // Check specific fraud signals
+        if (fraud.mocked) {
+            NSLog(@"Location is being mocked");
+        }
+        if (fraud.proxy) {
+            NSLog(@"User is using a proxy");
+        }
+        if (fraud.compromised) {
+            NSLog(@"Device or app is compromised");
+        }
+        if (fraud.jumped) {
+            NSLog(@"User jumped location");
+        }
+    }
+}
+```
+
+## Fraud Detection Signals
+
+<Expandable title="Understanding Fraud Signals">
+  Each fraud signal indicates a specific type of suspicious behavior:
+  
+  - **Mocked**: Location is being spoofed using simulator or spoofing apps
+  - **Proxy**: User's IP address is a known proxy server
+  - **Compromised**: Device or app integrity checks failed (via DeviceCheck)
+  - **Jumped**: User's location changed faster than physically possible
+  - **Inaccurate**: Location accuracy is too low to be reliable
+  - **Sharing**: Location is being shared from another device
+  - **Blocked**: User has been manually blocked from your application
+  - **Verified**: SSL pinning was successfully configured for the request
+  - **Bypassed**: Fraud checks were bypassed for testing purposes
+</Expandable>
+
+## See Also
+
+- [RadarVerifiedLocationToken](/api/radar-verified-location-token)
+- [RadarUser](/api/radar-user)
+- [Fraud Documentation](https://radar.com/documentation/fraud)

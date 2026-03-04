@@ -1,0 +1,127 @@
+---
+title: Radar iOS SDK
+description: iOS SDK for geofencing, location tracking, trip tracking, and more
+---
+
+The Radar iOS SDK is the leading geofencing and location tracking platform for iOS apps. The SDK abstracts away cross-platform differences between location services, allowing you to add geofencing, location tracking, trip tracking, geocoding, and search to your apps with just a few lines of code.
+
+## What is Radar?
+
+[Radar](https://radar.com) provides infrastructure for building location-aware applications. Whether you need geofencing, location tracking, or location search capabilities, Radar makes it simple.
+
+## Key Features
+
+The Radar iOS SDK provides powerful location features:
+
+<CardGroup cols={2}>
+  <Card title="Geofencing" icon="map-pin">
+    Create custom geofences and get notifications when users enter or exit them. Perfect for store arrivals, curbside pickup, and location-based notifications.
+  </Card>
+  
+  <Card title="Location Tracking" icon="location-dot">
+    Track user location in the background with flexible tracking modes optimized for battery life. Choose from continuous, responsive, or efficient tracking.
+  </Card>
+  
+  <Card title="Trip Tracking" icon="route">
+    Track multi-stop trips with live ETAs and progress updates. Ideal for delivery, rideshare, and on-demand apps.
+  </Card>
+  
+  <Card title="Places & Search" icon="magnifying-glass">
+    Search for nearby places by chain, category, or group. Access Radar's comprehensive database of points of interest.
+  </Card>
+  
+  <Card title="Geocoding" icon="globe">
+    Convert addresses to coordinates (forward geocoding) and coordinates to addresses (reverse geocoding).
+  </Card>
+  
+  <Card title="Fraud Detection" icon="shield">
+    Detect location spoofing and verify user locations with device integrity checks.
+  </Card>
+</CardGroup>
+
+## Use Cases
+
+The Radar iOS SDK powers location features for thousands of apps:
+
+- **Retail & Restaurants**: Curbside pickup notifications, store arrival detection, drive-thru optimization
+- **Delivery & Logistics**: Real-time delivery tracking, driver location updates, ETA calculations
+- **Rideshare & Transportation**: Trip tracking, pickup/dropoff detection, route optimization
+- **Marketing & Analytics**: Location-based campaigns, foot traffic analytics, audience segmentation
+- **Safety & Security**: Location verification, geofence monitoring, fraud prevention
+
+## Platform Support
+
+<Info>
+  **Minimum iOS Version**: iOS 10.0+
+  
+  **Language Support**: Swift and Objective-C
+  
+  **Package Managers**: CocoaPods, Swift Package Manager
+</Info>
+
+## Core Capabilities
+
+### Foreground Tracking
+
+Get the user's current location on-demand with a single method call:
+
+```swift
+Radar.trackOnce { (status, location, events, user) in
+  // Handle location update
+}
+```
+
+### Background Tracking
+
+Start continuous background tracking with configurable options:
+
+```swift
+Radar.startTracking(trackingOptions: .presetResponsive)
+```
+
+### Geofence Events
+
+Receive events when users enter or exit geofences:
+
+```swift
+class MyRadarDelegate: RadarDelegate {
+  func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+      if event.type == .userEnteredGeofence {
+        // User entered a geofence
+      }
+    }
+  }
+}
+```
+
+### Search & Geocoding
+
+Search for places or geocode addresses:
+
+```swift
+Radar.searchPlaces(
+  radius: 1000,
+  chains: ["starbucks"],
+  limit: 10
+) { (status, location, places) in
+  // Handle search results
+}
+```
+
+## Architecture
+
+The Radar iOS SDK is built on top of Apple's Core Location framework and provides:
+
+- **Automatic battery optimization** - Smart power management for background tracking
+- **Network efficiency** - Intelligent syncing and offline support
+- **Privacy-first design** - Compliant with Apple's location privacy requirements
+- **Event-driven architecture** - Delegate callbacks for location updates and events
+
+## Getting Started
+
+Ready to add location intelligence to your iOS app? Continue to the [installation guide](/installation) to get started.
+
+<Card title="Installation" icon="download" href="/installation">
+  Install the Radar iOS SDK using CocoaPods or Swift Package Manager
+</Card>

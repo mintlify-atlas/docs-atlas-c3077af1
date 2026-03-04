@@ -1,0 +1,359 @@
+---
+title: RadarTrackingOptions
+description: Configuration options for background tracking in the Radar iOS SDK
+---
+
+`RadarTrackingOptions` is a configuration class used to control background tracking behavior. It provides fine-grained control over location update intervals, accuracy, sync behavior, and iOS location services.
+
+## Properties
+
+<ResponseField name="desiredStoppedUpdateInterval" type="int">
+  Determines the desired location update interval in seconds when stopped. Use `0` to shut down when stopped.
+  
+  <Note>
+    Location updates may be delayed significantly by Low Power Mode, or if the device has connectivity issues, low battery, or Wi-Fi disabled.
+  </Note>
+</ResponseField>
+
+<ResponseField name="desiredMovingUpdateInterval" type="int">
+  Determines the desired location update interval in seconds when moving.
+  
+  <Note>
+    Location updates may be delayed significantly by Low Power Mode, or if the device has connectivity issues, low battery, or Wi-Fi disabled.
+  </Note>
+</ResponseField>
+
+<ResponseField name="desiredSyncInterval" type="int">
+  Determines the desired sync interval in seconds.
+</ResponseField>
+
+<ResponseField name="desiredAccuracy" type="RadarTrackingOptionsDesiredAccuracy">
+  Determines the desired accuracy of location updates.
+  
+  **Values:**
+  - `RadarTrackingOptionsDesiredAccuracyHigh` - Uses `kCLLocationAccuracyBest`
+  - `RadarTrackingOptionsDesiredAccuracyMedium` - Uses `kCLLocationAccuracyHundredMeters` (default)
+  - `RadarTrackingOptionsDesiredAccuracyLow` - Uses `kCLLocationAccuracyKilometer`
+</ResponseField>
+
+<ResponseField name="stopDuration" type="int">
+  With `stopDistance`, determines the duration in seconds after which the device is considered stopped.
+</ResponseField>
+
+<ResponseField name="stopDistance" type="int">
+  With `stopDuration`, determines the distance in meters within which the device is considered stopped.
+</ResponseField>
+
+<ResponseField name="startTrackingAfter" type="NSDate" optional>
+  Determines when to start tracking. Use `nil` to start tracking when `startTracking` is called.
+</ResponseField>
+
+<ResponseField name="stopTrackingAfter" type="NSDate" optional>
+  Determines when to stop tracking. Use `nil` to track until `stopTracking` is called.
+</ResponseField>
+
+<ResponseField name="replay" type="RadarTrackingOptionsReplay">
+  Determines which failed location updates to replay to the server.
+  
+  **Values:**
+  - `RadarTrackingOptionsReplayStops` - Replays failed stops
+  - `RadarTrackingOptionsReplayNone` - Replays no failed location updates
+  - `RadarTrackingOptionsReplayAll` - Replays all failed location updates
+</ResponseField>
+
+<ResponseField name="syncLocations" type="RadarTrackingOptionsSyncLocations">
+  Determines which location updates to sync to the server.
+  
+  **Values:**
+  - `RadarTrackingOptionsSyncAll` - Syncs all location updates to the server
+  - `RadarTrackingOptionsSyncStopsAndExits` - Syncs only stops and exits to the server
+  - `RadarTrackingOptionsSyncNone` - Syncs no location updates to the server
+</ResponseField>
+
+<ResponseField name="showBlueBar" type="BOOL">
+  Determines whether the flashing blue status bar is shown when tracking.
+  
+  See [Apple's documentation](https://developer.apple.com/documentation/corelocation/cllocationmanager/2923541-showsbackgroundlocationindicator) for more details.
+</ResponseField>
+
+<ResponseField name="useStoppedGeofence" type="BOOL">
+  Determines whether to use the iOS region monitoring service (geofencing) to create a client geofence around the device's current location when stopped.
+  
+  See [Apple's documentation on region monitoring](https://developer.apple.com/documentation/corelocation/monitoring_the_user_s_proximity_to_geographic_regions) for more details.
+</ResponseField>
+
+<ResponseField name="stoppedGeofenceRadius" type="int">
+  Determines the radius in meters of the client geofence around the device's current location when stopped.
+</ResponseField>
+
+<ResponseField name="useMovingGeofence" type="BOOL">
+  Determines whether to use the iOS region monitoring service (geofencing) to create a client geofence around the device's current location when moving.
+  
+  See [Apple's documentation on region monitoring](https://developer.apple.com/documentation/corelocation/monitoring_the_user_s_proximity_to_geographic_regions) for more details.
+</ResponseField>
+
+<ResponseField name="movingGeofenceRadius" type="int">
+  Determines the radius in meters of the client geofence around the device's current location when moving.
+</ResponseField>
+
+<ResponseField name="syncGeofences" type="BOOL">
+  Determines whether to sync nearby geofences from the server to the client to improve responsiveness.
+</ResponseField>
+
+<ResponseField name="useVisits" type="BOOL">
+  Determines whether to use the iOS visit monitoring service.
+  
+  See [Apple's documentation on visit monitoring](https://developer.apple.com/documentation/corelocation/getting_the_user_s_location/using_the_visits_location_service) for more details.
+</ResponseField>
+
+<ResponseField name="useSignificantLocationChanges" type="BOOL">
+  Determines whether to use the iOS significant location change service.
+  
+  See [Apple's documentation on significant location changes](https://developer.apple.com/documentation/corelocation/getting_the_user_s_location/using_the_significant-change_location_service) for more details.
+</ResponseField>
+
+<ResponseField name="beacons" type="BOOL">
+  Determines whether to monitor beacons.
+</ResponseField>
+
+<ResponseField name="useIndoorScan" type="BOOL">
+  Determines whether to use indoor scanning.
+</ResponseField>
+
+<ResponseField name="useMotion" type="BOOL">
+  Determines whether to use the iOS motion activity service.
+</ResponseField>
+
+<ResponseField name="usePressure" type="BOOL">
+  Determines whether to use the iOS pressure service.
+</ResponseField>
+
+## Preset Configurations
+
+Radar provides three preset tracking configurations optimized for common use cases.
+
+### presetContinuous
+
+```swift
+let options = RadarTrackingOptions.presetContinuous()
+```
+
+```objective-c
+RadarTrackingOptions *options = [RadarTrackingOptions presetContinuous];
+```
+
+Updates about every 30 seconds while moving or stopped. Moderate battery usage. Shows the flashing blue status bar during tracking.
+
+**Configuration:**
+- `desiredStoppedUpdateInterval`: 30 seconds
+- `desiredMovingUpdateInterval`: 30 seconds
+- `desiredSyncInterval`: 20 seconds
+- `desiredAccuracy`: High
+- `stopDuration`: 140 seconds
+- `stopDistance`: 70 meters
+- `syncLocations`: All
+- `replay`: None
+- `showBlueBar`: YES
+- `useStoppedGeofence`: NO
+- `useMovingGeofence`: NO
+- `syncGeofences`: YES
+- `useVisits`: NO
+- `useSignificantLocationChanges`: NO
+
+### presetResponsive
+
+```swift
+let options = RadarTrackingOptions.presetResponsive()
+```
+
+```objective-c
+RadarTrackingOptions *options = [RadarTrackingOptions presetResponsive];
+```
+
+Updates about every 2.5 minutes when moving and shuts down when stopped to save battery. Once stopped, the device will need to move more than 100 meters to wake up and start moving again. Low battery usage. Requires the `location` background mode.
+
+<Note>
+  Location updates may be delayed significantly by Low Power Mode, or if the device has connectivity issues, low battery, or Wi-Fi disabled.
+</Note>
+
+**Configuration:**
+- `desiredStoppedUpdateInterval`: 0 seconds (shut down when stopped)
+- `desiredMovingUpdateInterval`: 150 seconds
+- `desiredSyncInterval`: 20 seconds
+- `desiredAccuracy`: Medium
+- `stopDuration`: 140 seconds
+- `stopDistance`: 70 meters
+- `syncLocations`: All
+- `replay`: Stops
+- `showBlueBar`: NO
+- `useStoppedGeofence`: YES (100m radius)
+- `useMovingGeofence`: YES (100m radius)
+- `syncGeofences`: YES
+- `useVisits`: YES
+- `useSignificantLocationChanges`: YES
+
+### presetEfficient
+
+```swift
+let options = RadarTrackingOptions.presetEfficient()
+```
+
+```objective-c
+RadarTrackingOptions *options = [RadarTrackingOptions presetEfficient];
+```
+
+Uses the iOS visit monitoring service to update only on stops and exits. Once stopped, the device will need to move several hundred meters and trigger a visit departure to wake up and start moving again. Lowest battery usage.
+
+<Note>
+  Location updates may be delayed significantly by Low Power Mode, or if the device has connectivity issues, low battery, or Wi-Fi disabled.
+</Note>
+
+See [Apple's documentation on visit monitoring](https://developer.apple.com/documentation/corelocation/getting_the_user_s_location/using_the_visits_location_service) for more details.
+
+**Configuration:**
+- `desiredStoppedUpdateInterval`: 0 seconds
+- `desiredMovingUpdateInterval`: 0 seconds
+- `desiredSyncInterval`: 0 seconds
+- `desiredAccuracy`: Medium
+- `stopDuration`: 0 seconds
+- `stopDistance`: 0 meters
+- `syncLocations`: All
+- `replay`: Stops
+- `showBlueBar`: NO
+- `useStoppedGeofence`: NO
+- `useMovingGeofence`: NO
+- `syncGeofences`: YES
+- `useVisits`: YES
+- `useSignificantLocationChanges`: NO
+
+## Class Methods
+
+### trackingOptionsFromDictionary
+
+```swift
+class func trackingOptions(from dictionary: [AnyHashable : Any]) -> RadarTrackingOptions?
+```
+
+```objective-c
++ (RadarTrackingOptions *_Nullable)trackingOptionsFromDictionary:(NSDictionary *_Nonnull)dictionary;
+```
+
+Creates a `RadarTrackingOptions` instance from a dictionary.
+
+<ParamField path="dictionary" type="NSDictionary" required>
+  A dictionary containing tracking options configuration.
+</ParamField>
+
+**Returns:** A `RadarTrackingOptions` instance, or `nil` if the dictionary is invalid.
+
+### stringForDesiredAccuracy
+
+```swift
+class func string(for desiredAccuracy: RadarTrackingOptionsDesiredAccuracy) -> String
+```
+
+```objective-c
++ (NSString *)stringForDesiredAccuracy:(RadarTrackingOptionsDesiredAccuracy)desiredAccuracy;
+```
+
+Converts a desired accuracy enum value to its string representation.
+
+### desiredAccuracyForString
+
+```swift
+class func desiredAccuracy(for string: String) -> RadarTrackingOptionsDesiredAccuracy
+```
+
+```objective-c
++ (RadarTrackingOptionsDesiredAccuracy)desiredAccuracyForString:(NSString *)str;
+```
+
+Converts a string to a desired accuracy enum value.
+
+### stringForReplay
+
+```swift
+class func string(for replay: RadarTrackingOptionsReplay) -> String
+```
+
+```objective-c
++ (NSString *)stringForReplay:(RadarTrackingOptionsReplay)replay;
+```
+
+Converts a replay enum value to its string representation.
+
+### replayForString
+
+```swift
+class func replay(for string: String) -> RadarTrackingOptionsReplay
+```
+
+```objective-c
++ (RadarTrackingOptionsReplay)replayForString:(NSString *)str;
+```
+
+Converts a string to a replay enum value.
+
+### stringForSyncLocations
+
+```swift
+class func string(forSyncLocations syncLocations: RadarTrackingOptionsSyncLocations) -> String
+```
+
+```objective-c
++ (NSString *)stringForSyncLocations:(RadarTrackingOptionsSyncLocations)syncLocations;
+```
+
+Converts a sync locations enum value to its string representation.
+
+### syncLocationsForString
+
+```swift
+class func syncLocations(for string: String) -> RadarTrackingOptionsSyncLocations
+```
+
+```objective-c
++ (RadarTrackingOptionsSyncLocations)syncLocationsForString:(NSString *)str;
+```
+
+Converts a string to a sync locations enum value.
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [AnyHashable : Any]
+```
+
+```objective-c
+- (NSDictionary *)dictionaryValue;
+```
+
+Converts the tracking options instance to a dictionary representation.
+
+**Returns:** A dictionary containing all tracking options properties.
+
+## Usage Example
+
+```swift
+// Use a preset
+Radar.startTracking(trackingOptions: .presetResponsive())
+
+// Or customize options
+let options = RadarTrackingOptions.presetResponsive()
+options.desiredMovingUpdateInterval = 120
+options.showBlueBar = true
+Radar.startTracking(trackingOptions: options)
+```
+
+```objective-c
+// Use a preset
+[Radar startTrackingWithOptions:[RadarTrackingOptions presetResponsive]];
+
+// Or customize options
+RadarTrackingOptions *options = [RadarTrackingOptions presetResponsive];
+options.desiredMovingUpdateInterval = 120;
+options.showBlueBar = YES;
+[Radar startTrackingWithOptions:options];
+```

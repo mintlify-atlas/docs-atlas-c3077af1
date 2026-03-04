@@ -1,0 +1,275 @@
+---
+title: RadarTrip
+description: Represents an active or completed trip in the Radar iOS SDK
+---
+
+`RadarTrip` represents a trip that has been started with Radar's trip tracking feature. It contains information about the trip's destination, status, ETA, and metadata. Trip objects are returned in location callbacks and can be accessed via `RadarUser.trip`.
+
+## Properties
+
+<ResponseField name="_id" type="String" readonly>
+  The Radar ID of the trip. This is assigned by the server when the trip is created.
+</ResponseField>
+
+<ResponseField name="externalId" type="String" readonly optional>
+  The external ID of the trip. This is the unique ID you provided when creating the trip.
+</ResponseField>
+
+<ResponseField name="metadata" type="NSDictionary" readonly optional>
+  The optional set of custom key-value pairs for the trip. This contains any custom data attached to the trip.
+</ResponseField>
+
+<ResponseField name="destinationGeofenceTag" type="String" readonly optional>
+  For trips with a destination, the tag of the destination geofence.
+</ResponseField>
+
+<ResponseField name="destinationGeofenceExternalId" type="String" readonly optional>
+  For trips with a destination, the external ID of the destination geofence.
+</ResponseField>
+
+<ResponseField name="destinationLocation" type="RadarCoordinate" readonly optional>
+  For trips with a destination, the location of the destination geofence. Contains latitude and longitude coordinates.
+</ResponseField>
+
+<ResponseField name="mode" type="RadarRouteMode" readonly>
+  The travel mode for the trip. Used to calculate ETA and distance.
+  
+  **Values:**
+  - `RadarRouteModeFoot` - Walking
+  - `RadarRouteModeBike` - Biking
+  - `RadarRouteModeCar` - Driving
+  - `RadarRouteModeTruck` - Truck
+  - `RadarRouteModeMotorbike` - Motorcycle
+</ResponseField>
+
+<ResponseField name="etaDistance" type="float" readonly>
+  For trips with a destination, the distance to the destination geofence in meters based on the travel mode for the trip.
+</ResponseField>
+
+<ResponseField name="etaDuration" type="float" readonly>
+  For trips with a destination, the ETA to the destination geofence in minutes based on the travel mode for the trip.
+</ResponseField>
+
+<ResponseField name="status" type="RadarTripStatus" readonly>
+  The status of the trip.
+  
+  **Values:**
+  - `RadarTripStatusUnknown` - Unknown status
+  - `RadarTripStatusStarted` - Trip has been started
+  - `RadarTripStatusApproaching` - Device is approaching the destination (within the approaching threshold)
+  - `RadarTripStatusArrived` - Device has arrived at the destination
+  - `RadarTripStatusExpired` - Trip has expired
+  - `RadarTripStatusCompleted` - Trip has been completed
+  - `RadarTripStatusCanceled` - Trip has been canceled
+</ResponseField>
+
+<ResponseField name="orders" type="NSArray<RadarTripOrder *>" readonly optional>
+  The optional array of trip orders associated with this trip. Orders provide additional context about deliveries or pickups.
+</ResponseField>
+
+<ResponseField name="legs" type="NSArray<RadarTripLeg *>" readonly optional>
+  For multi-destination trips, the array of trip legs. Each leg represents a stop along the trip route and contains destination info, status, and metadata.
+  
+  Use `leg._id` when calling `updateTripLeg`.
+  
+  See [RadarTripLeg](/api/radar-trip-leg) for more details.
+</ResponseField>
+
+<ResponseField name="currentLegId" type="String" readonly optional>
+  For multi-destination trips, the ID of the current active leg. This identifies which leg the device is currently traveling to.
+</ResponseField>
+
+## Initializers
+
+### initWithObject
+
+```swift
+init?(object: Any)
+```
+
+```objective-c
+- (instancetype _Nullable)initWithObject:(id _Nonnull)object;
+```
+
+Initializes a `RadarTrip` instance from a server response object.
+
+<ParamField path="object" type="id" required>
+  A dictionary object from the server containing trip data.
+</ParamField>
+
+**Returns:** A `RadarTrip` instance, or `nil` if the object is invalid.
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [AnyHashable : Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the trip instance to a dictionary representation.
+
+**Returns:** A dictionary containing all trip properties.
+
+## Status Lifecycle
+
+A trip progresses through several statuses during its lifecycle:
+
+1. **Started** - The trip has been created and tracking has begun
+2. **Approaching** - The device is within the approaching threshold of the destination
+3. **Arrived** - The device has reached the destination geofence
+4. **Completed** - The trip has been manually completed
+5. **Canceled** - The trip has been manually canceled
+6. **Expired** - The trip has expired (typically after being in arrived state)
+
+## Usage Examples
+
+### Accessing the Current Trip
+
+```swift
+// Access trip from user object
+Radar.getLocation { (status, location, user, events) in
+    if let trip = user?.trip {
+        print("Trip ID: \(trip._id)")
+        print("Trip status: \(trip.status)")
+        print("ETA: \(trip.etaDuration) minutes")
+        print("Distance: \(trip.etaDistance) meters")
+        
+        if trip.status == .approaching {
+            print("Approaching destination!")
+        }
+    }
+}
+```
+
+```objective-c
+// Access trip from user object
+[Radar getLocationWithCompletionHandler:^(RadarStatus status, CLLocation *location, RadarUser *user, NSArray<RadarEvent *> *events) {
+    if (user.trip) {
+        NSLog(@"Trip ID: %@", user.trip._id);
+        NSLog(@"Trip status: %ld", (long)user.trip.status);
+        NSLog(@"ETA: %.1f minutes", user.trip.etaDuration);
+        NSLog(@"Distance: %.1f meters", user.trip.etaDistance);
+        
+        if (user.trip.status == RadarTripStatusApproaching) {
+            NSLog(@"Approaching destination!");
+        }
+    }
+}];
+```
+
+### Monitoring Trip Status
+
+```swift
+// Implement RadarDelegate to receive trip updates
+class MyClass: RadarDelegate {
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        guard let trip = user.trip else { return }
+        
+        switch trip.status {
+        case .started:
+            print("Trip started - ETA: \(trip.etaDuration) min")
+        case .approaching:
+            print("Approaching destination - \(trip.etaDistance)m away")
+        case .arrived:
+            print("Arrived at destination!")
+            // Complete the trip
+            Radar.completeTrip()
+        case .completed:
+            print("Trip completed")
+        case .canceled:
+            print("Trip canceled")
+        default:
+            break
+        }
+    }
+}
+```
+
+```objective-c
+// Implement RadarDelegate to receive trip updates
+@interface MyClass : NSObject <RadarDelegate>
+@end
+
+@implementation MyClass
+
+- (void)didUpdateLocation:(CLLocation *)location user:(RadarUser *)user {
+    if (!user.trip) {
+        return;
+    }
+    
+    RadarTrip *trip = user.trip;
+    
+    switch (trip.status) {
+        case RadarTripStatusStarted:
+            NSLog(@"Trip started - ETA: %.1f min", trip.etaDuration);
+            break;
+        case RadarTripStatusApproaching:
+            NSLog(@"Approaching destination - %.1fm away", trip.etaDistance);
+            break;
+        case RadarTripStatusArrived:
+            NSLog(@"Arrived at destination!");
+            // Complete the trip
+            [Radar completeTrip];
+            break;
+        case RadarTripStatusCompleted:
+            NSLog(@"Trip completed");
+            break;
+        case RadarTripStatusCanceled:
+            NSLog(@"Trip canceled");
+            break;
+        default:
+            break;
+    }
+}
+
+@end
+```
+
+### Working with Multi-Destination Trips
+
+```swift
+Radar.getLocation { (status, location, user, events) in
+    if let trip = user?.trip, let legs = trip.legs {
+        print("Trip has \(legs.count) legs")
+        
+        for (index, leg) in legs.enumerated() {
+            print("Leg \(index + 1): \(leg.status)")
+            if leg._id == trip.currentLegId {
+                print("  - Current leg")
+                print("  - ETA: \(leg.etaDuration) minutes")
+                print("  - Distance: \(leg.etaDistance) meters")
+            }
+        }
+    }
+}
+```
+
+```objective-c
+[Radar getLocationWithCompletionHandler:^(RadarStatus status, CLLocation *location, RadarUser *user, NSArray<RadarEvent *> *events) {
+    if (user.trip && user.trip.legs) {
+        NSLog(@"Trip has %lu legs", (unsigned long)user.trip.legs.count);
+        
+        for (NSInteger i = 0; i < user.trip.legs.count; i++) {
+            RadarTripLeg *leg = user.trip.legs[i];
+            NSLog(@"Leg %ld: %@", (long)(i + 1), [RadarTripLeg stringForStatus:leg.status]);
+            
+            if ([leg._id isEqualToString:user.trip.currentLegId]) {
+                NSLog(@"  - Current leg");
+                NSLog(@"  - ETA: %.1f minutes", leg.etaDuration);
+                NSLog(@"  - Distance: %.1f meters", leg.etaDistance);
+            }
+        }
+    }
+}];
+```
+
+## Related
+
+- [RadarTripOptions](/api/radar-trip-options) - Configure and start trips
+- [RadarTripLeg](/api/radar-trip-leg) - Multi-destination trip legs
+- [Trip Tracking Guide](https://radar.com/documentation/trip-tracking) - Complete guide to trip tracking

@@ -1,0 +1,306 @@
+---
+title: Motion Detection
+description: Use device motion and activity data to enhance location tracking accuracy
+---
+
+The Radar iOS SDK can leverage the device's motion sensors and CoreMotion framework to improve location tracking accuracy and reduce battery usage by detecting when the user is stationary, walking, driving, or performing other activities.
+
+## Overview
+
+Motion detection enables:
+
+- **Stop detection**: Identify when a user has stopped moving
+- **Activity classification**: Determine if the user is stationary, walking, running, biking, or driving
+- **Floor level detection**: Detect changes in altitude for indoor positioning
+- **Battery optimization**: Reduce location updates when the device is stationary
+
+## Enable motion detection
+
+To enable motion detection, set the `useMotion` property on your tracking options:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+let trackingOptions = RadarTrackingOptions()
+trackingOptions.useMotion = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+trackingOptions.useMotion = YES;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+</CodeGroup>
+
+<Info>
+  Motion detection requires the **RadarSDKMotion** framework to be integrated separately. The SDK will automatically detect its presence and enable motion features.
+</Info>
+
+## Request motion permissions
+
+Motion & Fitness permissions are required to access activity data:
+
+<Steps>
+  <Step title="Add Info.plist entry">
+    Add the motion usage description to your `Info.plist`:
+
+    ```xml
+    <key>NSMotionUsageDescription</key>
+    <string>We use motion data to improve location accuracy and optimize battery usage.</string>
+    ```
+  </Step>
+
+  <Step title="Request permission programmatically">
+    The SDK automatically requests motion permissions when you enable motion tracking. You can also manually request permissions:
+
+    <CodeGroup>
+    ```swift Swift
+    import CoreMotion
+
+    let motionManager = CMMotionActivityManager()
+    motionManager.startActivityUpdates(to: .main) { activity in
+        // Permission granted
+        motionManager.stopActivityUpdates()
+    }
+    ```
+
+    ```objectivec Objective-C
+    @import CoreMotion;
+
+    CMMotionActivityManager *motionManager = [[CMMotionActivityManager alloc] init];
+    [motionManager startActivityUpdatesToQueue:[NSOperationQueue mainQueue]
+                                   withHandler:^(CMMotionActivity *activity) {
+        // Permission granted
+        [motionManager stopActivityUpdates];
+    }];
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+## Activity types
+
+The SDK can detect the following activity types:
+
+| Activity | Description |
+|----------|-------------|
+| `RadarActivityTypeStationary` | Device is stationary |
+| `RadarActivityTypeFoot` | User is walking |
+| `RadarActivityTypeRun` | User is running |
+| `RadarActivityTypeBike` | User is biking |
+| `RadarActivityTypeCar` | User is driving |
+| `RadarActivityTypeUnknown` | Activity cannot be determined |
+
+## Stop detection
+
+Configure stop detection parameters to determine when a user has stopped moving:
+
+<CodeGroup>
+```swift Swift
+let trackingOptions = RadarTrackingOptions()
+
+// Stop detection configuration
+trackingOptions.stopDuration = 140 // seconds
+trackingOptions.stopDistance = 70 // meters
+trackingOptions.useMotion = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objectivec Objective-C
+RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+
+// Stop detection configuration
+trackingOptions.stopDuration = 140; // seconds
+trackingOptions.stopDistance = 70; // meters
+trackingOptions.useMotion = YES;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+</CodeGroup>
+
+The device is considered stopped when it stays within the `stopDistance` for at least `stopDuration`.
+
+### Optimize battery with stop detection
+
+Reduce battery usage by stopping location updates when the device is stationary:
+
+```swift
+let trackingOptions = RadarTrackingOptions()
+trackingOptions.desiredStoppedUpdateInterval = 0 // Shut down when stopped
+trackingOptions.desiredMovingUpdateInterval = 150 // Update every 2.5 min when moving
+trackingOptions.stopDuration = 140
+trackingOptions.stopDistance = 70
+trackingOptions.useMotion = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+## Pressure sensor integration
+
+Enable pressure sensor data to detect floor level changes:
+
+<CodeGroup>
+```swift Swift
+let trackingOptions = RadarTrackingOptions()
+trackingOptions.usePressure = true
+trackingOptions.useMotion = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objectivec Objective-C
+RadarTrackingOptions *trackingOptions = [RadarTrackingOptions new];
+trackingOptions.usePressure = YES;
+trackingOptions.useMotion = YES;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+</CodeGroup>
+
+<Note>
+  Pressure sensor data is available on devices with a barometer. The SDK uses both relative altitude (pressure-based) and absolute altitude (iOS 15+) when available.
+</Note>
+
+## Motion-aware tracking presets
+
+The preset tracking options include motion detection:
+
+### Responsive preset
+
+Includes motion detection for optimal battery usage:
+
+```swift
+let options = RadarTrackingOptions.presetResponsive
+// useMotion is automatically configured
+// useVisits is enabled
+// useSignificantLocationChanges is enabled
+```
+
+### Efficient preset
+
+Uses visit detection which relies on motion sensors:
+
+```swift
+let options = RadarTrackingOptions.presetEfficient
+// useVisits is enabled (uses motion detection internally)
+```
+
+## Receive motion updates
+
+Receive activity updates through the Radar delegate:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+class MyRadarDelegate: NSObject, RadarDelegate {
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        // Check user's current activity
+        if let activityType = user.foreground {
+            switch activityType {
+            case .stationary:
+                print("User is stationary")
+            case .foot:
+                print("User is walking")
+            case .car:
+                print("User is driving")
+            default:
+                print("Activity: \(activityType)")
+            }
+        }
+    }
+}
+
+// Set the delegate
+Radar.setDelegate(MyRadarDelegate())
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+@interface MyRadarDelegate : NSObject <RadarDelegate>
+@end
+
+@implementation MyRadarDelegate
+
+- (void)didUpdateLocation:(CLLocation *)location user:(RadarUser *)user {
+    // User object contains activity information
+    NSLog(@"Location updated");
+}
+
+@end
+
+// Set the delegate
+[Radar setDelegate:[[MyRadarDelegate alloc] init]];
+```
+</CodeGroup>
+
+## Implementation details
+
+The SDK manages motion detection through the `RadarActivityManager` class which:
+
+1. Initializes motion activity monitoring when `useMotion` is enabled
+2. Starts activity updates from CoreMotion's `CMMotionActivityManager`
+3. Monitors relative altitude using `CMAltimeter` when `usePressure` is enabled
+4. On iOS 15+, also monitors absolute altitude using `CMAbsoluteAltitudeData`
+5. Automatically stops updates when tracking is stopped
+
+<Warning>
+  The **RadarSDKMotion** framework must be integrated for motion features to work. If the framework is not present, the SDK will log a warning and motion features will be disabled.
+</Warning>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Request permission early" icon="hand">
+    Request Motion & Fitness permission when your app launches or during onboarding to ensure smooth tracking.
+  </Card>
+  
+  <Card title="Combine with geofencing" icon="location-dot">
+    Use motion detection with `useStoppedGeofence` to maximize battery efficiency.
+  </Card>
+  
+  <Card title="Test different activities" icon="person-running">
+    Test your app's behavior while walking, driving, and stationary to ensure proper detection.
+  </Card>
+  
+  <Card title="Handle permission denial" icon="circle-xmark">
+    Gracefully handle cases where users deny Motion & Fitness permission.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<Accordion title="Motion detection not working">
+  - Verify the **RadarSDKMotion** framework is integrated
+  - Check that Motion & Fitness permissions are granted
+  - Ensure `useMotion` is set to `true` in tracking options
+  - Check logs for "RadarSDKMotion detected and initialized" message
+</Accordion>
+
+<Accordion title="Pressure data unavailable">
+  - Verify the device has a barometer (iPhone 6 and later)
+  - Ensure Motion & Fitness permissions are granted
+  - Set both `useMotion` and `usePressure` to `true`
+</Accordion>
+
+<Accordion title="Stop detection too sensitive/insensitive">
+  Adjust the `stopDuration` and `stopDistance` parameters:
+  - Increase `stopDuration` for less sensitive detection
+  - Decrease `stopDistance` for more precise stop detection
+  - Typical values: 140 seconds and 70 meters
+</Accordion>
+
+## Related resources
+
+- [Background modes](/advanced/background-modes)
+- [Indoor positioning](/advanced/indoors)
+- [Tracking options](/sdk-reference/ios#tracking-options)
+- [Apple CoreMotion documentation](https://developer.apple.com/documentation/coremotion)

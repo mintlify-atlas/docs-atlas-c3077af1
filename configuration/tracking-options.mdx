@@ -1,0 +1,387 @@
+---
+title: Tracking Options
+description: Configure background tracking behavior with RadarTrackingOptions presets and custom settings
+---
+
+## Overview
+
+`RadarTrackingOptions` allows you to configure how the Radar SDK tracks location in the background. You can use preset configurations optimized for different use cases or create custom options to fine-tune tracking behavior.
+
+## Presets
+
+Radar provides three preset tracking options optimized for common scenarios:
+
+### Continuous
+
+Updates about every 30 seconds while moving or stopped. Moderate battery usage. Shows the flashing blue status bar during tracking.
+
+<CodeGroup>
+```swift Swift
+Radar.startTracking(trackingOptions: .presetContinuous)
+```
+
+```objective-c Objective-C
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetContinuous];
+```
+</CodeGroup>
+
+**Configuration:**
+- `desiredStoppedUpdateInterval`: 30 seconds
+- `desiredMovingUpdateInterval`: 30 seconds
+- `desiredAccuracy`: High
+- `showBlueBar`: `true`
+- `useStoppedGeofence`: `false`
+- `useMovingGeofence`: `false`
+- `useVisits`: `false`
+
+### Responsive
+
+Updates about every 2.5 minutes when moving and shuts down when stopped to save battery. Once stopped, the device will need to move more than 100 meters to wake up and start moving again. Low battery usage.
+
+<CodeGroup>
+```swift Swift
+Radar.startTracking(trackingOptions: .presetResponsive)
+```
+
+```objective-c Objective-C
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetResponsive];
+```
+</CodeGroup>
+
+**Configuration:**
+- `desiredStoppedUpdateInterval`: 0 (shuts down when stopped)
+- `desiredMovingUpdateInterval`: 150 seconds
+- `desiredAccuracy`: Medium
+- `showBlueBar`: `false`
+- `useStoppedGeofence`: `true` with 100m radius
+- `useMovingGeofence`: `true` with 100m radius
+- `useVisits`: `true`
+- `useSignificantLocationChanges`: `true`
+
+<Note>
+Location updates may be delayed significantly by Low Power Mode, or if the device has connectivity issues, low battery, or Wi-Fi disabled.
+</Note>
+
+### Efficient
+
+Uses the iOS visit monitoring service to update only on stops and exits. Once stopped, the device will need to move several hundred meters and trigger a visit departure to wake up and start moving again. Lowest battery usage.
+
+<CodeGroup>
+```swift Swift
+Radar.startTracking(trackingOptions: .presetEfficient)
+```
+
+```objective-c Objective-C
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetEfficient];
+```
+</CodeGroup>
+
+**Configuration:**
+- `desiredStoppedUpdateInterval`: 0
+- `desiredMovingUpdateInterval`: 0
+- `desiredAccuracy`: Medium
+- `useVisits`: `true`
+- `syncGeofences`: `true`
+- `replay`: Stops
+
+<Tip>
+This preset is ideal for applications that only need to know about significant location changes, such as arrival and departure events.
+</Tip>
+
+## Custom Options
+
+You can create custom tracking options by initializing a `RadarTrackingOptions` object and setting individual properties:
+
+<CodeGroup>
+```swift Swift
+let options = RadarTrackingOptions()
+options.desiredStoppedUpdateInterval = 0
+options.desiredMovingUpdateInterval = 120
+options.desiredSyncInterval = 20
+options.desiredAccuracy = .medium
+options.stopDuration = 140
+options.stopDistance = 70
+options.syncLocations = .all
+options.showBlueBar = false
+options.useStoppedGeofence = true
+options.stoppedGeofenceRadius = 100
+options.syncGeofences = true
+
+Radar.startTracking(trackingOptions: options)
+```
+
+```objective-c Objective-C
+RadarTrackingOptions *options = [RadarTrackingOptions new];
+options.desiredStoppedUpdateInterval = 0;
+options.desiredMovingUpdateInterval = 120;
+options.desiredSyncInterval = 20;
+options.desiredAccuracy = RadarTrackingOptionsDesiredAccuracyMedium;
+options.stopDuration = 140;
+options.stopDistance = 70;
+options.syncLocations = RadarTrackingOptionsSyncAll;
+options.showBlueBar = NO;
+options.useStoppedGeofence = YES;
+options.stoppedGeofenceRadius = 100;
+options.syncGeofences = YES;
+
+[Radar startTrackingWithOptions:options];
+```
+</CodeGroup>
+
+## Configuration Properties
+
+### Update Intervals
+
+<Accordion title="desiredStoppedUpdateInterval">
+Determines the desired location update interval in seconds when stopped. Set to `0` to shut down when stopped.
+
+**Type:** `Int`
+
+<Warning>
+Location updates may be delayed significantly by Low Power Mode, or if the device has connectivity issues, low battery, or Wi-Fi disabled.
+</Warning>
+</Accordion>
+
+<Accordion title="desiredMovingUpdateInterval">
+Determines the desired location update interval in seconds when moving.
+
+**Type:** `Int`
+</Accordion>
+
+<Accordion title="desiredSyncInterval">
+Determines the desired sync interval in seconds for sending location updates to the server.
+
+**Type:** `Int`
+</Accordion>
+
+### Accuracy
+
+<Accordion title="desiredAccuracy">
+Determines the desired accuracy of location updates.
+
+**Type:** `RadarTrackingOptionsDesiredAccuracy`
+
+**Options:**
+- `.high` - Uses `kCLLocationAccuracyBest`
+- `.medium` - Uses `kCLLocationAccuracyHundredMeters` (default)
+- `.low` - Uses `kCLLocationAccuracyKilometer`
+</Accordion>
+
+### Stop Detection
+
+<Accordion title="stopDuration">
+With `stopDistance`, determines the duration in seconds after which the device is considered stopped.
+
+**Type:** `Int`
+</Accordion>
+
+<Accordion title="stopDistance">
+With `stopDuration`, determines the distance in meters within which the device is considered stopped.
+
+**Type:** `Int`
+</Accordion>
+
+### Scheduling
+
+<Accordion title="startTrackingAfter">
+Determines when to start tracking. Use `nil` to start tracking immediately when `startTracking()` is called.
+
+**Type:** `Date?`
+
+```swift
+let options = RadarTrackingOptions.presetResponsive
+options.startTrackingAfter = Date().addingTimeInterval(3600) // Start in 1 hour
+Radar.startTracking(trackingOptions: options)
+```
+</Accordion>
+
+<Accordion title="stopTrackingAfter">
+Determines when to stop tracking. Use `nil` to track until `stopTracking()` is called.
+
+**Type:** `Date?`
+
+```swift
+let options = RadarTrackingOptions.presetResponsive
+options.stopTrackingAfter = Date().addingTimeInterval(86400) // Stop in 24 hours
+Radar.startTracking(trackingOptions: options)
+```
+</Accordion>
+
+### Sync Options
+
+<Accordion title="syncLocations">
+Determines which location updates to sync to the server.
+
+**Type:** `RadarTrackingOptionsSyncLocations`
+
+**Options:**
+- `.all` - Syncs all location updates (default)
+- `.stopsAndExits` - Syncs only stops and exits
+- `.none` - Syncs no location updates
+</Accordion>
+
+<Accordion title="replay">
+Determines which failed location updates to replay to the server when connectivity is restored.
+
+**Type:** `RadarTrackingOptionsReplay`
+
+**Options:**
+- `.stops` - Replays failed stops
+- `.none` - Replays no failed location updates
+- `.all` - Replays all failed location updates
+</Accordion>
+
+### iOS Services
+
+<Accordion title="useStoppedGeofence">
+Determines whether to use iOS region monitoring to create a client geofence around the device's current location when stopped.
+
+**Type:** `Bool`
+
+See [Apple's documentation](https://developer.apple.com/documentation/corelocation/monitoring_the_user_s_proximity_to_geographic_regions) for more information.
+</Accordion>
+
+<Accordion title="stoppedGeofenceRadius">
+Determines the radius in meters of the client geofence around the device's current location when stopped.
+
+**Type:** `Int`
+</Accordion>
+
+<Accordion title="useMovingGeofence">
+Determines whether to use iOS region monitoring to create a client geofence around the device's current location when moving.
+
+**Type:** `Bool`
+</Accordion>
+
+<Accordion title="movingGeofenceRadius">
+Determines the radius in meters of the client geofence around the device's current location when moving.
+
+**Type:** `Int`
+</Accordion>
+
+<Accordion title="useVisits">
+Determines whether to use the iOS visit monitoring service for detecting significant location changes.
+
+**Type:** `Bool`
+
+See [Apple's documentation](https://developer.apple.com/documentation/corelocation/getting_the_user_s_location/using_the_visits_location_service) for more information.
+</Accordion>
+
+<Accordion title="useSignificantLocationChanges">
+Determines whether to use the iOS significant location change service.
+
+**Type:** `Bool`
+
+See [Apple's documentation](https://developer.apple.com/documentation/corelocation/getting_the_user_s_location/using_the_significant-change_location_service) for more information.
+</Accordion>
+
+<Accordion title="showBlueBar">
+Determines whether the flashing blue status bar is shown when tracking in the background.
+
+**Type:** `Bool`
+
+See [Apple's documentation](https://developer.apple.com/documentation/corelocation/cllocationmanager/2923541-showsbackgroundlocationindicator) for more information.
+</Accordion>
+
+### Advanced Options
+
+<Accordion title="syncGeofences">
+Determines whether to sync nearby geofences from the server to the client to improve responsiveness.
+
+**Type:** `Bool`
+</Accordion>
+
+<Accordion title="beacons">
+Determines whether to monitor beacons for proximity detection.
+
+**Type:** `Bool`
+</Accordion>
+
+<Accordion title="useIndoorScan">
+Determines whether to use indoor scanning for improved indoor location accuracy.
+
+**Type:** `Bool`
+</Accordion>
+
+<Accordion title="useMotion">
+Determines whether to use the iOS motion activity service for better movement detection.
+
+**Type:** `Bool`
+</Accordion>
+
+<Accordion title="usePressure">
+Determines whether to use the iOS pressure service for altitude detection.
+
+**Type:** `Bool`
+</Accordion>
+
+## Getting Current Options
+
+You can retrieve the current tracking options:
+
+<CodeGroup>
+```swift Swift
+let currentOptions = Radar.getTrackingOptions()
+print("Desired accuracy: \(currentOptions.desiredAccuracy)")
+```
+
+```objective-c Objective-C
+RadarTrackingOptions *currentOptions = [Radar getTrackingOptions];
+NSLog(@"Desired accuracy: %ld", (long)currentOptions.desiredAccuracy);
+```
+</CodeGroup>
+
+## Battery Optimization
+
+To optimize battery usage while maintaining location accuracy:
+
+<Steps>
+  <Step title="Choose the right preset">
+    Start with a preset that matches your use case:
+    - Use **Efficient** for geofencing-only applications
+    - Use **Responsive** for delivery or on-demand apps
+    - Use **Continuous** only when real-time tracking is critical
+  </Step>
+  
+  <Step title="Tune update intervals">
+    Increase `desiredMovingUpdateInterval` to reduce location updates when moving. Set `desiredStoppedUpdateInterval` to `0` to shut down when stopped.
+  </Step>
+  
+  <Step title="Use geofences">
+    Enable `useStoppedGeofence` and `useMovingGeofence` to leverage iOS region monitoring instead of continuous location updates.
+  </Step>
+  
+  <Step title="Lower accuracy when possible">
+    Use `.medium` or `.low` accuracy if your use case doesn't require high precision.
+  </Step>
+  
+  <Step title="Enable iOS services">
+    Enable `useVisits` and `useSignificantLocationChanges` to leverage energy-efficient iOS location services.
+  </Step>
+</Steps>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start with a preset" icon="bolt">
+    Begin with a preset and customize only what you need. Presets are battle-tested for common scenarios.
+  </Card>
+  
+  <Card title="Test on real devices" icon="mobile">
+    Battery impact varies significantly between device models. Test your configuration on actual hardware.
+  </Card>
+  
+  <Card title="Monitor battery usage" icon="battery-three-quarters">
+    Use Xcode's Energy Log instrument to measure your app's energy impact.
+  </Card>
+  
+  <Card title="Respect Low Power Mode" icon="plug">
+    Location updates are automatically throttled by iOS in Low Power Mode. Design your app to handle delayed updates gracefully.
+  </Card>
+</CardGroup>
+
+## Related Resources
+
+- [Background Tracking](/sdk/ios/tracking#background-tracking)
+- [Permissions](/configuration/permissions)
+- [Delegates](/configuration/delegates)

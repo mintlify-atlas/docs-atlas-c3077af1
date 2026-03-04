@@ -1,0 +1,222 @@
+---
+title: "RadarIndoorsProtocol"
+description: "Protocol for integrating indoor positioning providers with the Radar SDK for enhanced indoor location accuracy."
+---
+
+## Overview
+
+`RadarIndoorsProtocol` defines the interface for indoor positioning providers that can be integrated with the Radar SDK. This protocol enables the SDK to perform indoor scans within specified geofences to determine precise indoor locations, such as floor level and position within a building.
+
+Indoor positioning providers implement this protocol to offer Wi-Fi fingerprinting, Bluetooth beacon scanning, or other technologies for indoor location determination.
+
+## Required Methods
+
+### startIndoorScan(_:forLength:withKnownLocation:completionHandler:)
+
+Initiates an indoor positioning scan within a specified geofence.
+
+```objective-c
++ (void)startIndoorScan:(NSString *)geofenceId
+              forLength:(int)scanLengthSeconds
+      withKnownLocation:(CLLocation *_Nullable)knownLocation
+      completionHandler:(RadarIndoorsScanCompletionHandler)completionHandler;
+```
+
+<ParamField path="geofenceId" type="NSString" required>
+  The unique identifier of the geofence where the indoor scan should be performed. This typically corresponds to a building or venue configured in the Radar dashboard.
+</ParamField>
+
+<ParamField path="scanLengthSeconds" type="int" required>
+  The duration of the indoor scan in seconds. Longer scans generally provide more accurate results but consume more battery and take longer to complete.
+</ParamField>
+
+<ParamField path="knownLocation" type="CLLocation">
+  An optional known location to assist with the scan. Providing a recent GPS location can improve scan accuracy and speed, especially near building entrances.
+</ParamField>
+
+<ParamField path="completionHandler" type="RadarIndoorsScanCompletionHandler" required>
+  The completion handler to invoke when the scan finishes or encounters an error.
+</ParamField>
+
+## Completion Handler
+
+The `RadarIndoorsScanCompletionHandler` is a block type defined as:
+
+```objective-c
+typedef void (^RadarIndoorsScanCompletionHandler)(
+    NSString *_Nullable result,
+    CLLocation *_Nullable locationAtStartOfScan
+);
+```
+
+<ResponseField name="result" type="NSString">
+  A string containing the indoor positioning result. The format depends on the provider implementation but typically includes floor level and coordinates. Returns `nil` if the scan fails.
+</ResponseField>
+
+<ResponseField name="locationAtStartOfScan" type="CLLocation">
+  The device location when the scan started. This can be used to validate the scan context or for fallback positioning. Returns `nil` if location is unavailable.
+</ResponseField>
+
+## Implementation Example
+
+Here's a basic implementation structure:
+
+```objective-c
+#import <CoreLocation/CoreLocation.h>
+#import "RadarIndoorsProtocol.h"
+
+@interface CustomIndoorProvider : NSObject <RadarIndoorsProtocol>
+@end
+
+@implementation CustomIndoorProvider
+
++ (void)startIndoorScan:(NSString *)geofenceId
+              forLength:(int)scanLengthSeconds
+      withKnownLocation:(CLLocation *)knownLocation
+      completionHandler:(RadarIndoorsScanCompletionHandler)completionHandler {
+    
+    // Store the starting location
+    CLLocation *startLocation = knownLocation ?: [[CLLocationManager alloc] init].location;
+    
+    // Perform indoor scan (implementation depends on provider)
+    // This might involve:
+    // - Wi-Fi fingerprinting
+    // - Bluetooth beacon scanning
+    // - Sensor fusion
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, scanLengthSeconds * NSEC_PER_SEC),
+                   dispatch_get_main_queue(), ^{
+        
+        // Example result format (format varies by provider)
+        NSString *result = @"{\"floor\": 2, \"latitude\": 37.7749, \"longitude\": -122.4194}";
+        
+        // Invoke completion handler with results
+        completionHandler(result, startLocation);
+    });
+}
+
+@end
+```
+
+## Swift Usage
+
+While the protocol is defined in Objective-C, it can be implemented in Swift:
+
+```swift
+import CoreLocation
+import RadarSDK
+
+class CustomIndoorProvider: NSObject, RadarIndoorsProtocol {
+    
+    static func startIndoorScan(
+        _ geofenceId: String,
+        forLength scanLengthSeconds: Int32,
+        withKnownLocation knownLocation: CLLocation?,
+        completionHandler: @escaping RadarIndoorsScanCompletionHandler
+    ) {
+        let startLocation = knownLocation
+        
+        // Perform indoor positioning scan
+        DispatchQueue.global().asyncAfter(deadline: .now() + .seconds(Int(scanLengthSeconds))) {
+            // Generate result based on scan data
+            let result = "{\"floor\": 2, \"x\": 150, \"y\": 200}"
+            
+            DispatchQueue.main.async {
+                completionHandler(result, startLocation)
+            }
+        }
+    }
+}
+```
+
+## Integration with Radar SDK
+
+To use a custom indoor provider with the Radar SDK:
+
+```objective-c
+#import "Radar.h"
+#import "CustomIndoorProvider.h"
+
+// Register your indoor provider with Radar
+[Radar setIndoorsProvider:[CustomIndoorProvider class]];
+
+// The SDK will now use your provider for indoor scans
+```
+
+```swift
+import RadarSDK
+
+// Register your indoor provider
+Radar.setIndoorsProvider(CustomIndoorProvider.self)
+```
+
+## Best Practices
+
+<Note>
+  Indoor scans can be battery-intensive. Choose scan durations that balance accuracy with battery consumption. Typical scan lengths range from 5-15 seconds.
+</Note>
+
+### Scan Duration
+
+- **Short scans (5-7 seconds)**: Faster but less accurate, suitable for frequent updates
+- **Medium scans (10-12 seconds)**: Balanced approach for most use cases
+- **Long scans (15+ seconds)**: Most accurate but slower and more battery-intensive
+
+### Location Context
+
+- Always provide `knownLocation` when available to improve accuracy
+- Use the most recent GPS location from outside the building
+- The location helps the provider narrow down the search space
+
+### Error Handling
+
+```objective-c
+[CustomIndoorProvider startIndoorScan:@"building-123"
+                            forLength:10
+                    withKnownLocation:currentLocation
+                    completionHandler:^(NSString *result, CLLocation *startLocation) {
+    if (result) {
+        // Process successful scan result
+        NSLog(@"Indoor scan result: %@", result);
+    } else {
+        // Handle scan failure
+        NSLog(@"Indoor scan failed");
+    }
+}];
+```
+
+### Result Format
+
+While the result format is flexible, consider including:
+
+- Floor level or building level identifier
+- Indoor coordinates (x, y or latitude, longitude)
+- Confidence score or accuracy estimate
+- Timestamp of the scan
+- Provider-specific metadata
+
+Example JSON format:
+
+```json
+{
+  "floor": 2,
+  "latitude": 37.7749,
+  "longitude": -122.4194,
+  "confidence": 0.85,
+  "timestamp": 1234567890,
+  "provider": "wifi-fingerprint"
+}
+```
+
+## Use Cases
+
+- **Retail Analytics**: Track customer movement through stores and departments
+- **Venue Navigation**: Provide turn-by-turn directions within large buildings
+- **Workplace Optimization**: Monitor space utilization and desk occupancy
+- **Airport/Transit**: Guide travelers through terminals and stations
+- **Healthcare**: Track equipment and personnel in hospitals
+
+## See Also
+
+- [RadarMotionProtocol](/api/radar-motion-protocol) - Protocol for motion activity detection
+- [Radar SDK Indoor Positioning Guide](/guides/indoor-positioning) - Complete guide to indoor positioning with Radar

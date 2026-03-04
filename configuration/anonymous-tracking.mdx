@@ -1,0 +1,420 @@
+---
+title: Anonymous Tracking
+description: Enable anonymous tracking mode for privacy compliance and user anonymity
+---
+
+## Overview
+
+Anonymous tracking mode allows you to track location events without creating identifiable user records on the Radar server. When enabled, Radar avoids sending stable device IDs, user IDs, and user metadata to the server, providing enhanced privacy for users.
+
+## When to Use Anonymous Tracking
+
+Use anonymous tracking when:
+
+- You need to comply with strict privacy regulations (GDPR, CCPA, etc.)
+- You want to track aggregate location patterns without identifying individual users
+- Users have opted out of personalized tracking
+- You're building a privacy-first application
+- You need location features without user identification
+
+<Warning>
+Anonymous tracking has limitations. You cannot:
+- Identify specific users or devices across sessions
+- Access user history or profiles
+- Use features that require persistent user identity
+- Retrieve user state from `RadarUser` objects in delegate callbacks
+</Warning>
+
+## Enabling Anonymous Tracking
+
+Enable anonymous tracking before starting location tracking:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+// Enable anonymous tracking
+Radar.setAnonymousTrackingEnabled(true)
+
+// Start tracking
+Radar.startTracking(trackingOptions: .presetResponsive)
+```
+
+```objective-c Objective-C
+#import <RadarSDK/RadarSDK.h>
+
+// Enable anonymous tracking
+[Radar setAnonymousTrackingEnabled:YES];
+
+// Start tracking
+[Radar startTrackingWithOptions:RadarTrackingOptions.presetResponsive];
+```
+</CodeGroup>
+
+<Info>
+Anonymous tracking can be enabled or disabled at any time. Changes take effect immediately for subsequent location updates.
+</Info>
+
+## How It Works
+
+When anonymous tracking is enabled:
+
+<Steps>
+  <Step title="No user records created">
+    Radar does not create or update user records on the server. Each location update is treated independently.
+  </Step>
+  
+  <Step title="Device ID is anonymized">
+    Instead of sending the actual device ID (IDFV), Radar sends a generic `"anonymous"` identifier.
+  </Step>
+  
+  <Step title="User metadata is excluded">
+    User IDs, descriptions, metadata, and tags are not sent to the server.
+  </Step>
+  
+  <Step title="Events still fire">
+    Geofence, place, and region events still fire normally, but without persistent user context.
+  </Step>
+</Steps>
+
+## What Still Works
+
+With anonymous tracking enabled, you can still use:
+
+<CardGroup cols={2}>
+  <Card title="Location tracking" icon="location-dot">
+    `trackOnce()`, `startTracking()`, and all tracking methods work normally.
+  </Card>
+  
+  <Card title="Geofencing" icon="draw-circle">
+    Geofence entry and exit events are detected and delivered.
+  </Card>
+  
+  <Card title="Place detection" icon="store">
+    Place entry, exit, and nearby events work as expected.
+  </Card>
+  
+  <Card title="Region detection" icon="map">
+    Country, state, DMA, and postal code events are generated.
+  </Card>
+  
+  <Card title="Client-side events" icon="bell">
+    Delegate callbacks like `didReceiveEvents` are called with event data.
+  </Card>
+  
+  <Card title="Context API" icon="layer-group">
+    `getContext()` provides location context without user identification.
+  </Card>
+</CardGroup>
+
+## What Doesn't Work
+
+With anonymous tracking enabled, these features are not available:
+
+<Accordion title="User identification">
+You cannot call `setUserId()`, `setDescription()`, `setMetadata()`, or `setTags()`. These values will not be sent to the server.
+
+```swift
+// These have no effect in anonymous mode
+Radar.setUserId("user_123")  // Not sent
+Radar.setMetadata(["key": "value"])  // Not sent
+```
+</Accordion>
+
+<Accordion title="User history">
+The server does not maintain a history of locations or events for anonymous users. Each request is independent.
+</Accordion>
+
+<Accordion title="User state in callbacks">
+In `RadarDelegate` callbacks, the `user` parameter will be `nil` when anonymous tracking is enabled.
+
+```swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    // user will be nil in anonymous mode
+    if user == nil {
+        print("Anonymous mode - no user state available")
+    }
+}
+
+func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+    // This method is NOT called in anonymous mode
+    // Use didUpdateClientLocation instead
+}
+```
+</Accordion>
+
+<Accordion title="Trip tracking">
+Trip tracking requires persistent user identity and is not available in anonymous mode.
+
+```swift
+// Trip tracking will fail in anonymous mode
+Radar.startTrip(options: tripOptions)  // Not supported
+```
+</Accordion>
+
+<Accordion title="Conversion tracking">
+`logConversion()` requires user identity and will not work properly in anonymous mode.
+</Accordion>
+
+## Disabling Anonymous Tracking
+
+You can disable anonymous tracking at any time:
+
+<CodeGroup>
+```swift Swift
+// Disable anonymous tracking
+Radar.setAnonymousTrackingEnabled(false)
+
+// Now you can identify users
+Radar.setUserId("user_123")
+```
+
+```objective-c Objective-C
+// Disable anonymous tracking
+[Radar setAnonymousTrackingEnabled:NO];
+
+// Now you can identify users
+[Radar setUserId:@"user_123"];
+```
+</CodeGroup>
+
+<Note>
+When you disable anonymous tracking, the next location update will create or update a user record with the device ID.
+</Note>
+
+## Privacy Compliance Example
+
+Here's an example of using anonymous tracking based on user consent:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+class LocationManager {
+    
+    func updateTrackingConsent(hasConsent: Bool) {
+        if hasConsent {
+            // User consented to personalized tracking
+            Radar.setAnonymousTrackingEnabled(false)
+            Radar.setUserId("user_123")
+            Radar.setMetadata(["plan": "premium"])
+            
+        } else {
+            // User declined - use anonymous mode
+            Radar.setAnonymousTrackingEnabled(true)
+            
+            // Clear any previously set user data
+            Radar.setUserId(nil)
+            Radar.setMetadata(nil)
+        }
+        
+        // Start tracking with appropriate mode
+        Radar.startTracking(trackingOptions: .presetResponsive)
+    }
+    
+    func showConsentDialog() {
+        let alert = UIAlertController(
+            title: "Location Tracking",
+            message: "Would you like to enable personalized location features? You can choose anonymous tracking for privacy.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Enable Personalized", style: .default) { _ in
+            self.updateTrackingConsent(hasConsent: true)
+        })
+        
+        alert.addAction(UIAlertAction(title: "Use Anonymous Mode", style: .default) { _ in
+            self.updateTrackingConsent(hasConsent: false)
+        })
+        
+        // Present alert...
+    }
+}
+```
+
+```objective-c Objective-C
+#import <RadarSDK/RadarSDK.h>
+
+@interface LocationManager : NSObject
+@end
+
+@implementation LocationManager
+
+- (void)updateTrackingConsent:(BOOL)hasConsent {
+    if (hasConsent) {
+        // User consented to personalized tracking
+        [Radar setAnonymousTrackingEnabled:NO];
+        [Radar setUserId:@"user_123"];
+        [Radar setMetadata:@{@"plan": @"premium"}];
+        
+    } else {
+        // User declined - use anonymous mode
+        [Radar setAnonymousTrackingEnabled:YES];
+        
+        // Clear any previously set user data
+        [Radar setUserId:nil];
+        [Radar setMetadata:nil];
+    }
+    
+    // Start tracking with appropriate mode
+    [Radar startTrackingWithOptions:RadarTrackingOptions.presetResponsive];
+}
+
+- (void)showConsentDialog {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Location Tracking"
+                                                                   message:@"Would you like to enable personalized location features?"
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"Enable Personalized"
+                                             style:UIAlertActionStyleDefault
+                                           handler:^(UIAlertAction * _Nonnull action) {
+        [self updateTrackingConsent:YES];
+    }]];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"Use Anonymous Mode"
+                                             style:UIAlertActionStyleDefault
+                                           handler:^(UIAlertAction * _Nonnull action) {
+        [self updateTrackingConsent:NO];
+    }]];
+    
+    // Present alert...
+}
+
+@end
+```
+</CodeGroup>
+
+## Server-Side Behavior
+
+When anonymous tracking is enabled, Radar API requests will:
+
+- Include `"anonymous": true` in the request payload
+- Use `"deviceId": "anonymous"` instead of the actual device ID
+- Not create or update user records in the database
+- Still return events and context in the response
+- Not persist any user state on the server
+
+## Delegate Considerations
+
+When implementing `RadarDelegate` with anonymous tracking:
+
+<CodeGroup>
+```swift Swift
+class AppDelegate: UIResponder, UIApplicationDelegate, RadarDelegate {
+    
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        // user will be nil in anonymous mode
+        for event in events {
+            print("Event: \(event.type)")
+            
+            // Event properties like geofence, place are still available
+            if let geofence = event.geofence {
+                print("Geofence: \(geofence.tag ?? "unknown")")
+            }
+        }
+        
+        if user == nil {
+            print("Running in anonymous mode")
+        }
+    }
+    
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        // This method is NOT called in anonymous mode
+    }
+    
+    func didUpdateClientLocation(_ location: CLLocation, stopped: Bool, source: RadarLocationSource) {
+        // This method IS called in anonymous mode
+        print("Anonymous location update: \(location.coordinate)")
+    }
+}
+```
+
+```objective-c Objective-C
+@interface AppDelegate () <RadarDelegate>
+@end
+
+@implementation AppDelegate
+
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    // user will be nil in anonymous mode
+    for (RadarEvent *event in events) {
+        NSLog(@"Event: %ld", (long)event.type);
+        
+        if (event.geofence) {
+            NSLog(@"Geofence: %@", event.geofence.tag);
+        }
+    }
+    
+    if (user == nil) {
+        NSLog(@"Running in anonymous mode");
+    }
+}
+
+- (void)didUpdateLocation:(CLLocation *)location user:(RadarUser *)user {
+    // This method is NOT called in anonymous mode
+}
+
+- (void)didUpdateClientLocation:(CLLocation *)location stopped:(BOOL)stopped source:(RadarLocationSource)source {
+    // This method IS called in anonymous mode
+    NSLog(@"Anonymous location update: %@", location);
+}
+
+@end
+```
+</CodeGroup>
+
+<Tip>
+Use `didUpdateClientLocation` instead of `didUpdateLocation` when implementing anonymous tracking, as `didUpdateLocation` requires user state.
+</Tip>
+
+## Best Practices
+
+<Steps>
+  <Step title="Respect user choice">
+    Always give users control over whether they want personalized or anonymous tracking.
+  </Step>
+  
+  <Step title="Set before tracking starts">
+    Enable anonymous mode before calling `startTracking()` or `trackOnce()` to ensure no user data is sent.
+  </Step>
+  
+  <Step title="Clear user data when enabling">
+    When switching to anonymous mode, clear any previously set user IDs and metadata.
+  </Step>
+  
+  <Step title="Document the limitations">
+    Make sure your app gracefully handles the limitations of anonymous mode (no user state, no history).
+  </Step>
+  
+  <Step title="Use appropriate delegate methods">
+    Implement `didUpdateClientLocation` and check for `nil` user in `didReceiveEvents`.
+  </Step>
+</Steps>
+
+## Testing Anonymous Mode
+
+To test anonymous tracking:
+
+```swift
+// Enable anonymous mode
+Radar.setAnonymousTrackingEnabled(true)
+
+// Track location
+Radar.trackOnce { status, location, events, user in
+    print("Status: \(status)")
+    print("User: \(user == nil ? "nil (anonymous)" : "not nil")")
+    
+    // Events will still be returned
+    if let events = events {
+        for event in events {
+            print("Event: \(event.type)")
+        }
+    }
+}
+```
+
+## Related Resources
+
+- [Privacy & Security](/privacy)
+- [Delegates](/configuration/delegates)
+- [User Identification](/sdk/ios/tracking#identify-users)

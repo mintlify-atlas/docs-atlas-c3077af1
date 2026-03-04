@@ -1,0 +1,832 @@
+---
+title: "Troubleshooting"
+description: "Common issues, solutions, debugging tips, and logging for the Radar iOS SDK"
+---
+
+This guide helps you diagnose and resolve common issues with the Radar iOS SDK.
+
+## Quick Diagnostics
+
+Before diving into specific issues, verify these basics:
+
+<AccordionGroup>
+  <Accordion icon="check" title="SDK initialized correctly">
+    Ensure you're calling `Radar.initialize()` in your `AppDelegate`'s `didFinishLaunchingWithOptions` method before any other Radar methods.
+    
+    ```swift AppDelegate.swift
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        Radar.initialize(publishableKey: "prj_test_pk_...")
+        return true
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="key" title="Valid API key">
+    Verify your publishable key is correct:
+    - Starts with `prj_test_pk_` (test) or `prj_live_pk_` (live)
+    - No extra spaces or characters
+    - Copied from your [Radar dashboard](https://radar.com/dashboard)
+    
+    ```swift
+    // Check if initialized
+    if Radar.isInitialized {
+        print("SDK version: \(Radar.sdkVersion)")
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="location-dot" title="Location permissions granted">
+    Check that your app has location permissions:
+    
+    ```swift
+    import CoreLocation
+    
+    let status = CLLocationManager.authorizationStatus()
+    switch status {
+    case .authorizedWhenInUse:
+        print("When in use authorization granted")
+    case .authorizedAlways:
+        print("Always authorization granted")
+    case .denied, .restricted:
+        print("Location permission denied or restricted")
+    case .notDetermined:
+        print("Location permission not requested yet")
+    @unknown default:
+        print("Unknown authorization status")
+    }
+    ```
+  </Accordion>
+  
+  <Accordion icon="circle-info" title="Info.plist configured">
+    Ensure these keys are in your `Info.plist`:
+    - `NSLocationWhenInUseUsageDescription`
+    - `NSLocationAlwaysAndWhenInUseUsageDescription` (if using background tracking)
+    - Optionally: `UIBackgroundModes` with `location` for background tracking
+  </Accordion>
+</AccordionGroup>
+
+## Common Issues
+
+### Location Tracking
+
+#### Location Updates Not Received
+
+<Steps>
+  <Step title="Enable debug logging">
+    Enable verbose logging to see what the SDK is doing:
+    
+    ```swift
+    // Enable before calling Radar.initialize()
+    let options = RadarInitializeOptions()
+    options.logLevel = .debug
+    Radar.initialize(publishableKey: "prj_test_pk_...", options: options)
+    ```
+  </Step>
+  
+  <Step title="Implement delegate">
+    Make sure you've set a delegate to receive updates:
+    
+    ```swift
+    class MyRadarDelegate: NSObject, RadarDelegate {
+        func didUpdateClientLocation(
+            _ location: CLLocation,
+            stopped: Bool,
+            source: RadarLocationSource
+        ) {
+            print("Location: \(location.coordinate), stopped: \(stopped)")
+        }
+        
+        func didFail(status: RadarStatus) {
+            print("Error: \(Radar.stringForStatus(status))")
+        }
+    }
+    
+    // Set delegate
+    Radar.setDelegate(MyRadarDelegate())
+    ```
+  </Step>
+  
+  <Step title="Check tracking status">
+    Verify tracking is actually started:
+    
+    ```swift
+    if Radar.isTracking() {
+        let options = Radar.getTrackingOptions()
+        print("Tracking with options: \(options)")
+    } else {
+        print("Tracking not started")
+        Radar.startTracking(trackingOptions: .presetResponsive)
+    }
+    ```
+  </Step>
+  
+  <Step title="Verify location permissions">
+    Background tracking requires "Always" authorization:
+    
+    ```swift
+    let status = CLLocationManager.authorizationStatus()
+    if status != .authorizedAlways {
+        print("Need 'Always' authorization for background tracking")
+        // Request always authorization
+        let locationManager = CLLocationManager()
+        locationManager.requestAlwaysAuthorization()
+    }
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+Location updates may be delayed by iOS Low Power Mode, poor connectivity, low battery, or disabled Wi-Fi.
+</Warning>
+
+#### Location Updates Too Infrequent
+
+**Symptoms:** Location updates happen less often than expected.
+
+**Solutions:**
+
+<Accordion title="Use a more aggressive preset">
+  ```swift
+  // Most frequent updates (~30 seconds)
+  Radar.startTracking(trackingOptions: .presetContinuous)
+  
+  // Moderate frequency (~2.5 minutes when moving)
+  Radar.startTracking(trackingOptions: .presetResponsive)
+  
+  // Least frequent (only on visits)
+  Radar.startTracking(trackingOptions: .presetEfficient)
+  ```
+</Accordion>
+
+<Accordion title="Customize tracking options">
+  ```swift
+  let options = RadarTrackingOptions.presetResponsive
+  options.desiredStoppedUpdateInterval = 120  // 2 minutes when stopped
+  options.desiredMovingUpdateInterval = 60    // 1 minute when moving
+  options.desiredAccuracy = .high             // Use best accuracy
+  Radar.startTracking(trackingOptions: options)
+  ```
+</Accordion>
+
+<Accordion title="Check iOS restrictions">
+  iOS may throttle location updates if:
+  - Device is in Low Power Mode
+  - Battery is low (< 20%)
+  - Poor network connectivity
+  - App is in background for extended period
+  - Location services are restricted systemwide
+  
+  These are iOS limitations and cannot be overridden by the SDK.
+</Accordion>
+
+#### Tracking Stops When App Backgrounded
+
+**Symptoms:** Location updates stop when app goes to background.
+
+**Solutions:**
+
+<Steps>
+  <Step title="Add background location capability">
+    In Xcode, go to your target's **Signing & Capabilities** tab:
+    1. Click **+ Capability**
+    2. Add **Background Modes**
+    3. Enable **Location updates**
+  </Step>
+  
+  <Step title="Request Always authorization">
+    Background tracking requires "Always" permission:
+    
+    ```swift
+    let locationManager = CLLocationManager()
+    locationManager.requestAlwaysAuthorization()
+    ```
+  </Step>
+  
+  <Step title="Add Info.plist key">
+    Add `NSLocationAlwaysAndWhenInUseUsageDescription` to your `Info.plist` with a clear explanation of why you need background location access.
+  </Step>
+  
+  <Step title="Don't use continuous with blue bar disabled">
+    If you disable the blue bar indicator:
+    ```swift
+    let options = RadarTrackingOptions.presetContinuous
+    options.showBlueBar = false  // ⚠️ Not recommended
+    ```
+    
+    iOS may still throttle updates. The blue bar is required for guaranteed continuous tracking.
+  </Step>
+</Steps>
+
+### Location Permissions
+
+#### Permission Prompt Not Showing
+
+**Symptoms:** Location permission dialog never appears.
+
+**Solutions:**
+
+<Accordion title="Check Info.plist keys">
+  Ensure you have the correct keys in your `Info.plist`:
+  
+  ```xml Info.plist
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>We need your location to provide nearby recommendations</string>
+  
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>We track your location to provide real-time updates and alerts</string>
+  ```
+  
+  **The description text cannot be empty** or the prompt won't show.
+</Accordion>
+
+<Accordion title="Request on main thread">
+  Permission requests must be made on the main thread:
+  
+  ```swift
+  DispatchQueue.main.async {
+      let locationManager = CLLocationManager()
+      locationManager.requestWhenInUseAuthorization()
+  }
+  ```
+</Accordion>
+
+<Accordion title="Check if already determined">
+  If the user previously denied permission, the prompt won't show again:
+  
+  ```swift
+  let status = CLLocationManager.authorizationStatus()
+  if status == .denied || status == .restricted {
+      // Direct user to Settings app
+      if let url = URL(string: UIApplication.openSettingsURLString) {
+          UIApplication.shared.open(url)
+      }
+  }
+  ```
+</Accordion>
+
+#### Can't Upgrade from When In Use to Always
+
+**Symptoms:** Already have "When In Use" permission but can't get "Always" permission.
+
+**Solutions:**
+
+<Steps>
+  <Step title="Request in correct order">
+    Request "When In Use" first, then "Always" after the app has been used:
+    
+    ```swift
+    let locationManager = CLLocationManager()
+    
+    // First request
+    locationManager.requestWhenInUseAuthorization()
+    
+    // Later, request Always
+    DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+        locationManager.requestAlwaysAuthorization()
+    }
+    ```
+  </Step>
+  
+  <Step title="Add both Info.plist keys">
+    You must have both keys in `Info.plist` to upgrade permissions:
+    - `NSLocationWhenInUseUsageDescription`
+    - `NSLocationAlwaysAndWhenInUseUsageDescription`
+  </Step>
+  
+  <Step title="Timing matters">
+    iOS may not show the Always prompt immediately. Request it:
+    - After the user has used the app a few times
+    - When they're performing an action that benefits from background tracking
+    - Not immediately on first launch
+  </Step>
+</Steps>
+
+### Trip Tracking
+
+#### Trip Not Starting
+
+**Symptoms:** `startTrip()` call returns an error or trip doesn't track.
+
+**Solutions:**
+
+<Accordion title="Check trip options">
+  ```swift
+  let tripOptions = RadarTripOptions(
+      externalId: "trip-123",  // Must be unique
+      destinationGeofenceTag: "store",
+      destinationGeofenceExternalId: "store-456"
+  )
+  tripOptions.mode = .car
+  
+  Radar.startTrip(options: tripOptions) { (status, trip, events) in
+      if status == .success {
+          print("Trip started: \(trip?._id ?? "")")
+      } else {
+          print("Failed to start trip: \(Radar.stringForStatus(status))")
+      }
+  }
+  ```
+</Accordion>
+
+<Accordion title="Verify destination geofence exists">
+  The destination geofence must exist in your Radar dashboard:
+  1. Go to [Geofences](https://radar.com/dashboard/geofences)
+  2. Search for your `destinationGeofenceTag` or `destinationGeofenceExternalId`
+  3. Ensure the geofence is enabled
+</Accordion>
+
+<Accordion title="Check tracking is enabled">
+  Trip tracking requires location tracking to be active:
+  
+  ```swift
+  if !Radar.isTracking() {
+      print("Need to start tracking first")
+      Radar.startTracking(trackingOptions: .presetResponsive)
+  }
+  
+  // Or use automatic tracking
+  let tripOptions = RadarTripOptions(...)
+  tripOptions.startTracking = true  // Auto-start tracking
+  Radar.startTrip(options: tripOptions)
+  ```
+</Accordion>
+
+#### No Trip Events Generated
+
+**Symptoms:** Trip starts but no approaching/arrival events received.
+
+**Solutions:**
+
+<Steps>
+  <Step title="Check approaching threshold">
+    Adjust the approaching threshold if events aren't triggered at the right distance:
+    
+    ```swift
+    let tripOptions = RadarTripOptions(...)
+    tripOptions.approachingThreshold = 500  // Meters from destination
+    ```
+  </Step>
+  
+  <Step title="Verify geofence radius">
+    Ensure your destination geofence is large enough. Geofences smaller than 100 meters may have delayed entry detection.
+  </Step>
+  
+  <Step title="Test with manual location">
+    Simulate location updates to test events:
+    
+    ```swift
+    let origin = CLLocation(latitude: 40.7128, longitude: -74.0060)
+    let destination = CLLocation(latitude: 40.7589, longitude: -73.9851)
+    
+    Radar.mockTracking(
+        origin: origin,
+        destination: destination,
+        mode: .car,
+        steps: 10,
+        interval: 3
+    ) { (status, location, events, user) in
+        print("Mock update: \(events?.count ?? 0) events")
+    }
+    ```
+  </Step>
+</Steps>
+
+### Events and Webhooks
+
+#### Events Not Received in Delegate
+
+**Symptoms:** Location updates work but event delegate methods aren't called.
+
+**Solutions:**
+
+<Accordion title="Implement all delegate methods">
+  ```swift
+  class MyRadarDelegate: NSObject, RadarDelegate {
+      func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+          for event in events {
+              print("Event: \(RadarEvent.stringForType(event.type) ?? "unknown")")
+              if let geofence = event.geofence {
+                  print("Geofence: \(geofence.tag)")
+              }
+          }
+      }
+      
+      func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+          print("Location updated, user: \(user._id)")
+      }
+      
+      func didUpdateClientLocation(
+          _ location: CLLocation,
+          stopped: Bool,
+          source: RadarLocationSource
+      ) {
+          print("Client location updated")
+      }
+      
+      func didFail(status: RadarStatus) {
+          print("Error: \(Radar.stringForStatus(status))")
+      }
+      
+      func didLog(message: String) {
+          print("Radar log: \(message)")
+      }
+  }
+  ```
+</Accordion>
+
+<Accordion title="Retain delegate reference">
+  Make sure your delegate isn't being deallocated:
+  
+  ```swift
+  // ❌ Delegate will be deallocated
+  Radar.setDelegate(MyRadarDelegate())
+  
+  // ✅ Keep a strong reference
+  class MyViewController: UIViewController {
+      let radarDelegate = MyRadarDelegate()
+      
+      override func viewDidLoad() {
+          super.viewDidLoad()
+          Radar.setDelegate(radarDelegate)
+      }
+  }
+  ```
+</Accordion>
+
+#### Webhooks Not Firing
+
+**Symptoms:** Events generated but webhooks not received on your server.
+
+**Solutions:**
+
+<Steps>
+  <Step title="Check webhook configuration">
+    In your [Radar dashboard](https://radar.com/dashboard/settings):
+    1. Go to **Settings** → **Webhooks**
+    2. Verify URL is correct and reachable
+    3. Ensure event types are enabled
+    4. Check webhook signature verification
+  </Step>
+  
+  <Step title="Test endpoint manually">
+    Use the Radar dashboard's webhook tester to send a test event to your endpoint.
+  </Step>
+  
+  <Step title="Check server logs">
+    Look for incoming requests on your server. Radar webhooks:
+    - Use `POST` method
+    - Have `Content-Type: application/json`
+    - Include `X-Radar-Signature` header
+  </Step>
+  
+  <Step title="Verify event conditions">
+    Some events have conditions:
+    - Geofence events require matching tag or metadata
+    - Trip events require active trip
+    - Dwell events require minimum dwell time
+  </Step>
+</Steps>
+
+### Verified Location
+
+#### trackVerified() Fails
+
+**Symptoms:** `trackVerified()` returns error status.
+
+**Solutions:**
+
+<Accordion title="Configure SSL pinning">
+  SSL pinning must be configured before calling `trackVerified()`:
+  
+  ```swift
+  // Configure SSL pinning in initialize options
+  let options = RadarInitializeOptions()
+  // Add your SSL pinning configuration here
+  Radar.initialize(publishableKey: "prj_test_pk_...", options: options)
+  
+  // Then call trackVerified
+  Radar.trackVerified { (status, token) in
+      if let token = token, token.passed {
+          print("Location verified: \(token.token)")
+      }
+  }
+  ```
+</Accordion>
+
+<Accordion title="Check verification requirements">
+  Location verification requires:
+  - SSL pinning configured
+  - Valid location with good accuracy
+  - Network connectivity
+  - Fraud detection enabled in dashboard
+  
+  ```swift
+  Radar.trackVerified(beacons: false, desiredAccuracy: .high) { (status, token) in
+      if status != .success {
+          print("Verification failed: \(Radar.stringForStatus(status))")
+      } else if let token = token {
+          print("Passed: \(token.passed)")
+          print("Expires: \(token.expiresAt ?? Date())")
+      }
+  }
+  ```
+</Accordion>
+
+<Accordion title="Handle verification failures">
+  A failed verification doesn't mean an error - it might indicate:
+  - Location spoofing detected
+  - Proxy/VPN usage
+  - Location mismatch with expected jurisdiction
+  
+  ```swift
+  Radar.trackVerified { (status, token) in
+      guard status == .success else {
+          // Handle API error
+          return
+      }
+      
+      if token?.passed == true {
+          // Verification passed
+          sendTokenToServer(token?.token)
+      } else {
+          // Verification failed - may indicate fraud
+          showErrorMessage("Location verification failed")
+      }
+  }
+  ```
+</Accordion>
+
+### Performance Issues
+
+#### High Battery Usage
+
+**Symptoms:** App drains battery faster than expected.
+
+**Solutions:**
+
+<Accordion title="Use appropriate tracking preset">
+  ```swift
+  // ⚡ Highest battery usage
+  Radar.startTracking(trackingOptions: .presetContinuous)
+  
+  // ⚡⚡ Moderate battery usage (recommended)
+  Radar.startTracking(trackingOptions: .presetResponsive)
+  
+  // ⚡⚡⚡ Lowest battery usage
+  Radar.startTracking(trackingOptions: .presetEfficient)
+  ```
+</Accordion>
+
+<Accordion title="Reduce update frequency">
+  ```swift
+  let options = RadarTrackingOptions.presetResponsive
+  options.desiredMovingUpdateInterval = 300  // 5 minutes
+  options.desiredStoppedUpdateInterval = 0   // Shut down when stopped
+  options.desiredAccuracy = .low             // Use lower accuracy
+  Radar.startTracking(trackingOptions: options)
+  ```
+</Accordion>
+
+<Accordion title="Disable unnecessary features">
+  ```swift
+  let options = RadarTrackingOptions.presetResponsive
+  options.beacons = false          // Disable beacon ranging
+  options.useIndoorScan = false    // Disable indoor positioning
+  options.syncGeofences = false    // Disable geofence sync
+  Radar.startTracking(trackingOptions: options)
+  ```
+</Accordion>
+
+#### App Launch Time Increased
+
+**Symptoms:** App takes longer to launch after adding Radar SDK.
+
+**Solutions:**
+
+<Accordion title="Defer non-critical initialization">
+  ```swift
+  func application(
+      _ application: UIApplication,
+      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+      // Initialize Radar first (required)
+      Radar.initialize(publishableKey: "prj_test_pk_...")
+      
+      // Defer tracking start until after UI loads
+      DispatchQueue.main.async {
+          if CLLocationManager.authorizationStatus() == .authorizedAlways {
+              Radar.startTracking(trackingOptions: .presetResponsive)
+          }
+      }
+      
+      return true
+  }
+  ```
+</Accordion>
+
+<Accordion title="Optimize tracking options">
+  Disable features you don't need:
+  
+  ```swift
+  let options = RadarInitializeOptions()
+  options.autoLogNotificationConversions = false  // If not using notifications
+  options.autoHandleNotificationDeepLinks = false
+  Radar.initialize(publishableKey: "prj_test_pk_...", options: options)
+  ```
+</Accordion>
+
+## Debugging Tools
+
+### Logging
+
+Enable different log levels to see SDK activity:
+
+```swift
+let options = RadarInitializeOptions()
+options.logLevel = .debug  // .none, .error, .warning, .info, or .debug
+
+Radar.initialize(publishableKey: "prj_test_pk_...", options: options)
+```
+
+**Log Levels:**
+- `.none` - No logs
+- `.error` - Only errors
+- `.warning` - Warnings and errors
+- `.info` - Info, warnings, and errors (default)
+- `.debug` - Verbose logging including all SDK operations
+
+**Implement log delegate:**
+
+```swift
+class MyRadarDelegate: NSObject, RadarDelegate {
+    func didLog(message: String) {
+        print("[Radar] \(message)")
+        // Send to your analytics service
+    }
+}
+```
+
+### Testing with Mock Locations
+
+Test tracking without moving:
+
+```swift
+let sanFrancisco = CLLocation(latitude: 37.7749, longitude: -122.4194)
+let newYork = CLLocation(latitude: 40.7128, longitude: -74.0060)
+
+Radar.mockTracking(
+    origin: sanFrancisco,
+    destination: newYork,
+    mode: .car,
+    steps: 20,       // Number of location updates
+    interval: 2      // Seconds between updates
+) { (status, location, events, user) in
+    print("Mock location: \(location?.coordinate ?? CLLocationCoordinate2D())")
+    print("Events: \(events?.count ?? 0)")
+}
+```
+
+### Manual Tracking
+
+Test with a manual location:
+
+```swift
+let testLocation = CLLocation(
+    coordinate: CLLocationCoordinate2D(latitude: 40.7589, longitude: -73.9851),
+    altitude: 10,
+    horizontalAccuracy: 5,
+    verticalAccuracy: 5,
+    timestamp: Date()
+)
+
+Radar.trackOnce(location: testLocation) { (status, location, events, user) in
+    print("Status: \(Radar.stringForStatus(status))")
+    print("Events: \(events?.count ?? 0)")
+    print("User: \(user?._id ?? "")")
+}
+```
+
+### Check SDK State
+
+Get current SDK configuration:
+
+```swift
+// Version and initialization
+print("SDK Version: \(Radar.sdkVersion)")
+print("Is Initialized: \(Radar.isInitialized)")
+
+// Tracking status
+print("Is Tracking: \(Radar.isTracking())")
+if Radar.isTracking() {
+    let options = Radar.getTrackingOptions()
+    print("Tracking Options: \(options.dictionaryValue)")
+}
+
+// Verified tracking
+print("Is Tracking Verified: \(Radar.isTrackingVerified())")
+
+// User info
+if let userId = Radar.getUserId() {
+    print("User ID: \(userId)")
+}
+if let metadata = Radar.getMetadata() {
+    print("Metadata: \(metadata)")
+}
+
+// Trip info
+if let trip = Radar.getTrip() {
+    print("Active Trip: \(trip._id)")
+    print("Status: \(trip.status)")
+}
+```
+
+## Common Error Codes
+
+Understand error status codes:
+
+```swift
+switch status {
+case .success:
+    print("Operation succeeded")
+    
+case .errorPublishableKey:
+    print("SDK not initialized or invalid API key")
+    
+case .errorPermissions:
+    print("Location permissions not granted")
+    
+case .errorLocation:
+    print("Location services error or timeout (20 seconds)")
+    
+case .errorBluetooth:
+    print("Beacon ranging error or timeout (5 seconds)")
+    
+case .errorNetwork:
+    print("Network error or timeout (10 seconds)")
+    
+case .errorBadRequest:
+    print("Bad request - check parameters")
+    
+case .errorUnauthorized:
+    print("Invalid API key")
+    
+case .errorPaymentRequired:
+    print("Organization disabled or usage exceeded")
+    
+case .errorForbidden:
+    print("Insufficient permissions or no beta access")
+    
+case .errorNotFound:
+    print("Resource not found")
+    
+case .errorRateLimit:
+    print("Too many requests - rate limit exceeded")
+    
+case .errorServer:
+    print("Internal server error")
+    
+case .errorUnknown:
+    print("Unknown error")
+    
+default:
+    print("Unhandled error: \(status.rawValue)")
+}
+```
+
+## Still Having Issues?
+
+If you're still experiencing problems:
+
+<CardGroup cols={2}>
+  <Card title="Contact Support" icon="life-ring" href="mailto:support@radar.com">
+    Email support@radar.com with:
+    - SDK version
+    - iOS version
+    - Device model
+    - Detailed description
+    - Relevant logs
+  </Card>
+  
+  <Card title="GitHub Issues" icon="github" href="https://github.com/radarlabs/radar-sdk-ios/issues">
+    Search existing issues or create a new one with:
+    - Steps to reproduce
+    - Expected behavior
+    - Actual behavior
+    - Code samples
+  </Card>
+  
+  <Card title="Documentation" icon="book" href="/">
+    Review the complete documentation for detailed API references and guides
+  </Card>
+  
+  <Card title="Dashboard" icon="gauge" href="https://radar.com/dashboard">
+    Check your Radar dashboard for:
+    - Event logs
+    - Webhook logs
+    - API usage
+    - Configuration
+  </Card>
+</CardGroup>

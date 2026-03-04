@@ -1,0 +1,290 @@
+---
+title: RadarEvent
+description: API reference for the RadarEvent class
+---
+
+Represents a change in user state. Events are generated when a user enters or exits a geofence, place, region, or beacon, or when trip status changes.
+
+## Properties
+
+<ResponseField name="_id" type="String" required>
+  The Radar ID of the event.
+</ResponseField>
+
+<ResponseField name="createdAt" type="Date" required>
+  The datetime when the event occurred on the device.
+</ResponseField>
+
+<ResponseField name="actualCreatedAt" type="Date" required>
+  The datetime when the event was created on the server.
+</ResponseField>
+
+<ResponseField name="live" type="Bool" required>
+  A boolean indicating whether the event was generated with your live API key.
+</ResponseField>
+
+<ResponseField name="type" type="RadarEventType" required>
+  The type of the event. See [Event Types](#event-types) for possible values.
+</ResponseField>
+
+<ResponseField name="conversionName" type="String">
+  The name of the conversion event. This will only be set if the `type` is `conversion`.
+</ResponseField>
+
+<ResponseField name="geofence" type="RadarGeofence">
+  The geofence for which the event was generated. May be `nil` for non-geofence events.
+</ResponseField>
+
+<ResponseField name="place" type="RadarPlace">
+  The place for which the event was generated. May be `nil` for non-place events.
+</ResponseField>
+
+<ResponseField name="region" type="RadarRegion">
+  The region for which the event was generated. May be `nil` for non-region events.
+</ResponseField>
+
+<ResponseField name="beacon" type="RadarBeacon">
+  The beacon for which the event was generated. May be `nil` for non-beacon events.
+</ResponseField>
+
+<ResponseField name="trip" type="RadarTrip">
+  The trip for which the event was generated. May be `nil` for non-trip events.
+</ResponseField>
+
+<ResponseField name="fraud" type="RadarFraud">
+  The fraud checks for which the event was generated. May be `nil` for non-fraud events.
+</ResponseField>
+
+<ResponseField name="alternatePlaces" type="[RadarPlace]">
+  For place entry events, alternate place candidates. May be `nil` for non-place events.
+</ResponseField>
+
+<ResponseField name="verifiedPlace" type="RadarPlace">
+  For accepted place entry events, the verified place. May be `nil` for non-place events or unverified events.
+</ResponseField>
+
+<ResponseField name="verification" type="RadarEventVerification" required>
+  The verification of the event. See [Event Verification](#event-verification) for possible values.
+</ResponseField>
+
+<ResponseField name="confidence" type="RadarEventConfidence" required>
+  The confidence level of the event. See [Event Confidence](#event-confidence) for possible values.
+</ResponseField>
+
+<ResponseField name="duration" type="Float" required>
+  The duration between entry and exit events, in minutes, for exit events. 0 for entry events.
+</ResponseField>
+
+<ResponseField name="location" type="CLLocation" required>
+  The location of the event.
+</ResponseField>
+
+<ResponseField name="replayed" type="Bool" required>
+  A boolean indicating whether the event came from a replayed location.
+</ResponseField>
+
+<ResponseField name="metadata" type="[String: Any]" required>
+  The metadata of the event. Present on conversion events only.
+</ResponseField>
+
+## Event Types
+
+The `RadarEventType` enum defines the types of events that can be generated:
+
+<ResponseField name="unknown" type="RadarEventType">
+  Unknown event type.
+</ResponseField>
+
+<ResponseField name="conversion" type="RadarEventType">
+  A conversion type, created by calling `Radar.sendEvent()`. The type value will be assigned to the `conversionName` property.
+</ResponseField>
+
+<ResponseField name="userEnteredGeofence" type="RadarEventType">
+  `user.entered_geofence` - User entered a geofence.
+</ResponseField>
+
+<ResponseField name="userExitedGeofence" type="RadarEventType">
+  `user.exited_geofence` - User exited a geofence.
+</ResponseField>
+
+<ResponseField name="userEnteredPlace" type="RadarEventType">
+  `user.entered_place` - User entered a place.
+</ResponseField>
+
+<ResponseField name="userExitedPlace" type="RadarEventType">
+  `user.exited_place` - User exited a place.
+</ResponseField>
+
+<ResponseField name="userNearbyPlaceChain" type="RadarEventType">
+  `user.nearby_place_chain` - User is near a place chain.
+</ResponseField>
+
+<ResponseField name="userEnteredRegionCountry" type="RadarEventType">
+  `user.entered_region_country` - User entered a country.
+</ResponseField>
+
+<ResponseField name="userExitedRegionCountry" type="RadarEventType">
+  `user.exited_region_country` - User exited a country.
+</ResponseField>
+
+<ResponseField name="userEnteredRegionState" type="RadarEventType">
+  `user.entered_region_state` - User entered a state.
+</ResponseField>
+
+<ResponseField name="userExitedRegionState" type="RadarEventType">
+  `user.exited_region_state` - User exited a state.
+</ResponseField>
+
+<ResponseField name="userEnteredRegionDMA" type="RadarEventType">
+  `user.entered_region_dma` - User entered a designated market area (DMA).
+</ResponseField>
+
+<ResponseField name="userExitedRegionDMA" type="RadarEventType">
+  `user.exited_region_dma` - User exited a DMA.
+</ResponseField>
+
+<ResponseField name="userEnteredRegionPostalCode" type="RadarEventType">
+  `user.entered_region_postal_code` - User entered a postal code.
+</ResponseField>
+
+<ResponseField name="userExitedRegionPostalCode" type="RadarEventType">
+  `user.exited_region_postal_code` - User exited a postal code.
+</ResponseField>
+
+<ResponseField name="userDwelledInGeofence" type="RadarEventType">
+  `user.dwelled_in_geofence` - User dwelled in a geofence.
+</ResponseField>
+
+<ResponseField name="userStartedTrip" type="RadarEventType">
+  `user.started_trip` - User started a trip.
+</ResponseField>
+
+<ResponseField name="userUpdatedTrip" type="RadarEventType">
+  `user.updated_trip` - User's trip was updated.
+</ResponseField>
+
+<ResponseField name="userApproachingTripDestination" type="RadarEventType">
+  `user.approaching_trip_destination` - User is approaching the trip destination.
+</ResponseField>
+
+<ResponseField name="userArrivedAtTripDestination" type="RadarEventType">
+  `user.arrived_at_trip_destination` - User arrived at the trip destination.
+</ResponseField>
+
+<ResponseField name="userArrivedAtWrongTripDestination" type="RadarEventType">
+  `user.arrived_at_wrong_trip_destination` - User arrived at the wrong trip destination.
+</ResponseField>
+
+<ResponseField name="userStoppedTrip" type="RadarEventType">
+  `user.stopped_trip` - User stopped a trip.
+</ResponseField>
+
+<ResponseField name="userFiredTripOrders" type="RadarEventType">
+  `user.fired_trip_orders` - User fired trip orders.
+</ResponseField>
+
+<ResponseField name="userEnteredBeacon" type="RadarEventType">
+  `user.entered_beacon` - User entered a beacon region.
+</ResponseField>
+
+<ResponseField name="userExitedBeacon" type="RadarEventType">
+  `user.exited_beacon` - User exited a beacon region.
+</ResponseField>
+
+<ResponseField name="userFailedFraud" type="RadarEventType">
+  `user.failed_fraud` - User failed fraud detection checks.
+</ResponseField>
+
+## Event Confidence
+
+The `RadarEventConfidence` enum defines the confidence levels for events:
+
+<ResponseField name="none" type="RadarEventConfidence">
+  Unknown confidence (0).
+</ResponseField>
+
+<ResponseField name="low" type="RadarEventConfidence">
+  Low confidence (1).
+</ResponseField>
+
+<ResponseField name="medium" type="RadarEventConfidence">
+  Medium confidence (2).
+</ResponseField>
+
+<ResponseField name="high" type="RadarEventConfidence">
+  High confidence (3).
+</ResponseField>
+
+## Event Verification
+
+The `RadarEventVerification` enum defines the verification types for events:
+
+<ResponseField name="accept" type="RadarEventVerification">
+  Accept event (1).
+</ResponseField>
+
+<ResponseField name="unverify" type="RadarEventVerification">
+  Unverify event (0).
+</ResponseField>
+
+<ResponseField name="reject" type="RadarEventVerification">
+  Reject event (-1).
+</ResponseField>
+
+## Methods
+
+### stringForType
+
+```swift
+class func string(for type: RadarEventType) -> String?
+```
+
+```objective-c
++ (NSString *_Nullable)stringForType:(RadarEventType)type;
+```
+
+Converts a `RadarEventType` enum value to its string representation.
+
+<ParamField path="type" type="RadarEventType" required>
+  The event type to convert.
+</ParamField>
+
+**Returns:** The string representation of the event type, or `nil` if unknown.
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [AnyHashable: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the event to a dictionary representation.
+
+**Returns:** A dictionary representation of the event.
+
+### arrayForEvents
+
+```swift
+class func array(for events: [RadarEvent]?) -> [[AnyHashable: Any]]?
+```
+
+```objective-c
++ (NSArray<NSDictionary *> *_Nullable)arrayForEvents:(NSArray<RadarEvent *> *_Nullable)events;
+```
+
+Converts an array of events to an array of dictionary representations.
+
+<ParamField path="events" type="[RadarEvent]">
+  The array of events to convert.
+</ParamField>
+
+**Returns:** An array of dictionary representations, or `nil` if the input is `nil`.
+
+## See Also
+
+- [RadarUser](/api/radar-user)
+- [RadarContext](/api/radar-context)
+- [Events Guide](https://radar.com/documentation/sdk/events)

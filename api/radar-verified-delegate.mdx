@@ -1,0 +1,180 @@
+---
+title: RadarVerifiedDelegate
+description: A delegate protocol for receiving verified location tokens from the Radar SDK.
+---
+
+The `RadarVerifiedDelegate` protocol provides client-side delivery of verified location tokens. Implement this delegate to receive tokens containing verified location data and fraud detection results.
+
+<Note>
+  Always verify tokens server-side using your secret key before trusting the location data.
+</Note>
+
+## Protocol Declaration
+
+```swift
+protocol RadarVerifiedDelegate
+```
+
+```objective-c
+@protocol RadarVerifiedDelegate<NSObject>
+```
+
+## Delegate Methods
+
+### didUpdateToken
+
+Tells the delegate that the current user's verified location was updated. Verify the token server-side using your secret key.
+
+```swift
+optional func didUpdateToken(_ token: RadarVerifiedLocationToken)
+```
+
+```objective-c
+- (void)didUpdateToken:(RadarVerifiedLocationToken *_Nonnull)token;
+```
+
+<ParamField path="token" type="RadarVerifiedLocationToken" required>
+  The verified location token containing user data, events, fraud detection results, and a signed JWT.
+</ParamField>
+
+## Usage
+
+### Setting the Delegate
+
+```swift
+import RadarSDK
+
+class MyLocationManager: RadarVerifiedDelegate {
+    
+    init() {
+        // Set the verified delegate
+        Radar.setVerifiedDelegate(self)
+    }
+    
+    func didUpdateToken(_ token: RadarVerifiedLocationToken) {
+        // Handle the verified location token
+        if token.passed {
+            print("User passed verification")
+            
+            // Send token to your server for verification
+            if let jwtToken = token.token {
+                sendTokenToServer(jwtToken)
+            }
+        } else {
+            print("User failed verification")
+            
+            // Check failure reasons
+            if let reasons = token.failureReasons {
+                print("Failure reasons: \(reasons)")
+            }
+        }
+    }
+    
+    private func sendTokenToServer(_ token: String) {
+        // Send token to your server for server-side verification
+        // using your Radar secret key
+    }
+}
+```
+
+```objective-c
+#import <RadarSDK/RadarSDK.h>
+
+@interface MyLocationManager : NSObject <RadarVerifiedDelegate>
+@end
+
+@implementation MyLocationManager
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        // Set the verified delegate
+        [Radar setVerifiedDelegate:self];
+    }
+    return self;
+}
+
+- (void)didUpdateToken:(RadarVerifiedLocationToken *)token {
+    // Handle the verified location token
+    if (token.passed) {
+        NSLog(@"User passed verification");
+        
+        // Send token to your server for verification
+        if (token.token) {
+            [self sendTokenToServer:token.token];
+        }
+    } else {
+        NSLog(@"User failed verification");
+        
+        // Check failure reasons
+        if (token.failureReasons) {
+            NSLog(@"Failure reasons: %@", token.failureReasons);
+        }
+    }
+}
+
+- (void)sendTokenToServer:(NSString *)token {
+    // Send token to your server for server-side verification
+    // using your Radar secret key
+}
+
+@end
+```
+
+### Using with Verified Tracking
+
+<Warning>
+  The `RadarVerifiedDelegate` only receives tokens when using verified tracking methods. Standard tracking methods will not trigger this delegate.
+</Warning>
+
+```swift
+// Start verified tracking
+Radar.startTrackingVerified()
+
+// Or use verified foreground tracking
+Radar.trackVerified { (status, location, events, user, token) in
+    // Token is also delivered via the completion handler
+    if let token = token {
+        print("Received token in completion handler")
+    }
+}
+```
+
+```objective-c
+// Start verified tracking
+[Radar startTrackingVerified];
+
+// Or use verified foreground tracking
+[Radar trackVerifiedWithCompletionHandler:^(RadarStatus status, 
+                                           CLLocation *location, 
+                                           NSArray<RadarEvent *> *events, 
+                                           RadarUser *user,
+                                           RadarVerifiedLocationToken *token) {
+    // Token is also delivered via the completion handler
+    if (token) {
+        NSLog(@"Received token in completion handler");
+    }
+}];
+```
+
+## Server-Side Verification
+
+After receiving a token via the delegate, send it to your server for verification:
+
+<Expandable title="Server-Side Token Verification">
+  1. **Client**: Receive the JWT token from `didUpdateToken`
+  2. **Client**: Send the token to your secure backend API
+  3. **Server**: Verify the JWT signature using your Radar secret key
+  4. **Server**: Extract and validate the location data from the token
+  5. **Server**: Check the `expiresAt` timestamp to ensure token is still valid
+  6. **Server**: Validate that the user `passed` fraud detection checks
+  
+  Never trust the token contents without server-side verification, as client-side data can be tampered with.
+</Expandable>
+
+## See Also
+
+- [RadarVerifiedLocationToken](/api/radar-verified-location-token)
+- [Radar.setVerifiedDelegate()](/api/radar#setverifieddelegate)
+- [Radar.trackVerified()](/api/radar#trackverified)
+- [Fraud Documentation](https://radar.com/documentation/fraud)

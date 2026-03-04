@@ -1,0 +1,447 @@
+---
+title: "RadarDelegate"
+description: "A protocol for client-side delivery of events, location updates, and debug logs."
+---
+
+## Overview
+
+The `RadarDelegate` protocol allows you to receive callbacks for location updates, events, errors, and debug logs on the client side. All methods are optional.
+
+To set a delegate, use:
+
+```swift
+Radar.setDelegate(self)
+```
+
+```objective-c
+[Radar setDelegate:self];
+```
+
+## Protocol Declaration
+
+```swift
+protocol RadarDelegate: NSObjectProtocol
+```
+
+```objective-c
+@protocol RadarDelegate <NSObject>
+@optional
+```
+
+## Methods
+
+All delegate methods are optional.
+
+### didReceiveEvents(_:user:)
+
+```swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?)
+```
+
+```objective-c
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user;
+```
+
+Tells the delegate that events were received.
+
+<ParamField path="events" type="Array<RadarEvent>" required>
+  The events received.
+</ParamField>
+
+<ParamField path="user" type="RadarUser" optional>
+  The user, if any.
+</ParamField>
+
+#### Example
+
+```swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        print("Received event: \(event.type)")
+        
+        if event.type == .userEnteredGeofence {
+            print("User entered geofence: \(event.geofence?.description ?? "")")
+        } else if event.type == .userEnteredPlace {
+            print("User entered place: \(event.place?.name ?? "")")
+        }
+    }
+    
+    if let user = user {
+        print("User location: \(user.location?.coordinate.latitude ?? 0), \(user.location?.coordinate.longitude ?? 0)")
+    }
+}
+```
+
+```objective-c
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        NSLog(@"Received event: %ld", (long)event.type);
+        
+        if (event.type == RadarEventTypeUserEnteredGeofence) {
+            NSLog(@"User entered geofence: %@", event.geofence.description);
+        } else if (event.type == RadarEventTypeUserEnteredPlace) {
+            NSLog(@"User entered place: %@", event.place.name);
+        }
+    }
+    
+    if (user) {
+        NSLog(@"User location: %f, %f", user.location.coordinate.latitude, user.location.coordinate.longitude);
+    }
+}
+```
+
+### didUpdateLocation(_:user:)
+
+```swift
+func didUpdateLocation(_ location: CLLocation, user: RadarUser)
+```
+
+```objective-c
+- (void)didUpdateLocation:(CLLocation *)location user:(RadarUser *)user;
+```
+
+Tells the delegate that the current user's location was updated and synced to the server.
+
+<ParamField path="location" type="CLLocation" required>
+  The location.
+</ParamField>
+
+<ParamField path="user" type="RadarUser" required>
+  The current user.
+</ParamField>
+
+#### Example
+
+```swift
+func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+    print("Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+    print("User geofences: \(user.geofences?.count ?? 0)")
+    print("User place: \(user.place?.name ?? "none")")
+}
+```
+
+```objective-c
+- (void)didUpdateLocation:(CLLocation *)location user:(RadarUser *)user {
+    NSLog(@"Location updated: %f, %f", location.coordinate.latitude, location.coordinate.longitude);
+    NSLog(@"User geofences: %lu", (unsigned long)user.geofences.count);
+    NSLog(@"User place: %@", user.place.name ?: @"none");
+}
+```
+
+### didUpdateClientLocation(_:stopped:source:)
+
+```swift
+func didUpdateClientLocation(_ location: CLLocation, stopped: Bool, source: RadarLocationSource)
+```
+
+```objective-c
+- (void)didUpdateClientLocation:(CLLocation *)location stopped:(BOOL)stopped source:(RadarLocationSource)source;
+```
+
+Tells the delegate that the client's location was updated but not necessarily synced to the server. To receive only server-synced location updates and user state, use `didUpdateLocation:user:` instead.
+
+<ParamField path="location" type="CLLocation" required>
+  The location.
+</ParamField>
+
+<ParamField path="stopped" type="Bool" required>
+  A boolean indicating whether the client is stopped.
+</ParamField>
+
+<ParamField path="source" type="RadarLocationSource" required>
+  The source of the location.
+</ParamField>
+
+#### Example
+
+```swift
+func didUpdateClientLocation(_ location: CLLocation, stopped: Bool, source: RadarLocationSource) {
+    print("Client location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+    print("Stopped: \(stopped)")
+    print("Source: \(Radar.stringForLocationSource(source))")
+}
+```
+
+```objective-c
+- (void)didUpdateClientLocation:(CLLocation *)location stopped:(BOOL)stopped source:(RadarLocationSource)source {
+    NSLog(@"Client location updated: %f, %f", location.coordinate.latitude, location.coordinate.longitude);
+    NSLog(@"Stopped: %d", stopped);
+    NSLog(@"Source: %@", [Radar stringForLocationSource:source]);
+}
+```
+
+### didFail(status:)
+
+```swift
+func didFail(status: RadarStatus)
+```
+
+```objective-c
+- (void)didFailWithStatus:(RadarStatus)status;
+```
+
+Tells the delegate that a request failed.
+
+<ParamField path="status" type="RadarStatus" required>
+  The status.
+</ParamField>
+
+#### Example
+
+```swift
+func didFail(status: RadarStatus) {
+    print("Request failed: \(Radar.stringForStatus(status))")
+    
+    switch status {
+    case .errorPermissions:
+        print("Location permissions not granted")
+    case .errorLocation:
+        print("Location services error or timeout")
+    case .errorNetwork:
+        print("Network error or timeout")
+    default:
+        break
+    }
+}
+```
+
+```objective-c
+- (void)didFailWithStatus:(RadarStatus)status {
+    NSLog(@"Request failed: %@", [Radar stringForStatus:status]);
+    
+    switch (status) {
+        case RadarStatusErrorPermissions:
+            NSLog(@"Location permissions not granted");
+            break;
+        case RadarStatusErrorLocation:
+            NSLog(@"Location services error or timeout");
+            break;
+        case RadarStatusErrorNetwork:
+            NSLog(@"Network error or timeout");
+            break;
+        default:
+            break;
+    }
+}
+```
+
+### didLog(message:)
+
+```swift
+func didLog(message: String)
+```
+
+```objective-c
+- (void)didLogMessage:(NSString *)message;
+```
+
+Tells the delegate that a debug log message was received.
+
+<ParamField path="message" type="String" required>
+  The message.
+</ParamField>
+
+#### Example
+
+```swift
+func didLog(message: String) {
+    print("Radar log: \(message)")
+}
+```
+
+```objective-c
+- (void)didLogMessage:(NSString *)message {
+    NSLog(@"Radar log: %@", message);
+}
+```
+
+## Implementation Example
+
+Here's a complete example of implementing `RadarDelegate`:
+
+```swift
+class LocationManager: NSObject, RadarDelegate {
+    
+    func setupRadar() {
+        Radar.initialize(publishableKey: "prj_test_pk_...")
+        Radar.setDelegate(self)
+        Radar.setLogLevel(.info)
+    }
+    
+    // MARK: - RadarDelegate
+    
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        for event in events {
+            print("Event: \(event.type) at \(event.createdAt)")
+            
+            // Handle specific event types
+            switch event.type {
+            case .userEnteredGeofence:
+                if let geofence = event.geofence {
+                    handleGeofenceEntry(geofence)
+                }
+            case .userExitedGeofence:
+                if let geofence = event.geofence {
+                    handleGeofenceExit(geofence)
+                }
+            case .userEnteredPlace:
+                if let place = event.place {
+                    handlePlaceEntry(place)
+                }
+            default:
+                break
+            }
+        }
+    }
+    
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        print("Location synced to server: \(location.coordinate)")
+        
+        // Access user context
+        if let geofences = user.geofences {
+            print("Currently in \(geofences.count) geofences")
+        }
+        
+        if let place = user.place {
+            print("Currently at: \(place.name)")
+        }
+    }
+    
+    func didUpdateClientLocation(_ location: CLLocation, stopped: Bool, source: RadarLocationSource) {
+        print("Client location: \(location.coordinate), stopped: \(stopped)")
+    }
+    
+    func didFail(status: RadarStatus) {
+        print("Radar error: \(Radar.stringForStatus(status))")
+        
+        // Handle errors appropriately
+        if status == .errorPermissions {
+            // Prompt user to grant location permissions
+            promptForLocationPermissions()
+        }
+    }
+    
+    func didLog(message: String) {
+        // Send to your logging system if needed
+        print("[Radar] \(message)")
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func handleGeofenceEntry(_ geofence: RadarGeofence) {
+        print("Entered geofence: \(geofence.description)")
+    }
+    
+    private func handleGeofenceExit(_ geofence: RadarGeofence) {
+        print("Exited geofence: \(geofence.description)")
+    }
+    
+    private func handlePlaceEntry(_ place: RadarPlace) {
+        print("Entered place: \(place.name)")
+    }
+    
+    private func promptForLocationPermissions() {
+        // Your implementation
+    }
+}
+```
+
+```objective-c
+@interface LocationManager () <RadarDelegate>
+@end
+
+@implementation LocationManager
+
+- (void)setupRadar {
+    [Radar initializeWithPublishableKey:@"prj_test_pk_..."];
+    [Radar setDelegate:self];
+    [Radar setLogLevel:RadarLogLevelInfo];
+}
+
+#pragma mark - RadarDelegate
+
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        NSLog(@"Event: %ld at %@", (long)event.type, event.createdAt);
+        
+        // Handle specific event types
+        switch (event.type) {
+            case RadarEventTypeUserEnteredGeofence:
+                if (event.geofence) {
+                    [self handleGeofenceEntry:event.geofence];
+                }
+                break;
+            case RadarEventTypeUserExitedGeofence:
+                if (event.geofence) {
+                    [self handleGeofenceExit:event.geofence];
+                }
+                break;
+            case RadarEventTypeUserEnteredPlace:
+                if (event.place) {
+                    [self handlePlaceEntry:event.place];
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+- (void)didUpdateLocation:(CLLocation *)location user:(RadarUser *)user {
+    NSLog(@"Location synced to server: %f, %f", location.coordinate.latitude, location.coordinate.longitude);
+    
+    // Access user context
+    if (user.geofences) {
+        NSLog(@"Currently in %lu geofences", (unsigned long)user.geofences.count);
+    }
+    
+    if (user.place) {
+        NSLog(@"Currently at: %@", user.place.name);
+    }
+}
+
+- (void)didUpdateClientLocation:(CLLocation *)location stopped:(BOOL)stopped source:(RadarLocationSource)source {
+    NSLog(@"Client location: %f, %f, stopped: %d", location.coordinate.latitude, location.coordinate.longitude, stopped);
+}
+
+- (void)didFailWithStatus:(RadarStatus)status {
+    NSLog(@"Radar error: %@", [Radar stringForStatus:status]);
+    
+    // Handle errors appropriately
+    if (status == RadarStatusErrorPermissions) {
+        // Prompt user to grant location permissions
+        [self promptForLocationPermissions];
+    }
+}
+
+- (void)didLogMessage:(NSString *)message {
+    // Send to your logging system if needed
+    NSLog(@"[Radar] %@", message);
+}
+
+#pragma mark - Helper Methods
+
+- (void)handleGeofenceEntry:(RadarGeofence *)geofence {
+    NSLog(@"Entered geofence: %@", geofence.description);
+}
+
+- (void)handleGeofenceExit:(RadarGeofence *)geofence {
+    NSLog(@"Exited geofence: %@", geofence.description);
+}
+
+- (void)handlePlaceEntry:(RadarPlace *)place {
+    NSLog(@"Entered place: %@", place.name);
+}
+
+- (void)promptForLocationPermissions {
+    // Your implementation
+}
+
+@end
+```
+
+## See Also
+
+- [Radar.setDelegate(_:)](/api/radar#setdelegate)
+- [RadarStatus](/api/radar-status)
+- [Listening for Events with a Delegate](https://radar.com/documentation/sdk/ios#listening-for-events-with-a-delegate)

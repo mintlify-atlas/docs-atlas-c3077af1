@@ -1,0 +1,463 @@
+---
+title: In-App Messages
+description: Display contextual in-app messages based on location triggers
+---
+
+The Radar iOS SDK enables you to display rich in-app messages to users based on their location and behavior. These messages appear within your app, providing a native and non-intrusive way to engage users.
+
+## Overview
+
+In-app messages support:
+
+- **Location-triggered messaging**: Show messages when users enter geofences or approach destinations
+- **Rich content**: Display titles, body text, images, and call-to-action buttons
+- **Custom styling**: Customize colors, fonts, and layout
+- **Deep linking**: Navigate users to specific screens in your app
+- **Conversion tracking**: Automatically track message displays, dismissals, and button clicks
+
+## Setup
+
+The SDK automatically manages in-app messages when location events occur. No additional setup is required beyond initializing the SDK.
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+Radar.initialize(publishableKey: "YOUR_PUBLISHABLE_KEY")
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+[Radar initializeWithPublishableKey:@"YOUR_PUBLISHABLE_KEY"];
+```
+</CodeGroup>
+
+<Note>
+  In-app messages require iOS 13.0 or later and are available starting with SDK version 3.10+.
+</Note>
+
+## Configure messages in the dashboard
+
+Create in-app messages in the [Radar dashboard](https://radar.com/dashboard) by adding message metadata to your geofences or campaigns:
+
+```json
+{
+  "title": {
+    "text": "Welcome to Our Store!",
+    "color": "#000000"
+  },
+  "body": {
+    "text": "Check out our latest deals and save 20% today.",
+    "color": "#666666"
+  },
+  "button": {
+    "text": "View Deals",
+    "color": "#FFFFFF",
+    "backgroundColor": "#0066FF",
+    "deepLink": "myapp://deals"
+  },
+  "image": {
+    "name": "store-banner",
+    "url": "https://example.com/images/store-banner.png"
+  },
+  "metadata": {
+    "radar:campaignId": "store-entry-2024",
+    "radar:campaignName": "Store Entry Campaign",
+    "radar:geofenceId": "store-123"
+  }
+}
+```
+
+## Message structure
+
+An in-app message consists of:
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `title` | `Text` | Yes | Message title with text and color |
+| `body` | `Text` | Yes | Message body with text and color |
+| `button` | `Button` | No | Optional call-to-action button |
+| `image` | `Image` | No | Optional banner image |
+| `metadata` | `Dictionary` | No | Additional metadata for tracking |
+
+### Text properties
+
+```swift
+struct Text {
+    var text: String      // The text content
+    var color: UIColor    // Hex color (e.g., "#000000")
+}
+```
+
+### Button properties
+
+```swift
+struct Button {
+    var text: String              // Button label
+    var color: UIColor            // Text color
+    var backgroundColor: UIColor  // Button background color
+    var deepLink: String?         // Optional deep link URL
+}
+```
+
+### Image properties
+
+```swift
+struct Image {
+    var name: String    // Image identifier
+    var url: String     // Image URL
+}
+```
+
+## Customize message presentation
+
+Implement the `RadarInAppMessageProtocol` to customize message presentation:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+@available(iOS 13.0, *)
+class CustomInAppMessageDelegate: RadarInAppMessageDelegate {
+    
+    // Called when a new message is received
+    override func onNewInAppMessage(_ message: RadarInAppMessage) {
+        print("New in-app message received")
+        
+        // Automatically show the message
+        Task { @MainActor in
+            await RadarInAppMessageManager.shared.showInAppMessage(message)
+        }
+    }
+    
+    // Called when a message is dismissed
+    override func onInAppMessageDismissed(_ message: RadarInAppMessage) {
+        print("In-app message dismissed")
+    }
+    
+    // Called when a button is clicked
+    override func onInAppMessageButtonClicked(_ message: RadarInAppMessage) {
+        print("In-app message button clicked")
+        
+        // Handle deep link
+        if let button = (message as? RadarInAppMessage_Swift)?.button,
+           let deepLink = button.deepLink,
+           let url = URL(string: deepLink) {
+            handleDeepLink(url)
+        }
+    }
+    
+    // Customize the message view
+    override func createInAppMessageView(
+        _ message: RadarInAppMessage,
+        onDismiss: @escaping () -> Void,
+        onInAppMessageClicked: @escaping () -> Void,
+        completionHandler: @escaping (UIViewController) -> Void
+    ) {
+        // Return your custom view controller
+        let customViewController = CustomMessageViewController(message: message)
+        customViewController.onDismiss = onDismiss
+        customViewController.onButtonClicked = onInAppMessageClicked
+        
+        completionHandler(customViewController)
+    }
+}
+
+// Set the custom delegate
+if #available(iOS 13.0, *) {
+    Task { @MainActor in
+        RadarInAppMessageManager.shared.setDelegate(CustomInAppMessageDelegate())
+    }
+}
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+API_AVAILABLE(ios(13.0))
+@interface CustomInAppMessageDelegate : RadarInAppMessageDelegate
+@end
+
+@implementation CustomInAppMessageDelegate
+
+// Called when a new message is received
+- (void)onNewInAppMessage:(RadarInAppMessage *)message {
+    NSLog(@"New in-app message received");
+    
+    // Automatically show the message
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[RadarInAppMessageManager shared] showInAppMessage:message completionHandler:^{}];
+    });
+}
+
+// Called when a message is dismissed
+- (void)onInAppMessageDismissed:(RadarInAppMessage *)message {
+    NSLog(@"In-app message dismissed");
+}
+
+// Called when a button is clicked
+- (void)onInAppMessageButtonClicked:(RadarInAppMessage *)message {
+    NSLog(@"In-app message button clicked");
+}
+
+@end
+
+// Set the custom delegate
+if (@available(iOS 13.0, *)) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[RadarInAppMessageManager shared] setDelegate:[[CustomInAppMessageDelegate alloc] init]];
+    });
+}
+```
+</CodeGroup>
+
+## Show messages programmatically
+
+Manually display in-app messages:
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+
+@available(iOS 13.0, *)
+func showMessage(_ message: RadarInAppMessage) {
+    Task { @MainActor in
+        await RadarInAppMessageManager.shared.showInAppMessage(message)
+    }
+}
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+
+API_AVAILABLE(ios(13.0))
+- (void)showMessage:(RadarInAppMessage *)message {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[RadarInAppMessageManager shared] showInAppMessage:message completionHandler:^{}];
+    });
+}
+```
+</CodeGroup>
+
+## Conversion tracking
+
+The SDK automatically tracks in-app message conversions:
+
+| Event | Description |
+|-------|-------------|
+| `user.displayed_in_app_message` | Message was shown to the user |
+| `user.dismissed_in_app_message` | User dismissed the message |
+| `user.clicked_in_app_message` | User clicked the message button |
+
+Conversions include metadata:
+- `displayDuration`: How long the message was shown (seconds)
+- `campaignId`: Campaign identifier
+- `campaignName`: Campaign name
+- `geofenceId`: Triggering geofence ID
+
+View conversion analytics in the [Radar dashboard](https://radar.com/dashboard) under Analytics > Conversions.
+
+## Handle deep links
+
+Process deep links from message buttons:
+
+<CodeGroup>
+```swift Swift
+func handleDeepLink(_ url: URL) {
+    // Parse the URL and navigate
+    if url.scheme == "myapp" {
+        switch url.host {
+        case "deals":
+            showDealsScreen()
+        case "product":
+            if let productId = url.pathComponents.last {
+                showProductDetails(productId)
+            }
+        default:
+            break
+        }
+    }
+}
+```
+
+```objectivec Objective-C
+- (void)handleDeepLink:(NSURL *)url {
+    // Parse the URL and navigate
+    if ([url.scheme isEqualToString:@"myapp"]) {
+        if ([url.host isEqualToString:@"deals"]) {
+            [self showDealsScreen];
+        } else if ([url.host isEqualToString:@"product"]) {
+            NSString *productId = url.pathComponents.lastObject;
+            [self showProductDetails:productId];
+        }
+    }
+}
+```
+</CodeGroup>
+
+## Message display rules
+
+The SDK follows these rules for displaying messages:
+
+1. Only one message is shown at a time
+2. New messages are ignored while a message is currently displayed
+3. Messages are shown on the app's key window
+4. Messages are displayed with a semi-transparent background overlay
+5. Users can dismiss messages by tapping outside the message view
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Keep messages concise" icon="message">
+    Use short, actionable text that users can quickly read and understand.
+  </Card>
+  
+  <Card title="Test on different devices" icon="mobile-screen">
+    Verify messages display correctly on various screen sizes and iOS versions.
+  </Card>
+  
+  <Card title="Use high-quality images" icon="image">
+    Optimize images for mobile and provide appropriate resolutions for retina displays.
+  </Card>
+  
+  <Card title="Implement deep links" icon="link">
+    Always provide a button with a deep link to make messages actionable.
+  </Card>
+</CardGroup>
+
+## Example: Complete implementation
+
+<CodeGroup>
+```swift Swift
+import RadarSDK
+import UIKit
+
+@available(iOS 13.0, *)
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        
+        // Initialize Radar
+        Radar.initialize(publishableKey: "YOUR_PUBLISHABLE_KEY")
+        
+        // Set up in-app message delegate
+        Task { @MainActor in
+            let delegate = MyInAppMessageDelegate()
+            RadarInAppMessageManager.shared.setDelegate(delegate)
+        }
+        
+        // Start tracking
+        Radar.startTracking(trackingOptions: .presetResponsive)
+        
+        return true
+    }
+}
+
+@available(iOS 13.0, *)
+class MyInAppMessageDelegate: RadarInAppMessageDelegate {
+    
+    override func onNewInAppMessage(_ message: RadarInAppMessage) {
+        // Show the message when received
+        Task { @MainActor in
+            await RadarInAppMessageManager.shared.showInAppMessage(message)
+        }
+    }
+    
+    override func onInAppMessageButtonClicked(_ message: RadarInAppMessage) {
+        // Handle button click
+        if let swiftMessage = message as? RadarInAppMessage_Swift,
+           let button = swiftMessage.button,
+           let deepLink = button.deepLink,
+           let url = URL(string: deepLink) {
+            
+            // Open deep link
+            UIApplication.shared.open(url)
+        }
+    }
+}
+```
+
+```objectivec Objective-C
+@import RadarSDK;
+@import UIKit;
+
+API_AVAILABLE(ios(13.0))
+@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@end
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    
+    // Initialize Radar
+    [Radar initializeWithPublishableKey:@"YOUR_PUBLISHABLE_KEY"];
+    
+    // Set up in-app message delegate
+    if (@available(iOS 13.0, *)) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            MyInAppMessageDelegate *delegate = [[MyInAppMessageDelegate alloc] init];
+            [[RadarInAppMessageManager shared] setDelegate:delegate];
+        });
+    }
+    
+    // Start tracking
+    [Radar startTrackingWithOptions:RadarTrackingOptions.presetResponsive];
+    
+    return YES;
+}
+
+@end
+
+API_AVAILABLE(ios(13.0))
+@interface MyInAppMessageDelegate : RadarInAppMessageDelegate
+@end
+
+@implementation MyInAppMessageDelegate
+
+- (void)onNewInAppMessage:(RadarInAppMessage *)message {
+    // Show the message when received
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[RadarInAppMessageManager shared] showInAppMessage:message completionHandler:^{}];
+    });
+}
+
+- (void)onInAppMessageButtonClicked:(RadarInAppMessage *)message {
+    // Handle button click
+    NSLog(@"Message button clicked");
+}
+
+@end
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<Accordion title="Messages not appearing">
+  - Verify iOS version is 13.0 or later
+  - Check that messages are configured correctly in the dashboard
+  - Ensure the app has a key window available
+  - Verify the delegate is set on the main thread
+  - Check that no other message is currently being displayed
+</Accordion>
+
+<Accordion title="Custom delegate not being called">
+  - Ensure the delegate is set using `RadarInAppMessageManager.shared.setDelegate()`
+  - Verify the delegate is set on the main thread with `@MainActor`
+  - Check that the delegate is retained (not deallocated)
+</Accordion>
+
+<Accordion title="Deep links not working">
+  - Verify the deep link URL format is correct
+  - Ensure your app's URL scheme is registered in Info.plist
+  - Check that you're handling the deep link in `onInAppMessageButtonClicked`
+</Accordion>
+
+## Related resources
+
+- [Push notifications](/advanced/push-notifications)
+- [Campaign management](https://radar.com/documentation/campaigns)
+- [Conversion tracking](/conversions)
+- [Geofences](/geofences)

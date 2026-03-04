@@ -1,0 +1,884 @@
+---
+title: "FAQ"
+description: "Frequently asked questions about the Radar iOS SDK"
+---
+
+Common questions about implementing and using the Radar iOS SDK.
+
+## Getting Started
+
+<AccordionGroup>
+  <Accordion title="What is Radar?" icon="circle-question">
+    Radar is a location data infrastructure platform that provides geofencing, location tracking, trip tracking, geocoding, and search APIs. The Radar iOS SDK makes it easy to add these capabilities to your iOS app.
+    
+    Key features:
+    - Background location tracking with configurable battery usage
+    - Geofencing with entry, exit, and dwell events
+    - Trip tracking with real-time ETAs
+    - Location verification and fraud detection
+    - Rich location context and search APIs
+  </Accordion>
+  
+  <Accordion title="How much does Radar cost?" icon="dollar-sign">
+    Radar offers a generous free tier and usage-based pricing for production apps. Visit [radar.com/pricing](https://radar.com/pricing) for current pricing.
+    
+    - **Free tier**: Includes monthly free requests for testing and small apps
+    - **Pay-as-you-go**: Only pay for what you use with no minimums
+    - **Enterprise**: Custom pricing for high-volume applications
+  </Accordion>
+  
+  <Accordion title="What iOS versions are supported?" icon="apple">
+    The Radar iOS SDK supports:
+    - **Minimum iOS version**: iOS 12.0 and later
+    - **Recommended**: iOS 14.0+ for best features and performance
+    - **Swift**: Swift 5.0+
+    - **Objective-C**: Fully supported
+    - **Architectures**: arm64, x86_64 (simulator)
+    
+    <Info>
+    While the SDK works on iOS 12+, some features like verified location tracking require iOS 14+.
+    </Info>
+  </Accordion>
+  
+  <Accordion title="Can I use Radar with SwiftUI?" icon="swift">
+    Yes! The Radar SDK works perfectly with SwiftUI apps. Initialize in your `App` struct:
+    
+    ```swift MyApp.swift
+    import SwiftUI
+    import RadarSDK
+    
+    @main
+    struct MyApp: App {
+        init() {
+            Radar.initialize(publishableKey: "prj_test_pk_...")
+        }
+        
+        var body: some Scene {
+            WindowGroup {
+                ContentView()
+            }
+        }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Do I need a credit card to get started?" icon="credit-card">
+    No, you can create a free Radar account and get a test API key without providing payment information. Upgrade to a live API key when you're ready to deploy.
+  </Accordion>
+</AccordionGroup>
+
+## Installation & Configuration
+
+<AccordionGroup>
+  <Accordion title="What's the difference between CocoaPods and SPM?" icon="box">
+    Both package managers work equally well. Choose based on your preference:
+    
+    **CocoaPods:**
+    ```ruby Podfile
+    pod 'RadarSDK', '~> 3.0'
+    ```
+    
+    **Swift Package Manager:**
+    - In Xcode: File → Add Packages
+    - Repository: `https://github.com/radarlabs/radar-sdk-ios-spm`
+    
+    <Note>
+    The SPM repository is at [radarlabs/radar-sdk-ios-spm](https://github.com/radarlabs/radar-sdk-ios-spm), separate from the main SDK repository.
+    </Note>
+  </Accordion>
+  
+  <Accordion title="How do I add Radar to an existing project?" icon="folder-plus">
+    <Steps>
+      <Step title="Install SDK">
+        Add via CocoaPods or Swift Package Manager (see above).
+      </Step>
+      
+      <Step title="Initialize in AppDelegate">
+        ```swift AppDelegate.swift
+        import RadarSDK
+        
+        func application(
+            _ application: UIApplication,
+            didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+        ) -> Bool {
+            Radar.initialize(publishableKey: "prj_test_pk_...")
+            return true
+        }
+        ```
+      </Step>
+      
+      <Step title="Add Info.plist keys">
+        Add location usage descriptions to your `Info.plist`.
+      </Step>
+      
+      <Step title="Request permissions">
+        Request location permissions where appropriate in your app flow.
+      </Step>
+    </Steps>
+  </Accordion>
+  
+  <Accordion title="What Info.plist keys are required?" icon="key">
+    At minimum, add:
+    
+    ```xml Info.plist
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We use your location to show nearby places</string>
+    ```
+    
+    For background tracking, also add:
+    
+    ```xml
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We track your location to provide real-time updates</string>
+    ```
+    
+    <Warning>
+    These descriptions must clearly explain why your app needs location access. Vague descriptions may be rejected by App Review.
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="Do I need to enable background modes?" icon="toggle-on">
+    Only if you want background location tracking. In your target's **Signing & Capabilities** tab:
+    
+    1. Add **Background Modes** capability
+    2. Enable **Location updates**
+    
+    Without this, location tracking stops when your app is backgrounded.
+  </Accordion>
+  
+  <Accordion title="Can I use Radar in a framework/SDK?" icon="cubes">
+    Yes, but consider these best practices:
+    - Initialize Radar in your framework's initialization method
+    - Use a unique user ID to avoid conflicts
+    - Document any location permissions requirements
+    - Consider namespace conflicts if the host app also uses Radar
+    
+    ```swift MyFramework.swift
+    public class MyFramework {
+        public static func initialize(apiKey: String) {
+            Radar.initialize(publishableKey: apiKey)
+            Radar.setUserId("framework-user-\(UUID().uuidString)")
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Location Tracking
+
+<AccordionGroup>
+  <Accordion title="What's the difference between tracking presets?" icon="gauge">
+    Radar provides three presets optimized for different use cases:
+    
+    | Preset | Update Frequency | Battery Usage | Best For |
+    |--------|------------------|---------------|----------|
+    | **Continuous** | ~30 seconds | High ⚡ | Real-time tracking, delivery apps |
+    | **Responsive** | ~2.5 minutes moving, shut down when stopped | Medium ⚡⚡ | Most apps, good balance |
+    | **Efficient** | Only on visits | Low ⚡⚡⚡ | Simple geofencing, low battery impact |
+    
+    ```swift
+    // Choose based on your needs
+    Radar.startTracking(trackingOptions: .presetContinuous)  // Most frequent
+    Radar.startTracking(trackingOptions: .presetResponsive)  // Recommended
+    Radar.startTracking(trackingOptions: .presetEfficient)   // Battery-friendly
+    ```
+  </Accordion>
+  
+  <Accordion title="How accurate is location tracking?" icon="bullseye">
+    Location accuracy depends on:
+    - Device GPS capabilities
+    - Environmental factors (indoors, urban canyons)
+    - Desired accuracy setting
+    - Battery level and Low Power Mode
+    
+    **Accuracy levels:**
+    - **High**: Best accuracy (~5-10m), highest battery usage
+    - **Medium**: Balanced (~100m), recommended
+    - **Low**: Lower accuracy (~1000m), best battery life
+    
+    ```swift
+    let options = RadarTrackingOptions.presetResponsive
+    options.desiredAccuracy = .high  // or .medium, .low
+    Radar.startTracking(trackingOptions: options)
+    ```
+  </Accordion>
+  
+  <Accordion title="Can tracking work offline?" icon="wifi-slash">
+    Yes! The SDK has offline support:
+    - Location updates are collected offline
+    - Stored locally in a replay buffer
+    - Automatically synced when connectivity returns
+    - Failed requests are retried
+    
+    Configure replay behavior:
+    ```swift
+    let options = RadarTrackingOptions.presetResponsive
+    options.replay = .all  // Replay all failed updates
+    // or .stops  // Only replay when stopped
+    // or .none   // Don't replay failed updates
+    ```
+  </Accordion>
+  
+  <Accordion title="Why does tracking stop when my app is killed?" icon="circle-xmark">
+    iOS terminates background tasks when:
+    - User force-quits the app (swipe up in app switcher)
+    - Device restarts
+    - System needs memory
+    - Crash or exception occurs
+    
+    **Mitigation strategies:**
+    - Use `.efficient` preset with visit monitoring (survives force-quit)
+    - Enable significant location change monitoring
+    - Prompt users not to force-quit the app
+    - Consider silent push notifications to relaunch app
+    
+    <Warning>
+    There's no way to track location after a force-quit except visit monitoring and significant location changes.
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="How do I track only while app is in use?" icon="mobile-screen">
+    Use `trackOnce()` instead of `startTracking()`:
+    
+    ```swift
+    // One-time tracking (foreground only)
+    Radar.trackOnce { (status, location, events, user) in
+        print("Location: \(location?.coordinate ?? CLLocationCoordinate2D())")
+    }
+    ```
+    
+    Or start/stop tracking based on app state:
+    ```swift
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        Radar.startTracking(trackingOptions: .presetResponsive)
+    }
+    
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        Radar.stopTracking()
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="What's the difference between the delegate methods?" icon="webhook">
+    The SDK provides different delegate methods for different purposes:
+    
+    ```swift
+    // Called for EVERY location update, even if not synced
+    func didUpdateClientLocation(
+        _ location: CLLocation,
+        stopped: Bool,
+        source: RadarLocationSource
+    ) {
+        // Use this for UI updates
+    }
+    
+    // Called only when location is synced to Radar servers
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        // Use this for server-synced state
+    }
+    
+    // Called when geofence, place, or trip events occur
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        // Handle business logic based on events
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Geofencing
+
+<AccordionGroup>
+  <Accordion title="How do I create geofences?" icon="draw-circle">
+    Create geofences in your [Radar dashboard](https://radar.com/dashboard/geofences) or via the API:
+    
+    **Dashboard method:**
+    1. Go to [Geofences](https://radar.com/dashboard/geofences)
+    2. Click "Create Geofence"
+    3. Draw on map or enter coordinates
+    4. Add tag and metadata
+    5. Save
+    
+    **API method:**
+    ```bash
+    curl https://api.radar.io/v1/geofences \
+      -H "Authorization: prj_live_sk_..." \
+      -X POST \
+      -d "description=Store #123" \
+      -d "tag=store" \
+      -d "externalId=store-123" \
+      -d "type=circle" \
+      -d "coordinates=[[-73.975363,40.783826]]" \
+      -d "radius=100"
+    ```
+  </Accordion>
+  
+  <Accordion title="What's the minimum geofence size?" icon="ruler">
+    **Minimum radius**: 100 meters
+    
+    Smaller geofences may experience:
+    - Delayed entry detection (several seconds or more)
+    - False positives due to GPS drift
+    - Reduced battery life
+    
+    <Tip>
+    For retail stores or small venues, use 100-150m radius and combine with dwell time detection to filter brief visits.
+    </Tip>
+  </Accordion>
+  
+  <Accordion title="How many geofences can I monitor?" icon="circle-nodes">
+    **Unlimited** on Radar's server-side geofencing!
+    
+    Unlike iOS's 20-geofence limit, Radar uses server-side geofencing:
+    - Monitor thousands of geofences simultaneously
+    - No client-side limit
+    - Automatically syncs nearby geofences to device
+    - More accurate than iOS region monitoring
+    
+    ```swift
+    let options = RadarTrackingOptions.presetResponsive
+    options.syncGeofences = true  // Enable geofence syncing
+    Radar.startTracking(trackingOptions: options)
+    ```
+  </Accordion>
+  
+  <Accordion title="How do I filter geofence events?" icon="filter">
+    Use tags and metadata to organize and filter geofences:
+    
+    ```swift
+    // Search for specific geofences
+    Radar.searchGeofences(
+        near: location,
+        radius: 1000,
+        tags: ["store"],  // Filter by tag
+        metadata: ["region": "west"],  // Filter by metadata
+        limit: 10,
+        includeGeometry: false
+    ) { (status, location, geofences) in
+        // Handle results
+    }
+    ```
+    
+    In webhooks, check event properties:
+    ```swift
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        for event in events {
+            if event.type == .userEnteredGeofence,
+               let geofence = event.geofence,
+               geofence.tag == "store" {
+                // Handle store entry
+            }
+        }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="What are dwell events?" icon="hourglass">
+    Dwell events fire when a user stays in a geofence for a specified duration:
+    
+    ```swift
+    // Configure in dashboard or via API
+    // Dwell time: 5 minutes
+    ```
+    
+    Use cases:
+    - Detect actual store visits vs. passing by
+    - Trigger notifications after user settles
+    - Calculate time spent at locations
+    
+    Configure dwell time when creating the geofence:
+    ```bash
+    curl https://api.radar.io/v1/geofences \
+      -H "Authorization: prj_live_sk_..." \
+      -d "metadata[dwellTime]=300"  # 5 minutes in seconds
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Trip Tracking
+
+<AccordionGroup>
+  <Accordion title="What is trip tracking?" icon="route">
+    Trip tracking monitors a user's journey from origin to destination:
+    - Real-time location updates
+    - Approaching destination events
+    - Arrival confirmation
+    - ETA calculations
+    - Trip status tracking
+    
+    Perfect for:
+    - Delivery apps
+    - Ride-sharing
+    - Curbside pickup
+    - On-demand services
+  </Accordion>
+  
+  <Accordion title="How do I start a trip?" icon="flag">
+    ```swift
+    let tripOptions = RadarTripOptions(
+        externalId: "order-12345",  // Your unique trip ID
+        destinationGeofenceTag: "store",
+        destinationGeofenceExternalId: "store-456"
+    )
+    tripOptions.mode = .car
+    tripOptions.scheduledArrivalAt = Date(timeIntervalSinceNow: 1800)  // 30 min
+    
+    Radar.startTrip(options: tripOptions) { (status, trip, events) in
+        if status == .success {
+            print("Trip started: \(trip?._id ?? "")")
+        }
+    }
+    ```
+    
+    The destination geofence must already exist in your dashboard.
+  </Accordion>
+  
+  <Accordion title="What trip events are generated?" icon="bell">
+    Trip tracking generates several event types:
+    
+    - **user.started_trip**: Trip begins
+    - **user.updated_trip**: Trip status changes
+    - **user.approaching_trip_destination**: Near destination (default 500m)
+    - **user.arrived_at_trip_destination**: Entered destination geofence
+    - **user.stopped_trip**: Trip completed or cancelled
+    
+    ```swift
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        for event in events {
+            switch event.type {
+            case .userApproachingTripDestination:
+                sendNotification("Driver is 5 minutes away")
+                
+            case .userArrivedAtTripDestination:
+                sendNotification("Driver has arrived")
+                completeOrder()
+                
+            default:
+                break
+            }
+        }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Can I track multi-stop trips?" icon="map-location-dot">
+    Yes! Use trip legs for multiple destinations:
+    
+    ```swift
+    let leg1 = RadarTripLeg(
+        externalId: "pickup-1",
+        destinationGeofenceTag: "pickup",
+        destinationGeofenceExternalId: "location-1"
+    )
+    
+    let leg2 = RadarTripLeg(
+        externalId: "delivery-1",
+        destinationGeofenceTag: "delivery",
+        destinationGeofenceExternalId: "location-2"
+    )
+    
+    let tripOptions = RadarTripOptions(
+        externalId: "route-123",
+        destinationGeofenceTag: nil,
+        destinationGeofenceExternalId: nil
+    )
+    tripOptions.legs = [leg1, leg2]
+    
+    Radar.startTrip(options: tripOptions) { (status, trip, events) in
+        // Trip started with multiple legs
+    }
+    
+    // Update leg status as you progress
+    Radar.updateTripLeg(legId: "pickup-1", status: .completed) { (status, trip, leg, events) in
+        print("Pickup completed")
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="How do I end a trip?" icon="flag-checkered">
+    Use `completeTrip()` for successful completion or `cancelTrip()` for cancellation:
+    
+    ```swift
+    // Trip completed successfully
+    Radar.completeTrip { (status, trip, events) in
+        print("Trip completed")
+    }
+    
+    // Or cancel the trip
+    Radar.cancelTrip { (status, trip, events) in
+        print("Trip cancelled")
+    }
+    ```
+    
+    This will:
+    - Stop trip tracking
+    - Generate `user.stopped_trip` event
+    - Return to previous tracking options
+    - Clear trip state
+  </Accordion>
+  
+  <Accordion title="Does trip tracking affect battery life?" icon="battery-half">
+    Trip tracking uses more battery than standard tracking because:
+    - More frequent location updates
+    - Continuous ETA calculations
+    - Real-time route monitoring
+    
+    **Battery optimization tips:**
+    - Only track during active trips
+    - Call `completeTrip()` or `cancelTrip()` promptly
+    - Use appropriate travel mode (car vs. bike vs. foot)
+    - Consider custom tracking options with longer intervals
+    
+    ```swift
+    let tripTrackingOptions = RadarTrackingOptions.presetResponsive
+    tripTrackingOptions.desiredMovingUpdateInterval = 60  // 1 minute
+    
+    Radar.startTrip(
+        options: tripOptions,
+        trackingOptions: tripTrackingOptions
+    ) { (status, trip, events) in
+        // Trip with custom tracking
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Privacy & Security
+
+<AccordionGroup>
+  <Accordion title="How does Radar handle user privacy?" icon="shield-halved">
+    Radar takes privacy seriously:
+    - **User consent**: Your app must request permissions
+    - **Data minimization**: Only collects necessary location data
+    - **Anonymization**: Supports anonymous tracking mode
+    - **GDPR compliant**: Data processing agreements available
+    - **CCPA compliant**: User data deletion on request
+    - **User control**: Users can revoke permissions anytime
+    
+    Enable anonymous tracking:
+    ```swift
+    Radar.setAnonymousTrackingEnabled(true)
+    ```
+  </Accordion>
+  
+  <Accordion title="What data does Radar collect?" icon="database">
+    The SDK collects:
+    - **Location data**: Coordinates, accuracy, speed, heading
+    - **Device data**: Device ID (IDFV), OS version, app version
+    - **Optional**: User ID, metadata, ad ID (if enabled)
+    
+    **Not collected** by default:
+    - Personally identifiable information
+    - Device contacts or photos
+    - Other app data
+    
+    Control data collection:
+    ```swift
+    Radar.setUserId("user-123")  // Optional
+    Radar.setMetadata(["plan": "premium"])  // Optional
+    Radar.setAdIdEnabled(false)  // Ad ID disabled by default
+    ```
+  </Accordion>
+  
+  <Accordion title="Can I delete user data?" icon="trash">
+    Yes, via the Radar API:
+    
+    ```bash
+    curl https://api.radar.io/v1/users/:id \
+      -H "Authorization: prj_live_sk_..." \
+      -X DELETE
+    ```
+    
+    Or in the dashboard:
+    1. Go to [Users](https://radar.com/dashboard/users)
+    2. Find the user
+    3. Click "Delete User"
+    
+    This will:
+    - Delete all location history
+    - Remove user metadata
+    - Clear event history
+    - Cannot be undone
+  </Accordion>
+  
+  <Accordion title="What is location verification?" icon="shield-check">
+    Location verification detects location spoofing and fraud:
+    - **Device integrity checks**: Validates genuine device
+    - **Location signals**: Analyzes GPS, network, and sensor data
+    - **Jurisdiction checks**: Verifies user is in expected location
+    - **JWT token**: Signed proof of location for your server
+    
+    ```swift
+    Radar.trackVerified { (status, token) in
+        if token?.passed == true {
+            // Location verified - allow feature access
+            sendToServer(token?.token)  // JWT to verify server-side
+        } else {
+            // Verification failed - possible fraud
+            showError("Unable to verify your location")
+        }
+    }
+    ```
+    
+    Use cases:
+    - Geofenced content
+    - Sports betting
+    - Regulatory compliance
+    - Fraud prevention
+  </Accordion>
+  
+  <Accordion title="Should I use test or live keys in production?" icon="key">
+    **Never use test keys in production!**
+    
+    - **Test keys** (`prj_test_pk_...`): For development and testing
+      - Separate data from production
+      - No charges for API usage
+      - Events marked as `live: false`
+    
+    - **Live keys** (`prj_live_pk_...`): For production apps
+      - Real user data
+      - Billable API usage
+      - Events marked as `live: true`
+    
+    ```swift
+    #if DEBUG
+    let apiKey = "prj_test_pk_..."
+    #else
+    let apiKey = "prj_live_pk_..."
+    #endif
+    
+    Radar.initialize(publishableKey: apiKey)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Performance & Optimization
+
+<AccordionGroup>
+  <Accordion title="How do I minimize battery usage?" icon="battery-full">
+    <Steps>
+      <Step title="Choose efficient preset">
+        ```swift
+        Radar.startTracking(trackingOptions: .presetEfficient)
+        ```
+      </Step>
+      
+      <Step title="Reduce update frequency">
+        ```swift
+        let options = RadarTrackingOptions.presetResponsive
+        options.desiredMovingUpdateInterval = 300  // 5 minutes
+        options.desiredStoppedUpdateInterval = 0   // Shut down when stopped
+        ```
+      </Step>
+      
+      <Step title="Lower accuracy">
+        ```swift
+        options.desiredAccuracy = .low
+        ```
+      </Step>
+      
+      <Step title="Disable unused features">
+        ```swift
+        options.beacons = false
+        options.useIndoorScan = false
+        options.syncGeofences = false
+        ```
+      </Step>
+    </Steps>
+  </Accordion>
+  
+  <Accordion title="How do I reduce network usage?" icon="wifi">
+    Configure sync behavior:
+    
+    ```swift
+    let options = RadarTrackingOptions.presetResponsive
+    
+    // Only sync stops and exits (fewer API calls)
+    options.syncLocations = .stopsAndExits
+    
+    // Or don't sync location updates automatically
+    options.syncLocations = .none
+    
+    // Increase sync interval
+    options.desiredSyncInterval = 300  // 5 minutes
+    
+    Radar.startTracking(trackingOptions: options)
+    ```
+  </Accordion>
+  
+  <Accordion title="Will Radar slow down my app?" icon="gauge-high">
+    No, the SDK is highly optimized:
+    - Lightweight (~2MB SDK size)
+    - Minimal CPU usage
+    - Efficient memory footprint
+    - Background processing
+    - Network request batching
+    
+    Best practices:
+    - Initialize in `didFinishLaunchingWithOptions`
+    - Start tracking asynchronously
+    - Don't call `trackOnce()` in tight loops
+    - Use delegate methods instead of polling
+  </Accordion>
+  
+  <Accordion title="How many API requests will my app make?" icon="chart-line">
+    Depends on your tracking configuration:
+    
+    **Continuous preset**:
+    - ~2 requests per minute when moving
+    - ~120 requests per hour
+    - ~2,880 requests per day per user
+    
+    **Responsive preset** (recommended):
+    - ~0.4 requests per minute when moving
+    - ~24 requests per hour when moving
+    - ~150-300 requests per day per user (varies by user activity)
+    
+    **Efficient preset**:
+    - Only on visit start/end
+    - ~2-10 requests per day per user
+    
+    Reduce requests:
+    ```swift
+    let options = RadarTrackingOptions.presetResponsive
+    options.desiredMovingUpdateInterval = 300  // Longer intervals
+    options.syncLocations = .stopsAndExits     // Sync less frequently
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## App Store & Deployment
+
+<AccordionGroup>
+  <Accordion title="Will Radar affect my App Store review?" icon="app-store-ios">
+    The SDK is designed to comply with App Store guidelines. Ensure:
+    
+    ✅ **Do's:**
+    - Clearly explain location usage in Info.plist
+    - Request permissions at appropriate times
+    - Handle permission denials gracefully
+    - Provide value to users for location access
+    - Comply with privacy requirements
+    
+    ❌ **Don'ts:**
+    - Request Always authorization on first launch
+    - Use vague permission descriptions
+    - Track location without user knowledge
+    - Access location for unrelated features
+    
+    Many apps using Radar have passed review successfully.
+  </Accordion>
+  
+  <Accordion title="What should I include in privacy labels?" icon="list-check">
+    On the App Store Connect privacy section, declare:
+    
+    **Location** (Required):
+    - [x] Precise Location
+    - Purpose: App Functionality, Analytics, Product Personalization (as applicable)
+    - Linked to User: Yes (unless using anonymous mode)
+    
+    **Device ID** (IDFV - Required):
+    - Purpose: App Functionality, Analytics
+    - Linked to User: Yes
+    
+    **Advertising Data** (Only if enabled):
+    - [x] Advertising Data (IDFA)
+    - Purpose: Developer's Advertising or Marketing
+    - Linked to User: Yes
+  </Accordion>
+  
+  <Accordion title="How do I test before releasing to production?" icon="vial">
+    <Steps>
+      <Step title="Use test API keys">
+        Test thoroughly with `prj_test_pk_...` keys before switching to live keys.
+      </Step>
+      
+      <Step title="Test with TestFlight">
+        Deploy to TestFlight to test in real-world conditions with beta testers.
+      </Step>
+      
+      <Step title="Use mock locations">
+        Simulate trips without moving:
+        ```swift
+        Radar.mockTracking(
+            origin: startLocation,
+            destination: endLocation,
+            mode: .car,
+            steps: 20,
+            interval: 2
+        )
+        ```
+      </Step>
+      
+      <Step title="Monitor dashboard">
+        Watch your [Radar dashboard](https://radar.com/dashboard) for:
+        - Event logs
+        - Webhook deliveries
+        - API usage
+        - Error rates
+      </Step>
+    </Steps>
+  </Accordion>
+  
+  <Accordion title="Can I use Radar in an enterprise distribution?" icon="building">
+    Yes! Radar works with:
+    - App Store apps
+    - TestFlight
+    - Enterprise (in-house) distribution
+    - Ad-hoc distribution
+    
+    For enterprise apps, contact Radar sales about volume pricing and custom agreements.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Help
+
+<AccordionGroup>
+  <Accordion title="Where can I find code examples?" icon="code">
+    - [Example app](https://github.com/radarlabs/radar-sdk-ios/tree/master/Example) in the SDK repository
+    - [Documentation](/quickstart) with code samples
+    - [API reference](/api/radar) with method examples
+    - [Blog tutorials](https://radar.com/blog) for specific use cases
+  </Accordion>
+  
+  <Accordion title="How do I report a bug?" icon="bug">
+    Report bugs via:
+    
+    **GitHub Issues**: [radarlabs/radar-sdk-ios/issues](https://github.com/radarlabs/radar-sdk-ios/issues)
+    - Check existing issues first
+    - Include SDK version, iOS version, device model
+    - Provide steps to reproduce
+    - Share relevant logs
+    
+    **Support Email**: [support@radar.com](mailto:support@radar.com)
+    - For urgent production issues
+    - Include account details and app info
+  </Accordion>
+  
+  <Accordion title="Does Radar offer professional services?" icon="handshake">
+    Yes! Radar offers:
+    - Implementation consulting
+    - Custom integration development
+    - Architecture review
+    - Training sessions
+    - Dedicated support plans
+    
+    Contact [sales@radar.com](mailto:sales@radar.com) for details.
+  </Accordion>
+  
+  <Accordion title="Where can I learn more?" icon="graduation-cap">
+    <CardGroup cols={2}>
+      <Card title="Documentation" icon="book" href="/">
+        Complete guides and API reference
+      </Card>
+      <Card title="Blog" icon="newspaper" href="https://radar.com/blog">
+        Tutorials and use case examples
+      </Card>
+      <Card title="Dashboard" icon="gauge" href="https://radar.com/dashboard">
+        Manage your geofences and view analytics
+      </Card>
+      <Card title="Status Page" icon="signal" href="https://status.radar.com">
+        API uptime and incident history
+      </Card>
+    </CardGroup>
+  </Accordion>
+</AccordionGroup>

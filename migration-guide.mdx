@@ -1,0 +1,698 @@
+---
+title: "Migration Guide"
+description: "Migrate your app to the latest version of the Radar iOS SDK with breaking changes, deprecated APIs, and upgrade instructions"
+---
+
+This guide helps you migrate between major versions of the Radar iOS SDK. Each section covers breaking changes, deprecated APIs, and provides code examples for upgrading.
+
+## Overview
+
+The Radar iOS SDK follows semantic versioning. Major version updates may contain breaking changes, while minor and patch versions are backward compatible.
+
+<Note>
+Before upgrading, review the full [MIGRATION.md](https://github.com/radarlabs/radar-sdk-ios/blob/master/MIGRATION.md) file in the SDK repository for the most up-to-date migration information.
+</Note>
+
+## Latest Migrations
+
+### 3.20.x to 3.21.x
+
+<Warning>
+The `Radar.searchPlaces()` method signature has changed to include a new parameter.
+</Warning>
+
+#### Breaking Changes
+
+**Country Code Parameter Added**
+
+The `searchPlaces()` method now requires an additional `countryCodes` parameter to filter search results by country.
+
+```swift Before (3.20.x)
+Radar.searchPlaces(
+    radius: 1000,
+    chains: ["starbucks"],
+    categories: nil,
+    groups: nil,
+    limit: 10
+) { (status, location, places) in
+    // Handle results
+}
+```
+
+```swift After (3.21.x)
+Radar.searchPlaces(
+    radius: 1000,
+    chains: ["starbucks"],
+    categories: nil,
+    groups: nil,
+    countryCodes: ["US"], // New parameter
+    limit: 10
+) { (status, location, places) in
+    // Handle results
+}
+```
+
+**Migration Steps**
+
+<Steps>
+  <Step title="Update method calls">
+    Add the `countryCodes` parameter to all `searchPlaces()` calls. Use `nil` if you don't want to filter by country.
+    
+    ```swift
+    // No country filter
+    Radar.searchPlaces(
+        radius: 1000,
+        chains: nil,
+        categories: ["restaurant"],
+        groups: nil,
+        countryCodes: nil,  // Add this
+        limit: 20
+    ) { (status, location, places) in
+        // Handle results
+    }
+    ```
+  </Step>
+  
+  <Step title="Test search functionality">
+    Verify that your place searches return expected results with the new parameter.
+  </Step>
+</Steps>
+
+### 3.12.x to 3.13.x
+
+<Warning>
+Major changes to location verification methods and return types.
+</Warning>
+
+#### Breaking Changes
+
+**Verified Tracking Return Type Changed**
+
+The `trackVerified()` method now returns a `RadarVerifiedLocationToken` object that includes the JWT token, user data, events, and verification results. The separate `trackVerifiedToken()` method has been removed.
+
+```swift Before (3.12.x)
+Radar.trackVerified { (status, location, events, user) in
+    if user?.fraud?.passed == true &&
+       user?.country?.allowed == true &&
+       user?.state?.allowed == true {
+        // Allow access to feature
+    } else {
+        // Deny access
+    }
+}
+
+// Separate method for token
+Radar.trackVerifiedToken { (status, token) in
+    // Send token to server
+}
+```
+
+```swift After (3.13.x)
+Radar.trackVerified { (status, token) in
+    // token is RadarVerifiedLocationToken
+    if token?.passed == true {
+        // Allow access to feature
+        // Send token.token to server for validation
+        let jwt = token?.token
+        let expiresAt = token?.expiresAt
+        let user = token?.user
+        let events = token?.events
+    } else {
+        // Deny access to feature
+    }
+}
+```
+
+**Migration Steps**
+
+<Steps>
+  <Step title="Update completion handler parameters">
+    Change `trackVerified()` completion handlers to accept `RadarVerifiedLocationToken` instead of separate parameters.
+  </Step>
+  
+  <Step title="Update verification logic">
+    Use `token?.passed` property instead of checking individual fraud/country/state flags.
+  </Step>
+  
+  <Step title="Remove trackVerifiedToken() calls">
+    Replace `trackVerifiedToken()` with `trackVerified()` since it now returns the JWT token directly.
+  </Step>
+  
+  <Step title="Update server integration">
+    Send `token?.token` (the JWT string) to your server for validation instead of making a separate API call.
+  </Step>
+</Steps>
+
+### 3.11.x to 3.12.x
+
+#### Breaking Changes
+
+**RadarDelegate Method Added**
+
+A new required method has been added to the `RadarDelegate` protocol.
+
+```swift
+class MyRadarDelegate: NSObject, RadarDelegate {
+    // New method - add this
+    func didUpdateLocationPermissionStatus() {
+        // Handle location permission changes
+        let status = CLLocationManager.authorizationStatus()
+        print("Location permission changed: \(status)")
+    }
+    
+    // Existing methods
+    func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+        // Handle events
+    }
+}
+```
+
+### 3.9.x to 3.10.x
+
+#### Breaking Changes
+
+**Search Geofences Method Updated**
+
+The `searchGeofences()` methods have been updated with new parameters for better control over results.
+
+```swift Before (3.9.x)
+Radar.searchGeofences(
+    near: location,
+    radius: 1000,
+    tags: ["store"],
+    metadata: ["region": "west"],
+    limit: 100
+) { (status, location, geofences) in
+    // Handle results
+}
+```
+
+```swift After (3.10.x)
+Radar.searchGeofences(
+    near: location,
+    radius: 1000,  // Use -1 for unlimited radius
+    tags: ["store"],
+    metadata: ["region": "west"],
+    limit: 100,
+    includeGeometry: false  // New parameter - set to false for better performance
+) { (status, location, geofences) in
+    // Handle results
+}
+```
+
+<Tip>
+Set `includeGeometry: false` unless you specifically need the full geofence geometry. This improves performance and allows you to retrieve more than 100 results.
+</Tip>
+
+### 3.8.x to 3.9.x
+
+#### Breaking Changes
+
+**Autocomplete Method Parameter Changed**
+
+The `expandUnits` parameter has been deprecated and replaced with `mailable`.
+
+```swift Before (3.8.x)
+Radar.autocomplete(
+    query: "123 Main",
+    near: location,
+    layers: nil,
+    limit: 10,
+    country: "US",
+    expandUnits: true
+) { (status, addresses) in
+    // Handle results
+}
+```
+
+```swift After (3.9.x)
+Radar.autocomplete(
+    query: "123 Main",
+    near: location,
+    layers: nil,
+    limit: 10,
+    country: "US",
+    mailable: true  // New parameter - filter to mailable addresses only
+) { (status, addresses) in
+    // Handle results
+}
+```
+
+## Major Version Migrations
+
+### 3.6.x to 3.7.x - Custom Events to Conversions
+
+<Warning>
+This is a significant API change. Custom events have been completely renamed to conversions.
+</Warning>
+
+#### Breaking Changes
+
+**1. Method Renaming**
+
+```swift Before (3.6.x)
+Radar.sendEvent(
+    customType: "purchase",
+    metadata: ["amount": "29.99"],
+    completionHandler: { (status, location, events, user) in
+        // Handle completion
+    }
+)
+
+// Method with location (removed)
+Radar.sendEvent(
+    customType: "checkout",
+    location: userLocation,
+    metadata: ["cart_size": "3"],
+    completionHandler: { (status, location, events, user) in
+        // Handle completion
+    }
+)
+```
+
+```swift After (3.7.x)
+Radar.logConversion(
+    name: "purchase",
+    metadata: ["amount": "29.99"],
+    completionHandler: { (status, event) in
+        // Handle completion - note different parameters
+    }
+)
+
+// Revenue tracking
+Radar.logConversion(
+    name: "purchase",
+    revenue: 29.99,
+    metadata: ["product_id": "abc123"],
+    completionHandler: { (status, event) in
+        // Handle completion
+    }
+)
+```
+
+**2. Completion Handler Changes**
+
+The completion handler signature has changed significantly:
+- Old: `(status, location, events, user)`
+- New: `(status, event)`
+
+**3. Event Property Changes**
+
+```swift Before (3.6.x)
+if event.type == .custom {
+    let eventName = event.customType
+}
+```
+
+```swift After (3.7.x)
+if event.type == .conversion {
+    let eventName = event.conversionName
+    let revenue = event.metadata?["revenue"] as? Double
+}
+```
+
+**Migration Steps**
+
+<Steps>
+  <Step title="Replace sendEvent() calls">
+    Find all `Radar.sendEvent()` calls and replace them with `Radar.logConversion()`.
+  </Step>
+  
+  <Step title="Update completion handlers">
+    Change completion handlers to accept `(RadarStatus, RadarEvent?)` instead of `(RadarStatus, CLLocation?, [RadarEvent]?, RadarUser?)`.
+  </Step>
+  
+  <Step title="Update event type checks">
+    Replace `.custom` with `.conversion` and `customType` with `conversionName`.
+  </Step>
+  
+  <Step title="Add revenue tracking">
+    Use the new `logConversion(name:revenue:metadata:)` method for purchase events.
+  </Step>
+  
+  <Step title="Remove location-based events">
+    The `sendEvent(customType:location:metadata:)` method has been removed. Remove these calls or replace with standard `logConversion()`.
+  </Step>
+</Steps>
+
+### 3.1.x to 3.2.x - XCFramework and Naming Changes
+
+<Warning>
+This update changes the SDK distribution format and renames several methods to avoid App Store rejections.
+</Warning>
+
+#### Breaking Changes
+
+**1. Distribution Format**
+
+The SDK is now distributed as `.xcframework` instead of `.framework`. This provides better support for different architectures.
+
+<Steps>
+  <Step title="Update CocoaPods">
+    Update your Podfile to version 3.2.x or later:
+    ```ruby
+    pod 'RadarSDK', '~> 3.2'
+    ```
+  </Step>
+  
+  <Step title="Clean build folder">
+    Clean your build folder in Xcode (Cmd+Shift+K) and rebuild.
+  </Step>
+</Steps>
+
+**2. Tracking Options Preset Naming**
+
+```swift Before (3.1.x)
+Radar.startTracking(trackingOptions: RadarTrackingOptions.continuous)
+Radar.startTracking(trackingOptions: RadarTrackingOptions.responsive)
+Radar.startTracking(trackingOptions: RadarTrackingOptions.efficient)
+```
+
+```swift After (3.2.x)
+Radar.startTracking(trackingOptions: .presetContinuous)
+Radar.startTracking(trackingOptions: .presetResponsive)
+Radar.startTracking(trackingOptions: .presetEfficient)
+```
+
+**3. Property Renaming**
+
+```swift Before (3.1.x)
+let options = RadarTrackingOptions()
+options.sync = .all
+
+let tripOptions = RadarTripOptions(externalId: "trip-123")
+
+let description = geofence._description
+let coordinates = geometry.coordinates
+let source = Radar.stringForSource(.foregroundLocation)
+```
+
+```swift After (3.2.x)
+let options = RadarTrackingOptions()
+options.syncLocations = .all  // Renamed from 'sync'
+
+let tripOptions = RadarTripOptions(
+    externalId: "trip-123",
+    destinationGeofenceTag: nil,
+    destinationGeofenceExternalId: nil
+)
+
+let description = geofence.__description  // Double underscore
+let coordinates = geometry._coordinates   // Added underscore
+let source = Radar.stringForLocationSource(.foregroundLocation)  // Renamed method
+```
+
+**4. Trip Completion Handler Changes**
+
+```swift Before (3.1.x)
+Radar.startTrip(options: options) { status in
+    if status == .success {
+        print("Trip started")
+    }
+}
+
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser) {
+    // User is non-optional
+}
+```
+
+```swift After (3.2.x)
+Radar.startTrip(options: options) { status, trip, events in
+    if status == .success {
+        print("Trip started: \(trip?._id ?? "")")
+        // Handle events
+    }
+}
+
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    // User is now optional
+    if let user = user {
+        print("User: \(user._id)")
+    }
+}
+```
+
+### 3.0.x to 3.1.x - Trip and Beacon Updates
+
+#### Breaking Changes
+
+**1. Track Once with Beacons**
+
+```swift Before (3.0.x)
+Radar.trackOnce(desiredAccuracy: .high) { (status, location, events, user) in
+    // Handle results
+}
+```
+
+```swift After (3.1.x)
+Radar.trackOnce(
+    desiredAccuracy: .high,
+    beacons: true  // New parameter to enable beacon ranging
+) { (status, location, events, user) in
+    // Handle results
+}
+```
+
+**2. Stop Trip Method Removed**
+
+```swift Before (3.0.x)
+Radar.stopTrip()  // Method removed
+```
+
+```swift After (3.1.x)
+// Use one of these instead:
+Radar.completeTrip { (status, trip, events) in
+    print("Trip completed")
+}
+
+// Or
+Radar.cancelTrip { (status, trip, events) in
+    print("Trip cancelled")
+}
+```
+
+### 2.1.x to 3.0.x - Major Tracking Overhaul
+
+<Warning>
+This is a major breaking change that introduces new tracking options and presets.
+</Warning>
+
+#### Breaking Changes
+
+**1. Start Tracking Requires Options**
+
+```swift Before (2.1.x)
+// Start tracking with default behavior
+Radar.startTracking()
+
+// Or with custom options
+let trackingOptions = RadarTrackingOptions()
+trackingOptions.priority = .efficiency
+Radar.startTracking(trackingOptions)
+```
+
+```swift After (3.0.x)
+// Must specify a preset or custom options
+Radar.startTracking(trackingOptions: .presetResponsive)
+// .presetResponsive is closest to v2 default behavior
+
+// Or use .presetEfficient for battery optimization
+Radar.startTracking(trackingOptions: .presetEfficient)
+
+// Or .presetContinuous for most frequent updates
+Radar.startTracking(trackingOptions: .presetContinuous)
+```
+
+**2. Required Delegate Method**
+
+A new delegate method is now required:
+
+```swift
+class MyRadarDelegate: NSObject, RadarDelegate {
+    // New required method
+    func didUpdateClientLocation(
+        _ location: CLLocation,
+        stopped: Bool,
+        source: RadarLocationSource
+    ) {
+        // Called for all location updates, even if not synced to server
+        print("Client location updated: \(location.coordinate)")
+    }
+    
+    // Existing method - still called only for server-synced updates
+    func didUpdateLocation(_ location: CLLocation, user: RadarUser) {
+        // Called only when location is synced to server
+        print("Server location updated: \(user._id)")
+    }
+}
+```
+
+<Info>
+Use `didUpdateClientLocation()` for all location updates, or `didUpdateLocation()` for only server-synced updates with user state.
+</Info>
+
+**3. Method Renaming**
+
+```swift Before (2.1.x)
+Radar.updateLocation(location) { (status, location, events, user) in
+    // Handle results
+}
+```
+
+```swift After (3.0.x)
+Radar.trackOnce(location: location) { (status, location, events, user) in
+    // Handle results
+}
+```
+
+**4. Ad ID Collection**
+
+```swift Before (2.1.x)
+// Ad ID was collected automatically
+```
+
+```swift After (3.0.x)
+// Ad ID collection is now opt-in
+Radar.setAdIdEnabled(true)  // Call this to enable ad ID collection
+```
+
+**5. Places Provider Removed**
+
+```swift Before (2.1.x)
+Radar.setPlacesProvider(.facebook)  // Method removed
+```
+
+```swift After (3.0.x)
+// Method removed - Radar now uses its own Places API exclusively
+```
+
+**Migration Steps**
+
+<Steps>
+  <Step title="Choose tracking preset">
+    Determine which preset matches your use case:
+    - **presetContinuous**: ~30 second updates, highest battery usage
+    - **presetResponsive**: ~2.5 minute updates when moving, shuts down when stopped (closest to v2 default)
+    - **presetEfficient**: Only updates on visits, lowest battery usage
+  </Step>
+  
+  <Step title="Update startTracking() calls">
+    Replace all `Radar.startTracking()` calls with preset options.
+  </Step>
+  
+  <Step title="Implement required delegate method">
+    Add `didUpdateClientLocation()` to your `RadarDelegate` implementation.
+  </Step>
+  
+  <Step title="Rename updateLocation() calls">
+    Replace `updateLocation()` with `trackOnce(location:)`.
+  </Step>
+  
+  <Step title="Enable ad ID if needed">
+    Call `Radar.setAdIdEnabled(true)` after initialization if you need ad ID collection.
+  </Step>
+  
+  <Step title="Remove places provider">
+    Remove any `setPlacesProvider()` calls.
+  </Step>
+</Steps>
+
+## Older Version Migrations
+
+### 2.0.x to 2.1.x
+
+This update introduced `startTrackingWithOptions:` for advanced tracking configuration.
+
+<Accordion title="View details">
+  No breaking changes in this version. The new `startTrackingWithOptions:` method provides additional configuration options while maintaining backward compatibility.
+</Accordion>
+
+### 1.3.x to 2.0.x
+
+<Accordion title="View details">
+  **Breaking Changes:**
+  
+  - Location authorization helper methods removed
+  - Use `CLLocationManager` directly for permissions
+  - `RadarStatusErrorUserId` and `RadarStatusErrorPlaces` removed
+  - `setTrackingPriority:` method removed
+  
+  ```swift Before (1.3.x)
+  Radar.requestWhenInUseAuthorization()
+  ```
+  
+  ```swift After (2.0.x)
+  let locationManager = CLLocationManager()
+  locationManager.requestWhenInUseAuthorization()
+  ```
+</Accordion>
+
+### 1.2.x to 1.3.x
+
+<Accordion title="View details">
+  **Breaking Changes:**
+  
+  - `userId` on `RadarUser` is now nullable
+  - `reidentifyUserWithOldUserId:` method removed
+  
+  ```swift Before (1.2.x)
+  Radar.reidentifyUserWithOldUserId(oldId)
+  ```
+  
+  ```swift After (1.3.x)
+  Radar.setUserId(newUserId)  // Just set the new user ID
+  ```
+</Accordion>
+
+## Testing Your Migration
+
+After migrating to a new version, test these critical paths:
+
+<AccordionGroup>
+  <Accordion icon="location-dot" title="Location tracking">
+    - Start and stop tracking
+    - Verify tracking presets work as expected
+    - Check that location updates are received
+    - Confirm battery usage is acceptable
+  </Accordion>
+  
+  <Accordion icon="circle-check" title="Delegate callbacks">
+    - Test all delegate methods are called
+    - Verify events are received correctly
+    - Check error handling
+    - Confirm log messages appear
+  </Accordion>
+  
+  <Accordion icon="route" title="Trip tracking">
+    - Start, update, complete, and cancel trips
+    - Verify trip events are generated
+    - Check ETA calculations
+    - Test multi-destination trips if used
+  </Accordion>
+  
+  <Accordion icon="shield-check" title="Location verification">
+    - Test verified tracking if enabled
+    - Verify token generation
+    - Check fraud detection results
+    - Confirm SSL pinning is working
+  </Accordion>
+</AccordionGroup>
+
+## Getting Help
+
+If you encounter issues during migration:
+
+<CardGroup cols={2}>
+  <Card title="Documentation" icon="book" href="/">
+    Review the complete SDK documentation
+  </Card>
+  <Card title="Support" icon="life-ring" href="mailto:support@radar.com">
+    Contact Radar support at support@radar.com
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/radarlabs/radar-sdk-ios/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="Changelog" icon="list" href="https://github.com/radarlabs/radar-sdk-ios/releases">
+    View detailed release notes
+  </Card>
+</CardGroup>

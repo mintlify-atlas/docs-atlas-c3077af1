@@ -1,0 +1,523 @@
+---
+title: "Geofencing"
+description: "Monitor custom geofences with entry, exit, and dwell events on iOS"
+---
+
+## Overview
+
+Radar's geofencing capabilities allow you to create custom geofences and monitor when users enter, exit, or dwell in specific locations. Geofences can be circular or polygon-shaped and include rich metadata for targeting and personalization.
+
+## Understanding Geofences
+
+Geofences are virtual boundaries that trigger events when a user crosses them. Each geofence includes:
+
+- **Unique identifier**: Radar ID and optional external ID
+- **Tag**: Categorize geofences (e.g., "store", "warehouse", "delivery-zone")
+- **Description**: Human-readable name
+- **Geometry**: Circle or polygon shape
+- **Metadata**: Custom key-value pairs for additional context
+- **Operating hours**: Optional hours when the geofence is active
+
+## Geofence Events
+
+Radar generates three types of geofence events:
+
+<Steps>
+
+<Step title="Entry Events">
+
+Triggered when a user enters a geofence.
+
+**Event type**: `RadarEventTypeUserEnteredGeofence`
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        if event.type == .userEnteredGeofence {
+            let geofence = event.geofence
+            print("Entered: \(geofence?.tag ?? "")")
+            print("Description: \(geofence?.__description ?? "")")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        if (event.type == RadarEventTypeUserEnteredGeofence) {
+            RadarGeofence *geofence = event.geofence;
+            NSLog(@"Entered: %@", geofence.tag);
+            NSLog(@"Description: %@", geofence.__description);
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Exit Events">
+
+Triggered when a user exits a geofence.
+
+**Event type**: `RadarEventTypeUserExitedGeofence`
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        if event.type == .userExitedGeofence {
+            let geofence = event.geofence
+            let duration = event.duration // in minutes
+            print("Exited: \(geofence?.tag ?? "") after \(duration) minutes")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        if (event.type == RadarEventTypeUserExitedGeofence) {
+            RadarGeofence *geofence = event.geofence;
+            float duration = event.duration; // in minutes
+            NSLog(@"Exited: %@ after %.0f minutes", geofence.tag, duration);
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+<Info>
+Exit events include a `duration` property indicating how long the user was inside the geofence (in minutes).
+</Info>
+
+</Step>
+
+<Step title="Dwell Events">
+
+Triggered when a user dwells in a geofence for a specified duration.
+
+**Event type**: `RadarEventTypeUserDwelledInGeofence`
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        if event.type == .userDwelledInGeofence {
+            let geofence = event.geofence
+            print("Dwelled in: \(geofence?.tag ?? "")")
+            
+            // Access geofence metadata
+            if let metadata = geofence?.metadata {
+                print("Metadata: \(metadata)")
+            }
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        if (event.type == RadarEventTypeUserDwelledInGeofence) {
+            RadarGeofence *geofence = event.geofence;
+            NSLog(@"Dwelled in: %@", geofence.tag);
+            
+            // Access geofence metadata
+            if (geofence.metadata) {
+                NSLog(@"Metadata: %@", geofence.metadata);
+            }
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+<Note>
+Configure dwell duration thresholds in the Radar dashboard. Default is 5 minutes.
+</Note>
+
+</Step>
+
+</Steps>
+
+## Searching for Geofences
+
+You can search for nearby geofences using the `searchGeofences()` method.
+
+### Search Near Current Location
+
+<CodeGroup>
+
+```swift Swift
+Radar.searchGeofences { (status, location, geofences) in
+    if status == .success {
+        // geofences sorted by distance
+        for geofence in geofences ?? [] {
+            print("Geofence: \(geofence.__description)")
+            print("Tag: \(geofence.tag ?? "")")
+            print("External ID: \(geofence.externalId ?? "")")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar searchGeofences:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarGeofence *> * _Nullable geofences) {
+    if (status == RadarStatusSuccess) {
+        // geofences sorted by distance
+        for (RadarGeofence *geofence in geofences) {
+            NSLog(@"Geofence: %@", geofence.__description);
+            NSLog(@"Tag: %@", geofence.tag);
+            NSLog(@"External ID: %@", geofence.externalId);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Search with Filters
+
+Filter geofences by tag, metadata, radius, and limit:
+
+<CodeGroup>
+
+```swift Swift
+let location = CLLocation(latitude: 40.7128, longitude: -74.0060)
+let tags = ["store", "restaurant"]
+let metadata = ["category": "retail"]
+
+Radar.searchGeofences(
+    near: location,
+    radius: 1000, // meters
+    tags: tags,
+    metadata: metadata,
+    limit: 10,
+    includeGeometry: false
+) { (status, location, geofences) in
+    if status == .success {
+        print("Found \(geofences?.count ?? 0) geofences")
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *location = [[CLLocation alloc] initWithLatitude:40.7128 longitude:-74.0060];
+NSArray *tags = @[@"store", @"restaurant"];
+NSDictionary *metadata = @{@"category": @"retail"};
+
+[Radar searchGeofencesNear:location
+                    radius:1000 // meters
+                      tags:tags
+                  metadata:metadata
+                     limit:10
+           includeGeometry:NO
+         completionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarGeofence *> * _Nullable geofences) {
+    if (status == RadarStatusSuccess) {
+        NSLog(@"Found %lu geofences", (unsigned long)geofences.count);
+    }
+}];
+```
+
+</CodeGroup>
+
+### Search Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `near` | `CLLocation?` | Location to search near. Use `nil` for current location. |
+| `radius` | `int` | Radius to search in meters (100-10000). Use -1 for unlimited. |
+| `tags` | `[String]?` | Filter by geofence tags. |
+| `metadata` | `[String: Any]?` | Filter by geofence metadata key-value pairs. |
+| `limit` | `int` | Maximum number of results (1-1000). Default is 100. |
+| `includeGeometry` | `BOOL` | Include full geometry in response. Set to `false` for >100 results. |
+
+<Warning>
+To retrieve more than 100 geofences, set `includeGeometry` to `false`. Including geometry data limits results to 100.
+</Warning>
+
+## Geofence Properties
+
+Access geofence properties from the `RadarGeofence` object:
+
+<CodeGroup>
+
+```swift Swift
+let geofence: RadarGeofence = event.geofence!
+
+// Identifiers
+let radarId = geofence._id
+let externalId = geofence.externalId
+let tag = geofence.tag
+
+// Description
+let description = geofence.__description
+
+// Metadata
+if let metadata = geofence.metadata {
+    let storeNumber = metadata["store_number"] as? String
+    let region = metadata["region"] as? String
+}
+
+// Geometry
+let geometry = geofence.geometry
+if let circleGeometry = geometry as? RadarCircleGeometry {
+    let center = circleGeometry.center
+    let radius = circleGeometry.radius
+} else if let polygonGeometry = geometry as? RadarPolygonGeometry {
+    let coordinates = polygonGeometry.coordinates
+}
+
+// Operating hours
+if let operatingHours = geofence.operatingHours {
+    // check if currently open
+}
+```
+
+```objective-c Objective-C
+RadarGeofence *geofence = event.geofence;
+
+// Identifiers
+NSString *radarId = geofence._id;
+NSString *externalId = geofence.externalId;
+NSString *tag = geofence.tag;
+
+// Description
+NSString *description = geofence.__description;
+
+// Metadata
+if (geofence.metadata) {
+    NSString *storeNumber = geofence.metadata[@"store_number"];
+    NSString *region = geofence.metadata[@"region"];
+}
+
+// Geometry
+RadarGeofenceGeometry *geometry = geofence.geometry;
+if ([geometry isKindOfClass:[RadarCircleGeometry class]]) {
+    RadarCircleGeometry *circleGeometry = (RadarCircleGeometry *)geometry;
+    RadarCoordinate *center = circleGeometry.center;
+    double radius = circleGeometry.radius;
+} else if ([geometry isKindOfClass:[RadarPolygonGeometry class]]) {
+    RadarPolygonGeometry *polygonGeometry = (RadarPolygonGeometry *)geometry;
+    NSArray *coordinates = polygonGeometry.coordinates;
+}
+
+// Operating hours
+if (geofence.operatingHours) {
+    // check if currently open
+}
+```
+
+</CodeGroup>
+
+## Syncing Geofences
+
+Enable geofence syncing to download nearby geofences to the device for improved responsiveness:
+
+<CodeGroup>
+
+```swift Swift
+let trackingOptions = RadarTrackingOptions.presetResponsive
+trackingOptions.syncGeofences = true
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objective-c Objective-C
+RadarTrackingOptions *trackingOptions = RadarTrackingOptions.presetResponsive;
+trackingOptions.syncGeofences = YES;
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+
+</CodeGroup>
+
+<Tip>
+Enabling `syncGeofences` allows the SDK to monitor nearby geofences locally, reducing latency for entry and exit events.
+</Tip>
+
+## Using Client Geofences
+
+Client geofences create local iOS region monitoring around the user's current location:
+
+<CodeGroup>
+
+```swift Swift
+let trackingOptions = RadarTrackingOptions.presetResponsive
+
+// Enable stopped geofence
+trackingOptions.useStoppedGeofence = true
+trackingOptions.stoppedGeofenceRadius = 100 // meters
+
+// Enable moving geofence
+trackingOptions.useMovingGeofence = true
+trackingOptions.movingGeofenceRadius = 200 // meters
+
+Radar.startTracking(trackingOptions: trackingOptions)
+```
+
+```objective-c Objective-C
+RadarTrackingOptions *trackingOptions = RadarTrackingOptions.presetResponsive;
+
+// Enable stopped geofence
+trackingOptions.useStoppedGeofence = YES;
+trackingOptions.stoppedGeofenceRadius = 100; // meters
+
+// Enable moving geofence
+trackingOptions.useMovingGeofence = YES;
+trackingOptions.movingGeofenceRadius = 200; // meters
+
+[Radar startTrackingWithOptions:trackingOptions];
+```
+
+</CodeGroup>
+
+<Info>
+Client geofences use Apple's region monitoring service to wake the app when the user moves beyond the specified radius, improving battery efficiency.
+</Info>
+
+## Event Confidence
+
+Geofence events include a confidence level indicating the likelihood that the event is accurate:
+
+<CodeGroup>
+
+```swift Swift
+func didReceiveEvents(_ events: [RadarEvent], user: RadarUser?) {
+    for event in events {
+        switch event.confidence {
+        case .high:
+            // High confidence - act immediately
+            print("High confidence event")
+        case .medium:
+            // Medium confidence - may want to verify
+            print("Medium confidence event")
+        case .low:
+            // Low confidence - treat with caution
+            print("Low confidence event")
+        case .none:
+            print("Unknown confidence")
+        @unknown default:
+            break
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+- (void)didReceiveEvents:(NSArray<RadarEvent *> *)events user:(RadarUser *)user {
+    for (RadarEvent *event in events) {
+        switch (event.confidence) {
+            case RadarEventConfidenceHigh:
+                // High confidence - act immediately
+                NSLog(@"High confidence event");
+                break;
+            case RadarEventConfidenceMedium:
+                // Medium confidence - may want to verify
+                NSLog(@"Medium confidence event");
+                break;
+            case RadarEventConfidenceLow:
+                // Low confidence - treat with caution
+                NSLog(@"Low confidence event");
+                break;
+            case RadarEventConfidenceNone:
+                NSLog(@"Unknown confidence");
+                break;
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+## Verifying Events
+
+You can accept or reject geofence events to improve accuracy:
+
+<CodeGroup>
+
+```swift Swift
+// Accept an event
+let eventId = event._id
+Radar.acceptEventId(eventId, verifiedPlaceId: nil)
+
+// Reject an event
+Radar.rejectEventId(eventId)
+```
+
+```objective-c Objective-C
+// Accept an event
+NSString *eventId = event._id;
+[Radar acceptEventId:eventId verifiedPlaceId:nil];
+
+// Reject an event
+[Radar rejectEventId:eventId];
+```
+
+</CodeGroup>
+
+<Note>
+Event verifications help Radar's machine learning improve future event accuracy and confidence levels.
+</Note>
+
+## Use Cases
+
+<CardGroup cols={2}>
+
+<Card title="Store Pickup" icon="store">
+Trigger curbside pickup notifications when customers arrive at store geofences.
+</Card>
+
+<Card title="Delivery Zones" icon="truck">
+Monitor when delivery drivers enter and exit delivery zones for real-time tracking.
+</Card>
+
+<Card title="Attendance Tracking" icon="clipboard-check">
+Track employee or student attendance based on geofence entry/exit events.
+</Card>
+
+<Card title="Marketing Campaigns" icon="bullhorn">
+Send targeted messages when users enter specific geographic areas or competitor locations.
+</Card>
+
+</CardGroup>
+
+## Best Practices
+
+<Steps>
+
+<Step title="Use Tags for Organization">
+Organize geofences with tags (e.g., "store", "warehouse", "restaurant") for easy filtering and management.
+</Step>
+
+<Step title="Leverage Metadata">
+Store additional context in geofence metadata (store IDs, manager contacts, operating details) for personalization.
+</Step>
+
+<Step title="Set Appropriate Radii">
+Use smaller radii (50-100m) for precise locations like stores. Use larger radii (500-1000m) for neighborhoods or zones.
+</Step>
+
+<Step title="Monitor Event Confidence">
+Check event confidence levels and handle high-confidence events differently than low-confidence ones.
+</Step>
+
+<Step title="Enable Geofence Syncing">
+Enable `syncGeofences` for better responsiveness and reduced latency in geofence events.
+</Step>
+
+</Steps>
+
+<Note>
+For more details on geofencing, visit the [Radar documentation](https://radar.com/documentation/geofences).
+</Note>

@@ -1,0 +1,207 @@
+---
+title: "RadarMotionProtocol"
+description: "Protocol for integrating motion activity and altitude detection providers with the Radar SDK."
+---
+
+## Overview
+
+`RadarMotionProtocol` defines the interface for motion activity detection providers that can be integrated with the Radar SDK. This protocol enables the SDK to receive motion activity updates, relative altitude updates, and absolute altitude updates from CoreMotion or custom motion providers.
+
+Implementing this protocol allows for custom motion detection backends or wrapping of Apple's CoreMotion framework.
+
+## Required Methods
+
+### startActivityUpdatesToQueue(_:withHandler:)
+
+Starts monitoring motion activity updates and delivers them to a specified queue.
+
+```objective-c
+- (void)startActivityUpdatesToQueue:(NSOperationQueue *)queue 
+                        withHandler:(CMMotionActivityHandler)handler;
+```
+
+<ParamField path="queue" type="NSOperationQueue" required>
+  The operation queue on which to deliver motion activity updates.
+</ParamField>
+
+<ParamField path="handler" type="CMMotionActivityHandler" required>
+  The block to invoke with motion activity updates. The handler receives `CMMotionActivity` objects representing the user's current activity state.
+</ParamField>
+
+<Note>
+  `CMMotionActivityHandler` is a block type defined as `void (^)(CMMotionActivity *activity)`.
+</Note>
+
+### stopActivityUpdates
+
+Stops monitoring motion activity updates.
+
+```objective-c
+- (void)stopActivityUpdates;
+```
+
+Call this method when motion activity updates are no longer needed to conserve battery and system resources.
+
+### startRelativeAltitudeUpdatesToQueue(_:withHandler:)
+
+Starts monitoring relative altitude changes and delivers them to a specified queue.
+
+```objective-c
+- (void)startRelativeAltitudeUpdatesToQueue:(NSOperationQueue *)queue
+                                withHandler:(CMAltitudeHandler)handler;
+```
+
+<ParamField path="queue" type="NSOperationQueue" required>
+  The operation queue on which to deliver altitude updates.
+</ParamField>
+
+<ParamField path="handler" type="CMAltitudeHandler" required>
+  The block to invoke with relative altitude updates. The handler receives `CMAltitudeData` objects representing altitude changes relative to a starting point.
+</ParamField>
+
+<Note>
+  Relative altitude measures changes from when monitoring started, useful for detecting floor changes in buildings.
+</Note>
+
+### stopRelativeAltitudeUpdates
+
+Stops monitoring relative altitude updates.
+
+```objective-c
+- (void)stopRelativeAltitudeUpdates;
+```
+
+### startAbsoluteAltitudeUpdatesToQueue(_:withHandler:)
+
+Starts monitoring absolute altitude and delivers updates to a specified queue.
+
+```objective-c
+- (void)startAbsoluteAltitudeUpdatesToQueue:(NSOperationQueue *)queue
+                                withHandler:(CMAltitudeHandler)handler;
+```
+
+<ParamField path="queue" type="NSOperationQueue" required>
+  The operation queue on which to deliver altitude updates.
+</ParamField>
+
+<ParamField path="handler" type="CMAltitudeHandler" required>
+  The block to invoke with absolute altitude updates. The handler receives `CMAltitudeData` objects representing altitude above sea level.
+</ParamField>
+
+<Note>
+  Absolute altitude provides elevation above sea level when available from device sensors.
+</Note>
+
+### stopAbsoluteAltitudeUpdates
+
+Stops monitoring absolute altitude updates.
+
+```objective-c
+- (void)stopAbsoluteAltitudeUpdates;
+```
+
+### stringForMotionAuthorization
+
+Returns a string representation of the current motion authorization status.
+
+```objective-c
++ (NSString *)stringForMotionAuthorization;
+```
+
+**Returns:** A string describing the current authorization status for motion and fitness data (e.g., "authorized", "denied", "notDetermined").
+
+## Implementation Example
+
+Here's an example implementation using CoreMotion:
+
+```objective-c
+#import <CoreMotion/CoreMotion.h>
+#import "RadarMotionProtocol.h"
+
+@interface CustomMotionProvider : NSObject <RadarMotionProtocol>
+@property (nonatomic, strong) CMMotionActivityManager *activityManager;
+@property (nonatomic, strong) CMAltimeter *altimeter;
+@end
+
+@implementation CustomMotionProvider
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _activityManager = [[CMMotionActivityManager alloc] init];
+        _altimeter = [[CMAltimeter alloc] init];
+    }
+    return self;
+}
+
+- (void)startActivityUpdatesToQueue:(NSOperationQueue *)queue
+                        withHandler:(CMMotionActivityHandler)handler {
+    [self.activityManager startActivityUpdatesToQueue:queue
+                                          withHandler:handler];
+}
+
+- (void)stopActivityUpdates {
+    [self.activityManager stopActivityUpdates];
+}
+
+- (void)startRelativeAltitudeUpdatesToQueue:(NSOperationQueue *)queue
+                                withHandler:(CMAltitudeHandler)handler {
+    [self.altimeter startRelativeAltitudeUpdatesToQueue:queue
+                                            withHandler:handler];
+}
+
+- (void)stopRelativeAltitudeUpdates {
+    [self.altimeter stopRelativeAltitudeUpdates];
+}
+
+- (void)startAbsoluteAltitudeUpdatesToQueue:(NSOperationQueue *)queue
+                                withHandler:(CMAltitudeHandler)handler {
+    if ([CMAltimeter isAbsoluteAltitudeAvailable]) {
+        [self.altimeter startAbsoluteAltitudeUpdatesToQueue:queue
+                                                withHandler:handler];
+    }
+}
+
+- (void)stopAbsoluteAltitudeUpdates {
+    [self.altimeter stopAbsoluteAltitudeUpdates];
+}
+
++ (NSString *)stringForMotionAuthorization {
+    CMAuthorizationStatus status = [CMMotionActivityManager authorizationStatus];
+    switch (status) {
+        case CMAuthorizationStatusAuthorized:
+            return @"authorized";
+        case CMAuthorizationStatusDenied:
+            return @"denied";
+        case CMAuthorizationStatusRestricted:
+            return @"restricted";
+        case CMAuthorizationStatusNotDetermined:
+            return @"notDetermined";
+        default:
+            return @"unknown";
+    }
+}
+
+@end
+```
+
+## Usage Notes
+
+<Warning>
+  Motion activity and altitude monitoring require user permission. Request authorization before starting updates and handle denied or restricted states appropriately.
+</Warning>
+
+- **Battery Impact**: Motion and altitude updates can significantly impact battery life. Stop updates when not needed.
+- **Authorization**: Check `CMMotionActivityManager.authorizationStatus()` before starting updates.
+- **Queue Management**: Use an appropriate operation queue for your app's threading model. For UI updates, use `OperationQueue.main`.
+- **Data Quality**: Altitude data accuracy depends on device sensors and environmental conditions.
+
+## Related APIs
+
+- Apple's [CMMotionActivityManager](https://developer.apple.com/documentation/coremotion/cmmotionactivitymanager)
+- Apple's [CMAltimeter](https://developer.apple.com/documentation/coremotion/cmaltimeter)
+- Apple's [CMMotionActivity](https://developer.apple.com/documentation/coremotion/cmmotionactivity)
+
+## See Also
+
+- [RadarIndoorsProtocol](/api/radar-indoors-protocol) - Protocol for indoor positioning providers

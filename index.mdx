@@ -1,97 +1,233 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Radar iOS SDK Documentation"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative overflow-hidden dark:bg-[#0a0a4a] bg-white py-20">
+  <div className="max-w-6xl mx-auto px-6 lg:px-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold dark:text-white text-gray-900 mb-6">
+          Build powerful location experiences on iOS
+        </h1>
+        <p className="text-base sm:text-lg dark:text-gray-300 text-gray-600 mb-8 max-w-2xl">
+          The Radar iOS SDK enables you to add geofencing, location tracking, trip monitoring, and location verification to your app with just a few lines of code.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a 
+            href="/quickstart" 
+            className="inline-flex items-center px-6 py-3 text-base font-medium rounded-lg text-white dark:bg-[#040454] bg-[#040454] hover:opacity-90 transition-colors"
+          >
+            Get Started
+          </a>
+          <a 
+            href="/api/radar" 
+            className="inline-flex items-center px-6 py-3 text-base font-medium rounded-lg dark:text-white text-gray-900 dark:bg-white/10 bg-gray-100 dark:border-white/20 border-gray-200 border hover:dark:bg-white/20 hover:bg-gray-200 transition-colors"
+          >
+            API Reference
+          </a>
+        </div>
+      </div>
+      <div className="lg:col-span-5 hidden lg:block">
+        <div className="relative">
+          <div className="absolute inset-0 dark:bg-gradient-to-r from-[#040454] to-[#e6005c] bg-gradient-to-r from-[#040454] to-blue-500 rounded-2xl blur-3xl opacity-20"></div>
+          <div className="relative dark:bg-[#1a1d27] bg-gray-50 rounded-2xl p-8 dark:border-[#27272a] border-gray-200 border">
+            <div className="space-y-3">
+              <div className="dark:bg-[#242838] bg-white rounded-lg p-4 dark:border-[#27272a] border-gray-200 border">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full dark:bg-[#040454] bg-[#040454]"></div>
+                  <span className="text-sm font-medium dark:text-gray-100 text-gray-900">Location Tracking</span>
+                </div>
+                <p className="text-xs dark:text-gray-400 text-gray-600">Continuous, responsive, efficient</p>
+              </div>
+              <div className="dark:bg-[#242838] bg-white rounded-lg p-4 dark:border-[#27272a] border-gray-200 border">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full dark:bg-[#e6005c] bg-[#e6005c]"></div>
+                  <span className="text-sm font-medium dark:text-gray-100 text-gray-900">Geofencing</span>
+                </div>
+                <p className="text-xs dark:text-gray-400 text-gray-600">Entry, exit, dwell events</p>
+              </div>
+              <div className="dark:bg-[#242838] bg-white rounded-lg p-4 dark:border-[#27272a] border-gray-200 border">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full dark:bg-[#7c84ac] bg-[#7c84ac]"></div>
+                  <span className="text-sm font-medium dark:text-gray-100 text-gray-900">Trip Tracking</span>
+                </div>
+                <p className="text-xs dark:text-gray-400 text-gray-600">Real-time ETAs & updates</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">Quick Start</h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">Get up and running with the Radar iOS SDK in minutes</p>
+  
+  <Steps>
+    <Step title="Install via CocoaPods or SPM">
+      Add the Radar SDK to your project using CocoaPods or Swift Package Manager.
+      
+      ```ruby Podfile
+      pod 'RadarSDK', '~> 3.0'
+      ```
+      
+      ```bash Terminal
+      pod install
+      ```
+      
+      Or add via Swift Package Manager in Xcode: `https://github.com/radarlabs/radar-sdk-ios`
+    </Step>
+    
+    <Step title="Initialize the SDK">
+      Import Radar and initialize with your publishable API key in your AppDelegate.
+      
+      ```swift AppDelegate.swift
+      import RadarSDK
+      
+      func application(_ application: UIApplication, 
+                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+          Radar.initialize(publishableKey: "prj_test_pk_...")
+          return true
+      }
+      ```
+    </Step>
+    
+    <Step title="Request location permissions">
+      Request location permissions from the user. Radar requires "When In Use" or "Always" authorization.
+      
+      ```swift ViewController.swift
+      import CoreLocation
+      
+      let locationManager = CLLocationManager()
+      locationManager.requestWhenInUseAuthorization()
+      // or locationManager.requestAlwaysAuthorization()
+      ```
+      
+      <Note>Add `NSLocationWhenInUseUsageDescription` and optionally `NSLocationAlwaysAndWhenInUseUsageDescription` keys to your Info.plist with descriptions of why your app needs location access.</Note>
+    </Step>
+    
+    <Step title="Start tracking">
+      Start tracking the user's location with a single method call.
+      
+      ```swift ViewController.swift
+      Radar.startTracking(trackingOptions: .presetEfficient)
+      ```
+      
+      Radar will now track the user's location in the background and deliver events to your server.
+    </Step>
+  </Steps>
+</div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">Core Features</h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">Powerful location capabilities built for production apps</p>
+  
+  <CardGroup cols={2}>
+    <Card title="Location Tracking" icon="location-dot" href="/features/tracking">
+      Track users in the background with configurable presets for continuous, responsive, or efficient tracking
+    </Card>
+    <Card title="Geofencing" icon="draw-circle" href="/features/geofencing">
+      Monitor custom geofences and receive entry, exit, and dwell events with dwelling time detection
+    </Card>
+    <Card title="Trip Tracking" icon="route" href="/features/trip-tracking">
+      Track trips with real-time ETAs, approach detection, and destination arrival notifications
+    </Card>
+    <Card title="Beacon Ranging" icon="bluetooth" href="/features/beacons">
+      Range iBeacons and trigger proximity-based experiences for retail, events, and indoor navigation
+    </Card>
+    <Card title="Fraud Verification" icon="shield-check" href="/features/fraud-verification">
+      Verify user location and detect location spoofing to prevent fraud and abuse
+    </Card>
+    <Card title="Context API" icon="earth-americas" href="/location/context">
+      Get comprehensive location context including nearby places, chains, categories, and neighborhoods
+    </Card>
+  </CardGroup>
+</div>
 
-## Make it yours
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">Location Services</h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">Rich location APIs for search, geocoding, and routing</p>
+  
+  <CardGroup cols={3}>
+    <Card title="Geocoding" icon="map-pin" href="/location/geocoding">
+      Forward and reverse geocoding with international address support
+    </Card>
+    <Card title="Place Search" icon="magnifying-glass-location" href="/location/search">
+      Search for places, geofences, and chains near a location
+    </Card>
+    <Card title="Distance & Routes" icon="signs-post" href="/location/routing">
+      Calculate distance, duration, and turn-by-turn routes
+    </Card>
+  </CardGroup>
+</div>
 
-Design a docs site that looks great and empowers your users.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">API Reference</h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">Complete reference for all classes, methods, and protocols</p>
+  
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <a href="/api/radar" className="group block rounded-2xl dark:bg-[#1a1d27] bg-gray-50 dark:border-[#27272a] border-gray-200 border p-6 dark:hover:border-[#040454] hover:border-[#040454] transition-colors no-underline">
+      <h3 className="text-base font-semibold dark:text-gray-100 text-gray-900 mb-2">Radar</h3>
+      <p className="text-sm dark:text-gray-400 text-gray-600 mb-3">Main SDK class with methods for initialization, tracking, and location services</p>
+      <div className="flex items-center text-sm dark:text-gray-400 text-gray-600 dark:group-hover:text-[#040454] group-hover:text-[#040454]">
+        View reference
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+    
+    <a href="/api/radar-delegate" className="group block rounded-2xl dark:bg-[#1a1d27] bg-gray-50 dark:border-[#27272a] border-gray-200 border p-6 dark:hover:border-[#040454] hover:border-[#040454] transition-colors no-underline">
+      <h3 className="text-base font-semibold dark:text-gray-100 text-gray-900 mb-2">RadarDelegate</h3>
+      <p className="text-sm dark:text-gray-400 text-gray-600 mb-3">Protocol for receiving location updates, events, and errors in your app</p>
+      <div className="flex items-center text-sm dark:text-gray-400 text-gray-600 dark:group-hover:text-[#040454] group-hover:text-[#040454]">
+        View reference
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+    
+    <a href="/api/radar-tracking-options" className="group block rounded-2xl dark:bg-[#1a1d27] bg-gray-50 dark:border-[#27272a] border-gray-200 border p-6 dark:hover:border-[#040454] hover:border-[#040454] transition-colors no-underline">
+      <h3 className="text-base font-semibold dark:text-gray-100 text-gray-900 mb-2">RadarTrackingOptions</h3>
+      <p className="text-sm dark:text-gray-400 text-gray-600 mb-3">Configure tracking behavior with presets and custom parameters</p>
+      <div className="flex items-center text-sm dark:text-gray-400 text-gray-600 dark:group-hover:text-[#040454] group-hover:text-[#040454]">
+        View reference
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+    
+    <a href="/api/radar-event" className="group block rounded-2xl dark:bg-[#1a1d27] bg-gray-50 dark:border-[#27272a] border-gray-200 border p-6 dark:hover:border-[#040454] hover:border-[#040454] transition-colors no-underline">
+      <h3 className="text-base font-semibold dark:text-gray-100 text-gray-900 mb-2">RadarEvent</h3>
+      <p className="text-sm dark:text-gray-400 text-gray-600 mb-3">Location events for geofence entries, exits, place visits, and trip updates</p>
+      <div className="flex items-center text-sm dark:text-gray-400 text-gray-600 dark:group-hover:text-[#040454] group-hover:text-[#040454]">
+        View reference
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+  </div>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="dark:bg-[#1a1d27] bg-gray-50 dark:border-[#27272a] border-gray-200 border rounded-2xl p-8 md:p-12">
+    <div className="max-w-2xl">
+      <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">Ready to start building?</h2>
+      <p className="text-base dark:text-gray-400 text-gray-600 mb-6">
+        Follow the quickstart guide to add location tracking to your iOS app in less than 10 minutes.
+      </p>
+      <a 
+        href="/quickstart" 
+        className="inline-flex items-center px-6 py-3 text-base font-medium rounded-lg text-white dark:bg-[#040454] bg-[#040454] hover:opacity-90 transition-colors"
+      >
+        Get Started
+      </a>
+    </div>
+  </div>
+</div>

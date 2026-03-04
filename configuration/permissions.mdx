@@ -1,0 +1,396 @@
+---
+title: Location Permissions
+description: Best practices for requesting and handling location permissions in iOS
+---
+
+## Overview
+
+Radar requires location permissions to track the user's location. iOS provides two levels of location authorization:
+
+- **When In Use** - Location access only while the app is in the foreground
+- **Always** - Location access in both foreground and background
+
+For background tracking, you must request Always authorization.
+
+## Required Info.plist Keys
+
+Before requesting location permissions, you must add usage description strings to your app's `Info.plist` file. These strings explain to users why your app needs location access.
+
+### Required Keys
+
+<CodeGroup>
+```xml Info.plist
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Your foreground location usage description goes here.</string>
+
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>Your background location usage description goes here.</string>
+```
+</CodeGroup>
+
+<Info>
+Replace the placeholder text with a clear explanation of why your app needs location access. Be specific about the features that require location.
+</Info>
+
+### Optional Keys
+
+If you're using motion detection features:
+
+```xml
+<key>NSMotionUsageDescription</key>
+<string>Your motion usage description goes here.</string>
+```
+
+### Background Modes
+
+For background tracking, you must enable the `location` background mode in your app's capabilities:
+
+```xml
+<key>UIBackgroundModes</key>
+<array>
+  <string>location</string>
+</array>
+```
+
+In Xcode, you can also enable this in your target's **Signing & Capabilities** tab under **Background Modes**.
+
+## Requesting Permissions
+
+### iOS 13.4 and Later
+
+On iOS 13.4 and later, you should request foreground permission first, then request background permission if granted:
+
+<CodeGroup>
+```swift Swift
+import CoreLocation
+
+class YourViewController: UIViewController, CLLocationManagerDelegate {
+    let locationManager = CLLocationManager()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        locationManager.delegate = self
+        requestLocationPermissions()
+    }
+    
+    func requestLocationPermissions() {
+        let status: CLAuthorizationStatus
+        
+        if #available(iOS 14.0, *) {
+            status = locationManager.authorizationStatus
+        } else {
+            status = CLLocationManager.authorizationStatus()
+        }
+        
+        if #available(iOS 13.4, *) {
+            // On iOS 13.4+, request foreground first, then background
+            if status == .notDetermined {
+                locationManager.requestWhenInUseAuthorization()
+            } else if status == .authorizedWhenInUse {
+                locationManager.requestAlwaysAuthorization()
+            }
+        } else {
+            // On earlier versions, request always authorization directly
+            locationManager.requestAlwaysAuthorization()
+        }
+    }
+    
+    // Handle authorization changes
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        requestLocationPermissions()
+    }
+}
+```
+
+```objective-c Objective-C
+#import <CoreLocation/CoreLocation.h>
+
+@interface YourViewController () <CLLocationManagerDelegate>
+@property (nonatomic, strong) CLLocationManager *locationManager;
+@end
+
+@implementation YourViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    self.locationManager = [[CLLocationManager alloc] init];
+    self.locationManager.delegate = self;
+    [self requestLocationPermissions];
+}
+
+- (void)requestLocationPermissions {
+    CLAuthorizationStatus status;
+    
+    if (@available(iOS 14.0, *)) {
+        status = self.locationManager.authorizationStatus;
+    } else {
+        status = [CLLocationManager authorizationStatus];
+    }
+    
+    if (@available(iOS 13.4, *)) {
+        // On iOS 13.4+, request foreground first, then background
+        if (status == kCLAuthorizationStatusNotDetermined) {
+            [self.locationManager requestWhenInUseAuthorization];
+        } else if (status == kCLAuthorizationStatusAuthorizedWhenInUse) {
+            [self.locationManager requestAlwaysAuthorization];
+        }
+    } else {
+        // On earlier versions, request always authorization directly
+        [self.locationManager requestAlwaysAuthorization];
+    }
+}
+
+- (void)locationManagerDidChangeAuthorization:(CLLocationManager *)manager {
+    [self requestLocationPermissions];
+}
+
+@end
+```
+</CodeGroup>
+
+<Note>
+On iOS 13.4 and later, the OS will show the background permission prompt in-app after the user grants foreground permission.
+</Note>
+
+### Before iOS 13.4
+
+On iOS 13.0-13.3, request Always authorization directly. The OS will show a foreground prompt in-app, then show a background prompt later at a time determined by the OS.
+
+<Warning>
+The background permission prompt on iOS 13.0-13.3 appears outside of your app after the user has been using the app for a while. Make sure to educate users about this behavior.
+</Warning>
+
+## Permission States
+
+The `CLAuthorizationStatus` enum defines the possible permission states:
+
+<Accordion title=".notDetermined">
+The user has not yet been asked for location permission. Call `requestWhenInUseAuthorization()` or `requestAlwaysAuthorization()` to prompt the user.
+</Accordion>
+
+<Accordion title=".authorizedWhenInUse">
+The user has granted foreground (When In Use) location permission. You can request Always authorization by calling `requestAlwaysAuthorization()`.
+</Accordion>
+
+<Accordion title=".authorizedAlways">
+The user has granted background (Always) location permission. This is required for Radar background tracking.
+</Accordion>
+
+<Accordion title=".denied">
+The user has explicitly denied location permission. You should direct users to Settings to change the permission.
+
+```swift
+if status == .denied {
+    // Show alert directing user to Settings
+    let alert = UIAlertController(
+        title: "Location Permission Required",
+        message: "Please enable location access in Settings to use this feature.",
+        preferredStyle: .alert
+    )
+    
+    alert.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
+        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(settingsUrl)
+        }
+    })
+    
+    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+    present(alert, animated: true)
+}
+```
+</Accordion>
+
+<Accordion title=".restricted">
+Location services are restricted, typically due to parental controls or enterprise device management. Your app cannot request permission.
+</Accordion>
+
+## Checking Current Authorization
+
+You can check the current authorization status at any time:
+
+<CodeGroup>
+```swift Swift
+import CoreLocation
+
+let status: CLAuthorizationStatus
+
+if #available(iOS 14.0, *) {
+    // iOS 14+ - use instance property
+    status = locationManager.authorizationStatus
+} else {
+    // iOS 13 and earlier - use class method
+    status = CLLocationManager.authorizationStatus()
+}
+
+switch status {
+case .notDetermined:
+    print("Permission not requested yet")
+case .authorizedWhenInUse:
+    print("Foreground permission granted")
+case .authorizedAlways:
+    print("Background permission granted")
+case .denied:
+    print("Permission denied")
+case .restricted:
+    print("Permission restricted")
+@unknown default:
+    print("Unknown status")
+}
+```
+
+```objective-c Objective-C
+#import <CoreLocation/CoreLocation.h>
+
+CLAuthorizationStatus status;
+
+if (@available(iOS 14.0, *)) {
+    status = locationManager.authorizationStatus;
+} else {
+    status = [CLLocationManager authorizationStatus];
+}
+
+switch (status) {
+    case kCLAuthorizationStatusNotDetermined:
+        NSLog(@"Permission not requested yet");
+        break;
+    case kCLAuthorizationStatusAuthorizedWhenInUse:
+        NSLog(@"Foreground permission granted");
+        break;
+    case kCLAuthorizationStatusAuthorizedAlways:
+        NSLog(@"Background permission granted");
+        break;
+    case kCLAuthorizationStatusDenied:
+        NSLog(@"Permission denied");
+        break;
+    case kCLAuthorizationStatusRestricted:
+        NSLog(@"Permission restricted");
+        break;
+}
+```
+</CodeGroup>
+
+## Provisional "Allow Once" Permission
+
+Starting with iOS 14, users can choose "Allow Once" which grants temporary permission that expires when the app is backgrounded. If the user selects this option, `authorizationStatus` will return `.authorizedWhenInUse`, but permission will need to be re-requested the next time the app is launched.
+
+## Best Practices
+
+<Steps>
+  <Step title="Explain before requesting">
+    Show an explanation screen or alert before requesting permission. Explain what features require location access and how it benefits the user.
+    
+    ```swift
+    func showLocationPermissionExplanation() {
+        let alert = UIAlertController(
+            title: "Location Access",
+            message: "We use your location to show nearby stores and provide accurate delivery estimates.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Continue", style: .default) { _ in
+            self.locationManager.requestWhenInUseAuthorization()
+        })
+        
+        present(alert, animated: true)
+    }
+    ```
+  </Step>
+  
+  <Step title="Request at the right time">
+    Don't request permission on app launch. Wait until the user is about to use a location-dependent feature.
+  </Step>
+  
+  <Step title="Use clear usage descriptions">
+    Write clear, specific `Info.plist` usage descriptions that explain the value to users. Avoid generic text.
+    
+    **Good:** "We use your location to show nearby restaurants and provide delivery tracking."
+    
+    **Bad:** "This app requires location access to function."
+  </Step>
+  
+  <Step title="Handle permission changes">
+    Implement `locationManagerDidChangeAuthorization` to handle when users change permissions in Settings.
+  </Step>
+  
+  <Step title="Gracefully handle denial">
+    If permission is denied, degrade gracefully and provide an option to open Settings.
+  </Step>
+  
+  <Step title="Request progressively">
+    On iOS 13.4+, request When In Use first, then upgrade to Always only when needed.
+  </Step>
+</Steps>
+
+## Radar Status Codes
+
+When calling Radar SDK methods, you may receive permission-related status codes:
+
+<CodeGroup>
+```swift Swift
+Radar.trackOnce { status, location, events, user in
+    switch status {
+    case .errorPermissions:
+        print("Location permissions not granted")
+        // Show permission request UI
+    case .success:
+        print("Location tracked successfully")
+    default:
+        print("Other error: \(status)")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar trackOnceWithCompletionHandler:^(RadarStatus status, CLLocation * _Nullable location, NSArray<RadarEvent *> * _Nullable events, RadarUser * _Nullable user) {
+    if (status == RadarStatusErrorPermissions) {
+        NSLog(@"Location permissions not granted");
+    } else if (status == RadarStatusSuccess) {
+        NSLog(@"Location tracked successfully");
+    }
+}];
+```
+</CodeGroup>
+
+## Testing Permissions
+
+When testing, you can reset permissions for your app:
+
+1. Open the **Settings** app
+2. Go to **Privacy & Security** > **Location Services**
+3. Find your app and change the permission
+4. Or use the Simulator: **Features** > **Location** > **Custom Location**
+
+To completely reset permissions:
+
+```bash
+# Reset permissions for your app (on Simulator)
+xcrun simctl privacy <device-id> reset location <bundle-id>
+```
+
+## Common Issues
+
+<Accordion title="Background permission not working">
+Make sure you have:
+1. Added `NSLocationAlwaysAndWhenInUseUsageDescription` to `Info.plist`
+2. Enabled the `location` background mode
+3. Called `requestAlwaysAuthorization()` after receiving When In Use permission
+</Accordion>
+
+<Accordion title="Permission prompt not showing">
+Check that:
+1. Usage description keys are present in `Info.plist`
+2. You're calling the request method on the main thread
+3. You haven't already been denied (check authorization status)
+4. Your `CLLocationManager` instance isn't being deallocated
+</Accordion>
+
+<Accordion title="Users downgrading from Always to When In Use">
+Users can change permissions in Settings at any time. Monitor authorization changes with the delegate callback and adjust your app's behavior accordingly.
+</Accordion>
+
+## Related Resources
+
+- [Background Tracking](/sdk/ios/tracking#background-tracking)
+- [Tracking Options](/configuration/tracking-options)
+- [Apple's Location Permission Documentation](https://developer.apple.com/documentation/corelocation/requesting_authorization_to_use_location_services)

@@ -1,0 +1,202 @@
+---
+title: RadarPlace
+description: Represents a place with name, categories, chain, and location information.
+---
+
+`RadarPlace` represents a place. Learn more about [Places](https://radar.com/documentation/places).
+
+## Properties
+
+<ResponseField name="_id" type="String" required>
+  The Radar ID of the place.
+</ResponseField>
+
+<ResponseField name="name" type="String" required>
+  The name of the place.
+</ResponseField>
+
+<ResponseField name="categories" type="Array<String>" required>
+  The categories of the place. For a full list of categories, see [Place Categories](https://radar.com/documentation/places/categories).
+</ResponseField>
+
+<ResponseField name="chain" type="RadarChain">
+  The chain of the place, if known. May be `nil` for places without a chain. For a full list of chains, see [Place Chains](https://radar.com/documentation/places/chains).
+  
+  <Expandable title="properties">
+    <ResponseField name="slug" type="String" required>
+      The unique ID of the chain.
+    </ResponseField>
+    
+    <ResponseField name="name" type="String" required>
+      The name of the chain.
+    </ResponseField>
+    
+    <ResponseField name="externalId" type="String">
+      The external ID of the chain.
+    </ResponseField>
+    
+    <ResponseField name="metadata" type="NSDictionary">
+      The optional set of custom key-value pairs for the chain.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="location" type="RadarCoordinate" required>
+  The location of the place.
+  
+  <Expandable title="properties">
+    <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+      The coordinate.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="group" type="String">
+  The group for the place, if any. For a full list of groups, see [Place Groups](https://radar.com/documentation/places/groups).
+</ResponseField>
+
+<ResponseField name="metadata" type="NSDictionary">
+  The metadata for the place, if part of a group. For details of metadata fields see [Place Groups](https://radar.com/documentation/places/groups).
+</ResponseField>
+
+<ResponseField name="address" type="RadarAddress">
+  The address of the place.
+  
+  <Expandable title="properties">
+    <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+      The location coordinate of the address.
+    </ResponseField>
+    
+    <ResponseField name="formattedAddress" type="String">
+      The formatted string representation of the address.
+    </ResponseField>
+    
+    <ResponseField name="country" type="String">
+      The name of the country of the address.
+    </ResponseField>
+    
+    <ResponseField name="countryCode" type="String">
+      The unique code of the country of the address.
+    </ResponseField>
+    
+    <ResponseField name="countryFlag" type="String">
+      The flag of the country of the address.
+    </ResponseField>
+    
+    <ResponseField name="state" type="String">
+      The name of the state of the address.
+    </ResponseField>
+    
+    <ResponseField name="stateCode" type="String">
+      The unique code of the state of the address.
+    </ResponseField>
+    
+    <ResponseField name="postalCode" type="String">
+      The postal code of the address.
+    </ResponseField>
+    
+    <ResponseField name="city" type="String">
+      The city of the address.
+    </ResponseField>
+    
+    <ResponseField name="borough" type="String">
+      The borough of the address.
+    </ResponseField>
+    
+    <ResponseField name="county" type="String">
+      The county of the address.
+    </ResponseField>
+    
+    <ResponseField name="neighborhood" type="String">
+      The neighborhood of the address.
+    </ResponseField>
+    
+    <ResponseField name="number" type="String">
+      The street number of the address.
+    </ResponseField>
+    
+    <ResponseField name="street" type="String">
+      The street name of the address.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Methods
+
+### isChain
+
+```objective-c
+- (BOOL)isChain:(NSString *_Nullable)slug;
+```
+
+Returns a boolean indicating whether the place is part of the specified chain.
+
+**Parameters:**
+- `slug` - The chain slug to check
+
+**Returns:** `true` if the place is part of the specified chain, `false` otherwise.
+
+### hasCategory
+
+```objective-c
+- (BOOL)hasCategory:(NSString *_Nullable)category;
+```
+
+Returns a boolean indicating whether the place has the specified category.
+
+**Parameters:**
+- `category` - The category to check
+
+**Returns:** `true` if the place has the specified category, `false` otherwise.
+
+### arrayForPlaces
+
+```objective-c
++ (NSArray<NSDictionary *> *_Nullable)arrayForPlaces:(NSArray<RadarPlace *> *_Nullable)places;
+```
+
+Converts an array of `RadarPlace` objects to an array of dictionaries.
+
+### dictionaryValue
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Returns the dictionary representation of the place.
+
+## Example
+
+```swift
+let place: RadarPlace = event.place
+let placeId = place._id
+let placeName = place.name
+let placeCategories = place.categories
+let placeChain = place.chain
+let placeLocation = place.location
+
+if place.isChain("starbucks") {
+    // place is a Starbucks
+}
+
+if place.hasCategory("coffee-shop") {
+    // place is a coffee shop
+}
+```
+
+```objective-c
+RadarPlace *place = event.place;
+NSString *placeId = place._id;
+NSString *placeName = place.name;
+NSArray<NSString *> *placeCategories = place.categories;
+RadarChain *placeChain = place.chain;
+RadarCoordinate *placeLocation = place.location;
+
+if ([place isChain:@"starbucks"]) {
+    // place is a Starbucks
+}
+
+if ([place hasCategory:@"coffee-shop"]) {
+    // place is a coffee shop
+}
+```

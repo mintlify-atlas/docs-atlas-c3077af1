@@ -1,0 +1,460 @@
+---
+title: "Geocoding"
+description: "Convert addresses to coordinates and coordinates to addresses with Radar's geocoding APIs"
+---
+
+Radar provides comprehensive geocoding capabilities for iOS apps, including forward geocoding, reverse geocoding, IP geocoding, and address validation.
+
+## Forward Geocoding
+
+Forward geocoding converts a human-readable address into geographic coordinates.
+
+### Basic Forward Geocoding
+
+<CodeGroup>
+
+```swift Swift
+Radar.geocode(address: "20 jay st brooklyn") { status, addresses in
+    if status == .success, let address = addresses?.first {
+        print("Coordinate: \(address.coordinate)")
+        print("Formatted address: \(address.formattedAddress ?? "")")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar geocodeAddress:@"20 jay st brooklyn" completionHandler:^(RadarStatus status, NSArray<RadarAddress *> * _Nullable addresses) {
+    if (status == RadarStatusSuccess && addresses.firstObject) {
+        RadarAddress *address = addresses.firstObject;
+        NSLog(@"Coordinate: %f, %f", address.coordinate.latitude, address.coordinate.longitude);
+        NSLog(@"Formatted address: %@", address.formattedAddress);
+    }
+}];
+```
+
+</CodeGroup>
+
+### Forward Geocoding with Filters
+
+You can filter geocoding results by layer type and country to get more precise results.
+
+<CodeGroup>
+
+```swift Swift
+Radar.geocode(
+    address: "20 jay st brooklyn",
+    layers: ["place", "locality"],
+    countries: ["US", "CA"]
+) { status, addresses in
+    if status == .success, let address = addresses?.first {
+        print("Layer: \(address.layer ?? "")")
+        print("Country: \(address.countryCode ?? "")")
+        print("Coordinate: \(address.coordinate)")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar geocodeAddress:@"20 jay st brooklyn"
+               layers:@[@"place", @"locality"]
+            countries:@[@"US", @"CA"]
+    completionHandler:^(RadarStatus status, NSArray<RadarAddress *> * _Nullable addresses) {
+        if (status == RadarStatusSuccess && addresses.firstObject) {
+            RadarAddress *address = addresses.firstObject;
+            NSLog(@"Layer: %@", address.layer);
+            NSLog(@"Country: %@", address.countryCode);
+        }
+}];
+```
+
+</CodeGroup>
+
+<Note>
+Layer filters allow you to specify the type of result you want: `place`, `address`, `locality`, `state`, `country`, etc.
+</Note>
+
+## Reverse Geocoding
+
+Reverse geocoding converts geographic coordinates into a human-readable address.
+
+### Basic Reverse Geocoding
+
+Reverse geocode the device's current location:
+
+<CodeGroup>
+
+```swift Swift
+Radar.reverseGeocode { status, addresses in
+    if status == .success, let address = addresses?.first {
+        print("Formatted address: \(address.formattedAddress ?? "")")
+        print("City: \(address.city ?? "")")
+        print("State: \(address.state ?? "")")
+        print("Country: \(address.country ?? "")")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar reverseGeocodeWithCompletionHandler:^(RadarStatus status, NSArray<RadarAddress *> * _Nullable addresses) {
+    if (status == RadarStatusSuccess && addresses.firstObject) {
+        RadarAddress *address = addresses.firstObject;
+        NSLog(@"Formatted address: %@", address.formattedAddress);
+        NSLog(@"City: %@", address.city);
+        NSLog(@"State: %@", address.state);
+    }
+}];
+```
+
+</CodeGroup>
+
+### Reverse Geocoding a Specific Location
+
+<CodeGroup>
+
+```swift Swift
+let location = CLLocation(latitude: 40.70390, longitude: -73.98670)
+
+Radar.reverseGeocode(location: location) { status, addresses in
+    if status == .success, let address = addresses?.first {
+        print("Formatted address: \(address.formattedAddress ?? "")")
+        print("Street: \(address.street ?? "")")
+        print("Number: \(address.number ?? "")")
+        print("Postal code: \(address.postalCode ?? "")")
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *location = [[CLLocation alloc] initWithLatitude:40.70390 longitude:-73.98670];
+
+[Radar reverseGeocodeLocation:location completionHandler:^(RadarStatus status, NSArray<RadarAddress *> * _Nullable addresses) {
+    if (status == RadarStatusSuccess && addresses.firstObject) {
+        RadarAddress *address = addresses.firstObject;
+        NSLog(@"Formatted address: %@", address.formattedAddress);
+        NSLog(@"Street: %@", address.street);
+        NSLog(@"Number: %@", address.number);
+    }
+}];
+```
+
+</CodeGroup>
+
+### Reverse Geocoding with Layer Filters
+
+<CodeGroup>
+
+```swift Swift
+let location = CLLocation(latitude: 40.70390, longitude: -73.98670)
+
+Radar.reverseGeocode(
+    location: location,
+    layers: ["locality", "state"]
+) { status, addresses in
+    if status == .success, let address = addresses?.first {
+        print("City: \(address.city ?? "")")
+        print("State: \(address.state ?? "") (\(address.stateCode ?? ""))")
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *location = [[CLLocation alloc] initWithLatitude:40.70390 longitude:-73.98670];
+
+[Radar reverseGeocodeLocation:location
+                       layers:@[@"locality", @"state"]
+            completionHandler:^(RadarStatus status, NSArray<RadarAddress *> * _Nullable addresses) {
+    if (status == RadarStatusSuccess && addresses.firstObject) {
+        RadarAddress *address = addresses.firstObject;
+        NSLog(@"City: %@", address.city);
+        NSLog(@"State: %@ (%@)", address.state, address.stateCode);
+    }
+}];
+```
+
+</CodeGroup>
+
+## IP Geocoding
+
+IP geocoding converts the device's IP address into an approximate location. This is useful for location-based content customization without requesting location permissions.
+
+<CodeGroup>
+
+```swift Swift
+Radar.ipGeocode { status, address, proxy in
+    if status == .success, let address = address {
+        print("Country: \(address.countryCode ?? "")")
+        print("City: \(address.city ?? "")")
+        print("Is proxy: \(proxy)")
+    }
+}
+```
+
+```objective-c Objective-C
+[Radar ipGeocodeWithCompletionHandler:^(RadarStatus status, RadarAddress * _Nullable address, BOOL proxy) {
+    if (status == RadarStatusSuccess && address) {
+        NSLog(@"Country: %@", address.countryCode);
+        NSLog(@"City: %@", address.city);
+        NSLog(@"Is proxy: %d", proxy);
+    }
+}];
+```
+
+</CodeGroup>
+
+<Warning>
+IP geocoding provides approximate location data at the city level. It should not be used for precise location-based features.
+</Warning>
+
+## Address Validation
+
+Validate and standardize addresses to ensure accuracy and completeness.
+
+<CodeGroup>
+
+```swift Swift
+let address = RadarAddress(from: [
+    "latitude": 0,
+    "longitude": 0,
+    "city": "New York",
+    "stateCode": "NY",
+    "postalCode": "10003",
+    "countryCode": "US",
+    "street": "Broadway",
+    "number": "841"
+])!
+
+Radar.validateAddress(address: address) { status, validatedAddress, verificationStatus in
+    if status == .success, let validatedAddress = validatedAddress {
+        print("Verification status: \(Radar.stringForVerificationStatus(verificationStatus))")
+        print("Formatted address: \(validatedAddress.formattedAddress ?? "")")
+        print("Plus4: \(validatedAddress.plus4 ?? "")")
+    }
+}
+```
+
+```objective-c Objective-C
+RadarAddress *address = [[RadarAddress alloc] initFrom:@{
+    @"latitude": @0,
+    @"longitude": @0,
+    @"city": @"New York",
+    @"stateCode": @"NY",
+    @"postalCode": @"10003",
+    @"countryCode": @"US",
+    @"street": @"Broadway",
+    @"number": @"841"
+}];
+
+[Radar validateAddress:address completionHandler:^(RadarStatus status, RadarAddress * _Nullable validatedAddress, RadarAddressVerificationStatus verificationStatus) {
+    if (status == RadarStatusSuccess && validatedAddress) {
+        NSLog(@"Verification status: %@", [Radar stringForVerificationStatus:verificationStatus]);
+        NSLog(@"Formatted address: %@", validatedAddress.formattedAddress);
+        NSLog(@"Plus4: %@", validatedAddress.plus4);
+    }
+}];
+```
+
+</CodeGroup>
+
+### Verification Status Values
+
+The `RadarAddressVerificationStatus` indicates the quality of the address match:
+
+<Steps>
+
+<Step title="Verified">
+Complete match was made between the input data and a single record from the reference data.
+</Step>
+
+<Step title="Partially Verified">
+A partial match was made between the input data and a single record.
+</Step>
+
+<Step title="Ambiguous">
+More than one close reference data match was found.
+</Step>
+
+<Step title="Unverified">
+Unable to verify. The output fields will contain the input data.
+</Step>
+
+</Steps>
+
+## Autocomplete
+
+Autocomplete provides address suggestions as users type, sorted by relevance.
+
+<CodeGroup>
+
+```swift Swift
+let origin = CLLocation(latitude: 40.78382, longitude: -73.97536)
+
+Radar.autocomplete(
+    query: "brooklyn",
+    near: origin,
+    layers: ["locality"],
+    limit: 10,
+    country: "US"
+) { status, addresses in
+    if status == .success {
+        addresses?.forEach { address in
+            print("Suggestion: \(address.formattedAddress ?? "")")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *origin = [[CLLocation alloc] initWithLatitude:40.78382 longitude:-73.97536];
+
+[Radar autocompleteQuery:@"brooklyn"
+                    near:origin
+                  layers:@[@"locality"]
+                   limit:10
+                 country:@"US"
+       completionHandler:^(RadarStatus status, NSArray<RadarAddress *> * _Nullable addresses) {
+    if (status == RadarStatusSuccess) {
+        for (RadarAddress *address in addresses) {
+            NSLog(@"Suggestion: %@", address.formattedAddress);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+### Autocomplete with Mailable Filter
+
+Filter results to only include addresses that can receive mail:
+
+<CodeGroup>
+
+```swift Swift
+let origin = CLLocation(latitude: 40.78382, longitude: -73.97536)
+
+Radar.autocomplete(
+    query: "brooklyn",
+    near: origin,
+    layers: ["address"],
+    limit: 10,
+    country: "US",
+    mailable: true
+) { status, addresses in
+    if status == .success {
+        addresses?.forEach { address in
+            print("Mailable address: \(address.formattedAddress ?? "")")
+        }
+    }
+}
+```
+
+```objective-c Objective-C
+CLLocation *origin = [[CLLocation alloc] initWithLatitude:40.78382 longitude:-73.97536];
+
+[Radar autocompleteQuery:@"brooklyn"
+                    near:origin
+                  layers:@[@"address"]
+                   limit:10
+                 country:@"US"
+                mailable:YES
+       completionHandler:^(RadarStatus status, NSArray<RadarAddress *> * _Nullable addresses) {
+    if (status == RadarStatusSuccess) {
+        for (RadarAddress *address in addresses) {
+            NSLog(@"Mailable address: %@", address.formattedAddress);
+        }
+    }
+}];
+```
+
+</CodeGroup>
+
+## RadarAddress Properties
+
+The `RadarAddress` object contains comprehensive address information:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `coordinate` | `CLLocationCoordinate2D` | The location coordinate |
+| `formattedAddress` | `String?` | Formatted string representation |
+| `country` | `String?` | Country name |
+| `countryCode` | `String?` | Two-letter country code |
+| `countryFlag` | `String?` | Country flag emoji |
+| `state` | `String?` | State or province name |
+| `stateCode` | `String?` | State or province code |
+| `postalCode` | `String?` | Postal or ZIP code |
+| `city` | `String?` | City name |
+| `borough` | `String?` | Borough name |
+| `county` | `String?` | County name |
+| `neighborhood` | `String?` | Neighborhood name |
+| `street` | `String?` | Street name |
+| `number` | `String?` | Street number |
+| `unit` | `String?` | Unit or apartment number |
+| `plus4` | `String?` | ZIP+4 extension |
+| `addressLabel` | `String?` | Address label |
+| `placeLabel` | `String?` | Place label |
+| `layer` | `String?` | Layer type (e.g., 'place', 'address') |
+| `distance` | `NSNumber?` | Distance to search anchor in meters |
+| `confidence` | `RadarAddressConfidence` | Confidence level of result |
+| `metadata` | `[String: Any]?` | Additional metadata |
+| `timeZone` | `RadarTimeZone?` | Time zone information |
+| `categories` | `[String]?` | Place categories |
+
+## International Support
+
+Radar's geocoding APIs support addresses in over 100 countries worldwide. Use the `countries` parameter to filter results:
+
+```swift
+Radar.geocode(
+    address: "10 Downing Street",
+    layers: ["address"],
+    countries: ["GB"]
+) { status, addresses in
+    // Handle results
+}
+```
+
+<Tip>
+For best results with international addresses, always specify the country code when it's known.
+</Tip>
+
+## Error Handling
+
+All geocoding methods return a `RadarStatus` value indicating success or failure:
+
+```swift
+Radar.geocode(address: query) { status, addresses in
+    switch status {
+    case .success:
+        print("Geocoding succeeded")
+    case .errorNetwork:
+        print("Network error occurred")
+    case .errorBadRequest:
+        print("Invalid request parameters")
+    case .errorRateLimit:
+        print("Rate limit exceeded")
+    default:
+        print("Error: \(Radar.stringForStatus(status))")
+    }
+}
+```
+
+## Learn More
+
+<CardGroup cols={2}>
+
+<Card title="API Reference" icon="code" href="https://radar.com/documentation/api#geocoding">
+Explore the complete geocoding API reference
+</Card>
+
+<Card title="Places" icon="location-dot" href="/places">
+Learn about place detection and categorization
+</Card>
+
+<Card title="Regions" icon="globe" href="/regions">
+Understand region-based location context
+</Card>
+
+<Card title="Context" icon="map-location-dot" href="/location/context">
+Get comprehensive location context
+</Card>
+
+</CardGroup>

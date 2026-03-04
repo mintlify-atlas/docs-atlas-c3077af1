@@ -1,0 +1,106 @@
+---
+title: RadarBeacon
+description: Represents a Bluetooth beacon with UUID, major, minor, and RSSI information.
+---
+
+`RadarBeacon` represents a Bluetooth beacon. Learn more about [Beacons](https://radar.com/documentation/beacons).
+
+## Properties
+
+<ResponseField name="_id" type="String">
+  The Radar ID of the beacon.
+</ResponseField>
+
+<ResponseField name="__description" type="String">
+  The description of the beacon. Not to be confused with the `NSObject` `description` property.
+</ResponseField>
+
+<ResponseField name="tag" type="String">
+  The tag of the beacon.
+</ResponseField>
+
+<ResponseField name="externalId" type="String">
+  The external ID of the beacon.
+</ResponseField>
+
+<ResponseField name="uuid" type="String" required>
+  The UUID of the beacon.
+</ResponseField>
+
+<ResponseField name="major" type="String" required>
+  The major ID of the beacon.
+</ResponseField>
+
+<ResponseField name="minor" type="String" required>
+  The minor ID of the beacon.
+</ResponseField>
+
+<ResponseField name="metadata" type="NSDictionary">
+  The optional set of custom key-value pairs for the beacon.
+</ResponseField>
+
+<ResponseField name="geometry" type="RadarCoordinate">
+  The location of the beacon.
+  
+  <Expandable title="properties">
+    <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+      The coordinate.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="rssi" type="NSInteger" required>
+  The RSSI (Received Signal Strength Indicator) of the beacon, or 0 if not available.
+</ResponseField>
+
+## Methods
+
+### arrayForBeacons
+
+```objective-c
++ (NSArray<NSDictionary *> *_Nullable)arrayForBeacons:(NSArray<RadarBeacon *> *_Nullable)beacons;
+```
+
+Converts an array of `RadarBeacon` objects to an array of dictionaries.
+
+### dictionaryValue
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Returns the dictionary representation of the beacon.
+
+## Example
+
+```swift
+let beacon: RadarBeacon = event.beacon
+let beaconId = beacon._id
+let beaconDescription = beacon.__description
+let beaconTag = beacon.tag
+let beaconExternalId = beacon.externalId
+let beaconUuid = beacon.uuid
+let beaconMajor = beacon.major
+let beaconMinor = beacon.minor
+let beaconMetadata = beacon.metadata
+let beaconGeometry = beacon.geometry
+let beaconRssi = beacon.rssi
+```
+
+```objective-c
+RadarBeacon *beacon = event.beacon;
+NSString *beaconId = beacon._id;
+NSString *beaconDescription = beacon.__description;
+NSString *beaconTag = beacon.tag;
+NSString *beaconExternalId = beacon.externalId;
+NSString *beaconUuid = beacon.uuid;
+NSString *beaconMajor = beacon.major;
+NSString *beaconMinor = beacon.minor;
+NSDictionary *beaconMetadata = beacon.metadata;
+RadarCoordinate *beaconGeometry = beacon.geometry;
+NSInteger beaconRssi = beacon.rssi;
+```
+
+<Note>
+  The RSSI value indicates the signal strength of the beacon. Higher values (closer to 0) indicate stronger signals, while lower values (more negative) indicate weaker signals.
+</Note>
