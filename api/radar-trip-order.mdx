@@ -1,0 +1,160 @@
+---
+title: RadarTripOrder
+description: Represents a trip order
+---
+
+`RadarTripOrder` represents a trip order, which is used to manage delivery and pickup workflows within trips.
+
+## RadarTripOrderStatus
+
+The status values for trip orders.
+
+<ResponseField name="unknown" type="enum">
+  Unknown status.
+</ResponseField>
+
+<ResponseField name="pending" type="enum">
+  Order is pending and awaiting fulfillment.
+</ResponseField>
+
+<ResponseField name="fired" type="enum">
+  Order has been fired (triggered).
+</ResponseField>
+
+<ResponseField name="canceled" type="enum">
+  Order has been canceled.
+</ResponseField>
+
+<ResponseField name="completed" type="enum">
+  Order has been completed.
+</ResponseField>
+
+## Properties
+
+<ResponseField name="_id" type="string" required>
+  The ID of the trip order.
+</ResponseField>
+
+<ResponseField name="guid" type="string">
+  The optional GUID of the trip order. This is an additional unique identifier.
+</ResponseField>
+
+<ResponseField name="handoffMode" type="string">
+  The optional handoff mode of the trip order. This specifies how the order should be handed off (e.g., "curbside", "in-store").
+</ResponseField>
+
+<ResponseField name="status" type="RadarTripOrderStatus" required>
+  The status of the trip order.
+</ResponseField>
+
+<ResponseField name="firedAt" type="Date">
+  The optional date when the order was fired.
+</ResponseField>
+
+<ResponseField name="firedAttempts" type="number">
+  The optional number of fired attempts for the order.
+</ResponseField>
+
+<ResponseField name="firedReason" type="string">
+  The optional reason why the order was fired.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="Date" required>
+  The date when the order was last updated.
+</ResponseField>
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the trip order to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the trip order.
+
+## Example
+
+```swift
+// Access trip orders
+Radar.getTrip { (status, trip, events) in
+    if let trip = trip {
+        if let orders = trip.orders {
+            for order in orders {
+                print("Order ID: \(order._id)")
+                
+                switch order.status {
+                case .pending:
+                    print("Status: Pending")
+                case .fired:
+                    print("Status: Fired")
+                    if let firedAt = order.firedAt {
+                        print("Fired at: \(firedAt)")
+                    }
+                case .completed:
+                    print("Status: Completed")
+                case .canceled:
+                    print("Status: Canceled")
+                default:
+                    print("Status: Unknown")
+                }
+                
+                if let handoffMode = order.handoffMode {
+                    print("Handoff mode: \(handoffMode)")
+                }
+            }
+        }
+    }
+}
+```
+
+```objective-c
+// Access trip orders
+[Radar getTripWithCompletionHandler:^(RadarStatus status, 
+                                      RadarTrip * _Nullable trip, 
+                                      NSArray<RadarEvent *> * _Nullable events) {
+    if (trip && trip.orders) {
+        for (RadarTripOrder *order in trip.orders) {
+            NSLog(@"Order ID: %@", order._id);
+            
+            switch (order.status) {
+                case RadarTripOrderStatusPending:
+                    NSLog(@"Status: Pending");
+                    break;
+                case RadarTripOrderStatusFired:
+                    NSLog(@"Status: Fired");
+                    if (order.firedAt) {
+                        NSLog(@"Fired at: %@", order.firedAt);
+                    }
+                    break;
+                case RadarTripOrderStatusCompleted:
+                    NSLog(@"Status: Completed");
+                    break;
+                case RadarTripOrderStatusCanceled:
+                    NSLog(@"Status: Canceled");
+                    break;
+                default:
+                    NSLog(@"Status: Unknown");
+                    break;
+            }
+            
+            if (order.handoffMode) {
+                NSLog(@"Handoff mode: %@", order.handoffMode);
+            }
+        }
+    }
+}];
+```
+
+## See Also
+
+- [Trip Tracking Documentation](https://radar.com/documentation/trip-tracking)
+- [RadarTrip](/api/radar-trip)

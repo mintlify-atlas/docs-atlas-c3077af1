@@ -1,0 +1,92 @@
+---
+title: RadarTimeZone
+description: Represents a time zone
+---
+
+`RadarTimeZone` represents a time zone with detailed information including offsets, current time, and identifiers.
+
+## Properties
+
+<ResponseField name="_id" type="string" required>
+  The ID of the time zone (e.g., "America/New_York").
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  The name of the time zone (e.g., "Eastern Time").
+</ResponseField>
+
+<ResponseField name="code" type="string" required>
+  The time zone abbreviation (e.g., "EST", "EDT").
+</ResponseField>
+
+<ResponseField name="currentTime" type="Date" required>
+  The current time for the time zone.
+</ResponseField>
+
+<ResponseField name="utcOffset" type="number" required>
+  The UTC offset for the time zone in minutes.
+</ResponseField>
+
+<ResponseField name="dstOffset" type="number" required>
+  The DST (Daylight Saving Time) offset for the time zone in minutes.
+</ResponseField>
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the time zone to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the time zone.
+
+## Example
+
+```swift
+// Get time zone from geocoding
+Radar.geocode(address: "20 Jay Street, Brooklyn, NY") { (status, addresses) in
+    if let address = addresses?.first {
+        if let timeZone = address.timeZone {
+            print("Time zone ID: \(timeZone._id)")
+            print("Time zone name: \(timeZone.name)")
+            print("Time zone code: \(timeZone.code)")
+            print("Current time: \(timeZone.currentTime)")
+            print("UTC offset: \(timeZone.utcOffset) minutes")
+            print("DST offset: \(timeZone.dstOffset) minutes")
+        }
+    }
+}
+```
+
+```objective-c
+// Get time zone from geocoding
+[Radar geocodeAddress:@"20 Jay Street, Brooklyn, NY" 
+    completionHandler:^(RadarStatus status, NSArray<RadarAddress *> * _Nullable addresses) {
+    if (addresses.count > 0) {
+        RadarAddress *address = addresses.firstObject;
+        if (address.timeZone) {
+            RadarTimeZone *timeZone = address.timeZone;
+            NSLog(@"Time zone ID: %@", timeZone._id);
+            NSLog(@"Time zone name: %@", timeZone.name);
+            NSLog(@"Time zone code: %@", timeZone.code);
+            NSLog(@"Current time: %@", timeZone.currentTime);
+            NSLog(@"UTC offset: %d minutes", timeZone.utcOffset);
+            NSLog(@"DST offset: %d minutes", timeZone.dstOffset);
+        }
+    }
+}];
+```
+
+## See Also
+
+- [Geocoding API Documentation](https://radar.com/documentation/api#geocoding)
+- [RadarAddress](/api/radar-address)

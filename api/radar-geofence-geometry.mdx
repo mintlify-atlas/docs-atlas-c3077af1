@@ -1,0 +1,162 @@
+---
+title: RadarGeofenceGeometry
+description: Base class for geofence geometry and its subclasses
+---
+
+`RadarGeofenceGeometry` is the base class for representing the geometry of a geofence. Concrete implementations include `RadarCircleGeometry` and `RadarPolygonGeometry`.
+
+## RadarGeofenceGeometry
+
+The base class for geofence geometry. This class has no public properties or methods and serves as a parent class for specific geometry types.
+
+## RadarCircleGeometry
+
+Represents the geometry of a circle geofence.
+
+### Properties
+
+<ResponseField name="center" type="RadarCoordinate" required>
+  The center of the circle geofence.
+  
+  <Expandable title="properties">
+    <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+      The location coordinate containing latitude and longitude.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="radius" type="number" required>
+  The radius of the circle geofence in meters.
+</ResponseField>
+
+### Example
+
+```swift
+// Access circle geofence geometry
+if let circle = geofence.geometry as? RadarCircleGeometry {
+    let center = circle.center.coordinate
+    let radius = circle.radius
+    
+    print("Circle center: \(center.latitude), \(center.longitude)")
+    print("Circle radius: \(radius) meters")
+}
+```
+
+```objective-c
+// Access circle geofence geometry
+if ([geofence.geometry isKindOfClass:[RadarCircleGeometry class]]) {
+    RadarCircleGeometry *circle = (RadarCircleGeometry *)geofence.geometry;
+    CLLocationCoordinate2D center = circle.center.coordinate;
+    double radius = circle.radius;
+    
+    NSLog(@"Circle center: %f, %f", center.latitude, center.longitude);
+    NSLog(@"Circle radius: %f meters", radius);
+}
+```
+
+## RadarPolygonGeometry
+
+Represents the geometry of a polygon geofence.
+
+### Properties
+
+<ResponseField name="_coordinates" type="RadarCoordinate[]">
+  The geometry of the polygon geofence as a closed ring of coordinates. The first and last coordinates should be the same to close the polygon.
+  
+  <Expandable title="RadarCoordinate properties">
+    <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+      The location coordinate containing latitude and longitude.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="center" type="RadarCoordinate" required>
+  The calculated centroid of the polygon geofence.
+  
+  <Expandable title="properties">
+    <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+      The location coordinate containing latitude and longitude.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="radius" type="number" required>
+  The calculated radius of the polygon geofence in meters. This is typically the distance from the centroid to the furthest vertex.
+</ResponseField>
+
+### Example
+
+```swift
+// Access polygon geofence geometry
+if let polygon = geofence.geometry as? RadarPolygonGeometry {
+    let center = polygon.center.coordinate
+    let radius = polygon.radius
+    
+    print("Polygon center: \(center.latitude), \(center.longitude)")
+    print("Polygon radius: \(radius) meters")
+    
+    if let coordinates = polygon._coordinates {
+        print("Polygon has \(coordinates.count) vertices")
+        for coordinate in coordinates {
+            let coord = coordinate.coordinate
+            print("Vertex: \(coord.latitude), \(coord.longitude)")
+        }
+    }
+}
+```
+
+```objective-c
+// Access polygon geofence geometry
+if ([geofence.geometry isKindOfClass:[RadarPolygonGeometry class]]) {
+    RadarPolygonGeometry *polygon = (RadarPolygonGeometry *)geofence.geometry;
+    CLLocationCoordinate2D center = polygon.center.coordinate;
+    double radius = polygon.radius;
+    
+    NSLog(@"Polygon center: %f, %f", center.latitude, center.longitude);
+    NSLog(@"Polygon radius: %f meters", radius);
+    
+    if (polygon._coordinates) {
+        NSLog(@"Polygon has %lu vertices", (unsigned long)polygon._coordinates.count);
+        for (RadarCoordinate *coordinate in polygon._coordinates) {
+            CLLocationCoordinate2D coord = coordinate.coordinate;
+            NSLog(@"Vertex: %f, %f", coord.latitude, coord.longitude);
+        }
+    }
+}
+```
+
+## Usage
+
+To determine the type of geometry, use type checking:
+
+```swift
+let geofence: RadarGeofence = // ... from an event or context
+
+if let circle = geofence.geometry as? RadarCircleGeometry {
+    // Handle circle geometry
+    print("Circle geofence with radius: \(circle.radius)m")
+} else if let polygon = geofence.geometry as? RadarPolygonGeometry {
+    // Handle polygon geometry
+    print("Polygon geofence with \(polygon._coordinates?.count ?? 0) vertices")
+}
+```
+
+```objective-c
+RadarGeofence *geofence = // ... from an event or context
+
+if ([geofence.geometry isKindOfClass:[RadarCircleGeometry class]]) {
+    // Handle circle geometry
+    RadarCircleGeometry *circle = (RadarCircleGeometry *)geofence.geometry;
+    NSLog(@"Circle geofence with radius: %fm", circle.radius);
+} else if ([geofence.geometry isKindOfClass:[RadarPolygonGeometry class]]) {
+    // Handle polygon geometry
+    RadarPolygonGeometry *polygon = (RadarPolygonGeometry *)geofence.geometry;
+    NSLog(@"Polygon geofence with %lu vertices", (unsigned long)polygon._coordinates.count);
+}
+```
+
+## See Also
+
+- [Geofences Documentation](https://radar.com/documentation/geofences)
+- [RadarGeofence](/api/radar-geofence)
+- [RadarCoordinate](/api/radar-coordinate)

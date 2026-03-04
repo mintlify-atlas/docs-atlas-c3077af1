@@ -1,0 +1,94 @@
+---
+title: RadarSegment
+description: Represents a user segment
+---
+
+`RadarSegment` represents a user segment that can be used to group and target users based on behavior or characteristics.
+
+## Properties
+
+<ResponseField name="__description" type="string" required>
+  The description of the segment.
+</ResponseField>
+
+<ResponseField name="externalId" type="string" required>
+  The external ID of the segment. This is the unique identifier for the segment.
+</ResponseField>
+
+## Class Methods
+
+### arrayForSegments
+
+```swift
+class func array(for segments: [RadarSegment]?) -> [[String: Any]]?
+```
+
+```objective-c
++ (NSArray<NSDictionary *> *_Nullable)arrayForSegments:(NSArray<RadarSegment *> *_Nullable)segments;
+```
+
+Converts an array of `RadarSegment` objects to an array of dictionaries.
+
+#### Parameters
+
+<ParamField path="segments" type="RadarSegment[]">
+  The array of segments to convert.
+</ParamField>
+
+#### Returns
+
+An array of dictionaries representing the segments.
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the segment to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the segment.
+
+## Example
+
+```swift
+// Access user segments
+Radar.trackOnce { (status, location, events, user) in
+    if let user = user {
+        if let segments = user.segments {
+            for segment in segments {
+                print("Segment: \(segment.__description)")
+                print("External ID: \(segment.externalId)")
+            }
+        }
+    }
+}
+```
+
+```objective-c
+// Access user segments
+[Radar trackOnceWithCompletionHandler:^(RadarStatus status, 
+                                        CLLocation * _Nullable location, 
+                                        NSArray<RadarEvent *> * _Nullable events, 
+                                        RadarUser * _Nullable user) {
+    if (user && user.segments) {
+        for (RadarSegment *segment in user.segments) {
+            NSLog(@"Segment: %@", segment.__description);
+            NSLog(@"External ID: %@", segment.externalId);
+        }
+    }
+}];
+```
+
+## See Also
+
+- [RadarUser](/api/radar-user)
+- [Segments Documentation](https://radar.com/documentation/segments)

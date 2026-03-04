@@ -1,0 +1,73 @@
+---
+title: RadarRouteDuration
+description: Represents the duration of a route
+---
+
+`RadarRouteDuration` represents the duration of a route, including both the numeric value and a formatted display string.
+
+## Properties
+
+<ResponseField name="value" type="number" required>
+  The duration in minutes.
+</ResponseField>
+
+<ResponseField name="text" type="string" required>
+  A display string for the duration. This is a human-readable formatted string (e.g., "15 min" or "1 hour 30 min").
+</ResponseField>
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the route duration to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the route duration.
+
+## Example
+
+```swift
+// Get routing information
+Radar.getDistance(
+    origin: origin,
+    destination: destination,
+    modes: [.car],
+    units: .imperial
+) { (status, routes) in
+    if let duration = routes?.car?.duration {
+        print("Duration: \(duration.text)")
+        print("Duration in minutes: \(duration.value)")
+    }
+}
+```
+
+```objective-c
+// Get routing information
+[Radar getDistanceFromOrigin:origin
+                  destination:destination
+                        modes:RadarRouteModeCar
+                        units:RadarRouteUnitsImperial
+            completionHandler:^(RadarStatus status, RadarRoutes * _Nullable routes) {
+    RadarRouteDuration *duration = routes.car.duration;
+    if (duration) {
+        NSLog(@"Duration: %@", duration.text);
+        NSLog(@"Duration in minutes: %f", duration.value);
+    }
+}];
+```
+
+## See Also
+
+- [Routing API Documentation](https://radar.com/documentation/api#distance)
+- [RadarRoute](/api/radar-route)
+- [RadarRoutes](/api/radar-routes)
+- [RadarRouteDistance](/api/radar-route-distance)

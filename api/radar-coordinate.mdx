@@ -1,0 +1,102 @@
+---
+title: RadarCoordinate
+description: Represents a location coordinate
+---
+
+`RadarCoordinate` represents a location coordinate, wrapping a `CLLocationCoordinate2D` value.
+
+## Properties
+
+<ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+  The coordinate containing latitude and longitude values.
+  
+  <Expandable title="CLLocationCoordinate2D properties">
+    <ResponseField name="latitude" type="number" required>
+      The latitude in degrees.
+    </ResponseField>
+    
+    <ResponseField name="longitude" type="number" required>
+      The longitude in degrees.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the coordinate to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the coordinate.
+
+## Example
+
+```swift
+// Access coordinates from route geometry
+Radar.getDistance(
+    origin: origin,
+    destination: destination,
+    modes: [.car],
+    units: .imperial
+) { (status, routes) in
+    if let coordinates = routes?.car?.geometry.coordinates {
+        for radarCoordinate in coordinates {
+            let coord = radarCoordinate.coordinate
+            print("Lat: \(coord.latitude), Lon: \(coord.longitude)")
+        }
+    }
+}
+
+// Access coordinates from polygon geometry
+if let polygon = geofence.geometry as? RadarPolygonGeometry {
+    if let coordinates = polygon._coordinates {
+        for radarCoordinate in coordinates {
+            let coord = radarCoordinate.coordinate
+            print("Vertex: \(coord.latitude), \(coord.longitude)")
+        }
+    }
+}
+```
+
+```objective-c
+// Access coordinates from route geometry
+[Radar getDistanceFromOrigin:origin
+                  destination:destination
+                        modes:RadarRouteModeCar
+                        units:RadarRouteUnitsImperial
+            completionHandler:^(RadarStatus status, RadarRoutes * _Nullable routes) {
+    if (routes.car.geometry.coordinates) {
+        for (RadarCoordinate *radarCoordinate in routes.car.geometry.coordinates) {
+            CLLocationCoordinate2D coord = radarCoordinate.coordinate;
+            NSLog(@"Lat: %f, Lon: %f", coord.latitude, coord.longitude);
+        }
+    }
+}];
+
+// Access coordinates from polygon geometry
+if ([geofence.geometry isKindOfClass:[RadarPolygonGeometry class]]) {
+    RadarPolygonGeometry *polygon = (RadarPolygonGeometry *)geofence.geometry;
+    if (polygon._coordinates) {
+        for (RadarCoordinate *radarCoordinate in polygon._coordinates) {
+            CLLocationCoordinate2D coord = radarCoordinate.coordinate;
+            NSLog(@"Vertex: %f, %f", coord.latitude, coord.longitude);
+        }
+    }
+}
+```
+
+## See Also
+
+- [RadarRouteGeometry](/api/radar-route-geometry)
+- [RadarPolygonGeometry](/api/radar-geofence-geometry)
+- [RadarCircleGeometry](/api/radar-geofence-geometry)

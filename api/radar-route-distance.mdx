@@ -1,0 +1,73 @@
+---
+title: RadarRouteDistance
+description: Represents the distance of a route
+---
+
+`RadarRouteDistance` represents the distance of a route, including both the numeric value and a formatted display string.
+
+## Properties
+
+<ResponseField name="value" type="number" required>
+  The distance in feet (for imperial units) or meters (for metric units).
+</ResponseField>
+
+<ResponseField name="text" type="string" required>
+  A display string for the distance. This is a human-readable formatted string appropriate for the unit system (e.g., "1.2 mi" or "2.0 km").
+</ResponseField>
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the route distance to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the route distance.
+
+## Example
+
+```swift
+// Get routing information
+Radar.getDistance(
+    origin: origin,
+    destination: destination,
+    modes: [.car],
+    units: .imperial
+) { (status, routes) in
+    if let distance = routes?.car?.distance {
+        print("Distance: \(distance.text)")
+        print("Distance in feet: \(distance.value)")
+    }
+}
+```
+
+```objective-c
+// Get routing information
+[Radar getDistanceFromOrigin:origin
+                  destination:destination
+                        modes:RadarRouteModeCar
+                        units:RadarRouteUnitsImperial
+            completionHandler:^(RadarStatus status, RadarRoutes * _Nullable routes) {
+    RadarRouteDistance *distance = routes.car.distance;
+    if (distance) {
+        NSLog(@"Distance: %@", distance.text);
+        NSLog(@"Distance in feet: %f", distance.value);
+    }
+}];
+```
+
+## See Also
+
+- [Routing API Documentation](https://radar.com/documentation/api#distance)
+- [RadarRoute](/api/radar-route)
+- [RadarRoutes](/api/radar-routes)
+- [RadarRouteDuration](/api/radar-route-duration)

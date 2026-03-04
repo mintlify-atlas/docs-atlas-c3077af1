@@ -1,0 +1,85 @@
+---
+title: RadarInitializeOptions
+description: Configuration options for initializing the Radar SDK
+---
+
+`RadarInitializeOptions` provides configuration options for initializing the Radar SDK, including notification handling and push notification settings.
+
+## Properties
+
+<ResponseField name="autoLogNotificationConversions" type="boolean" required>
+  A boolean indicating whether to automatically log notification conversions. When enabled, the SDK will track when users interact with notifications.
+</ResponseField>
+
+<ResponseField name="autoHandleNotificationDeepLinks" type="boolean" required>
+  A boolean indicating whether to automatically handle deep links from notifications. When enabled, the SDK will process and navigate to deep links contained in notifications.
+</ResponseField>
+
+<ResponseField name="silentPush" type="boolean" required>
+  A boolean indicating whether to use silent push notifications. When enabled, notifications are delivered silently without alerting the user.
+</ResponseField>
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the initialization options to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the initialization options.
+
+### initWithDict
+
+```swift
+init(dict: [String: Any]?)
+```
+
+```objective-c
+- (instancetype _Nonnull)initWithDict:(NSDictionary *_Nullable)dict;
+```
+
+Creates a `RadarInitializeOptions` instance from a dictionary.
+
+#### Parameters
+
+<ParamField path="dict" type="[String: Any]?" required>
+  The dictionary containing initialization options.
+</ParamField>
+
+#### Returns
+
+A `RadarInitializeOptions` instance.
+
+## Example
+
+```swift
+let options = RadarInitializeOptions(dict: [
+    "autoLogNotificationConversions": true,
+    "autoHandleNotificationDeepLinks": true,
+    "silentPush": false
+])
+Radar.initialize(publishableKey: "prj_test_pk_...", options: options)
+```
+
+```objective-c
+RadarInitializeOptions *options = [[RadarInitializeOptions alloc] initWithDict:@{
+    @"autoLogNotificationConversions": @YES,
+    @"autoHandleNotificationDeepLinks": @YES,
+    @"silentPush": @NO
+}];
+[Radar initializeWithPublishableKey:@"prj_test_pk_..." options:options];
+```
+
+## See Also
+
+- [SDK Documentation](https://radar.com/documentation/sdk)
+- [Radar](/api/radar)

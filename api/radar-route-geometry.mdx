@@ -1,0 +1,87 @@
+---
+title: RadarRouteGeometry
+description: Represents the geometry of a route
+---
+
+`RadarRouteGeometry` represents the geometry of a route as an array of coordinates that define the path.
+
+## Properties
+
+<ResponseField name="coordinates" type="RadarCoordinate[]">
+  The geometry of the route as an array of `RadarCoordinate` objects. Each coordinate represents a point along the route path.
+  
+  <Expandable title="RadarCoordinate properties">
+    <ResponseField name="coordinate" type="CLLocationCoordinate2D" required>
+      The location coordinate (latitude and longitude).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Instance Methods
+
+### dictionaryValue
+
+```swift
+func dictionaryValue() -> [String: Any]
+```
+
+```objective-c
+- (NSDictionary *_Nonnull)dictionaryValue;
+```
+
+Converts the route geometry to a dictionary representation.
+
+#### Returns
+
+A dictionary representation of the route geometry.
+
+## Example
+
+```swift
+// Get routing information with geometry
+Radar.getDistance(
+    origin: origin,
+    destination: destination,
+    modes: [.car],
+    units: .imperial
+) { (status, routes) in
+    if let geometry = routes?.car?.geometry {
+        if let coordinates = geometry.coordinates {
+            print("Route has \(coordinates.count) points")
+            
+            // Access individual coordinates
+            for coordinate in coordinates {
+                let coord = coordinate.coordinate
+                print("Point: \(coord.latitude), \(coord.longitude)")
+            }
+        }
+    }
+}
+```
+
+```objective-c
+// Get routing information with geometry
+[Radar getDistanceFromOrigin:origin
+                  destination:destination
+                        modes:RadarRouteModeCar
+                        units:RadarRouteUnitsImperial
+            completionHandler:^(RadarStatus status, RadarRoutes * _Nullable routes) {
+    RadarRouteGeometry *geometry = routes.car.geometry;
+    if (geometry && geometry.coordinates) {
+        NSLog(@"Route has %lu points", (unsigned long)geometry.coordinates.count);
+        
+        // Access individual coordinates
+        for (RadarCoordinate *coordinate in geometry.coordinates) {
+            CLLocationCoordinate2D coord = coordinate.coordinate;
+            NSLog(@"Point: %f, %f", coord.latitude, coord.longitude);
+        }
+    }
+}];
+```
+
+## See Also
+
+- [Routing API Documentation](https://radar.com/documentation/api#distance)
+- [RadarRoute](/api/radar-route)
+- [RadarRoutes](/api/radar-routes)
+- [RadarCoordinate](/api/radar-coordinate)
